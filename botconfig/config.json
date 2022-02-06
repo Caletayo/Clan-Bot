@@ -1,0 +1,38 @@
+{
+   "token": "OTM0NjI0ODI4NDQxMzc4ODM3.YeyzMw.ZuGpjxIsJVDY_3qzaSpCR4800p0",
+   "prefix": ",",
+   "ownerIDS": [
+      "862621966317912084"
+   ],
+   "memer_api": "WNyBStXWCU4",
+   "status": {
+      "text": "🎈 | Todo funcionando correctamente | ,help",
+      "text2": "😂 | Si tienes dudas pregúntale a Google XD",
+      "type": "WATCHING",
+      "url": "https://twitch.tv/milratoDiscordBot"
+   },
+   "clientsettings": {
+      "nodes": [
+         {
+            "host": "lava.link",
+            "port": 80,
+            "password": "youshallnotpass"
+         }
+      ]
+   },
+   "spotify": {
+      "clientSecret": "0522108b2cb24c708fefface0348455a",
+      "clientID": "ac536c48444b430c8e4d83ff6e5329c8"
+   },
+   "settings": {
+      "leaveOnEmpty_Channel": {
+         "enabled": true,
+         "time_delay": 30000
+      },
+      "LeaveOnEmpty_Queue": {
+         "enabled": true,
+         "time_delay": 30000
+      },
+      "selfDeaf": true
+   }
+}
