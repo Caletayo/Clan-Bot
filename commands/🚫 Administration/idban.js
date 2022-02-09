@@ -69,7 +69,7 @@ module.exports = {
           .setColor(es.wrongcolor)
           .setFooter(client.getFooter(es))
           .setTitle(`❌ Could not ban ${banuser}`)
-          .setDescription(`\`\`\`${String(e.message ? e.message : e).substr(0, 2000)}\`\`\``)]}).catch(()=>{});
+          .setDescription(`\`\`\`${String(e.message ? e.message : e).substring(0, 2000)}\`\`\``)]}).catch(()=>{});
       })
 
     } catch (e) {

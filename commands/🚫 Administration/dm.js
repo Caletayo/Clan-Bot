@@ -46,7 +46,7 @@ module.exports = {
             .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
             .setFooter(client.getFooter(es))
             .setAuthor(`Message from: ${message.author.username}`, message.author.displayAvatarURL({dynamic:true}), "https://discord.gg/milrato")
-            .setDescription(args.slice(1).join(" ").substr(0, 2048))
+            .setDescription(args.slice(1).join(" ").substring(0, 2048))
           ]})
           message.reply({embeds : [new MessageEmbed()
             .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
@@ -95,7 +95,7 @@ module.exports = {
               .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
               .setFooter(client.getFooter(es))
               .setAuthor(`Message from: ${message.author.username}`, message.author.displayAvatarURL({dynamic:true}), "https://discord.gg/milrato")
-              .setDescription(args.slice(1).join(" ").substr(0, 2048))
+              .setDescription(args.slice(1).join(" ").substring(0, 2048))
             ]}).catch(e=>{
               failedd = true
             })
@@ -113,7 +113,7 @@ module.exports = {
           .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
           .setFooter(client.getFooter(es))
           .setTitle(eval(client.la[ls]["cmds"]["administration"]["dm"]["variable13"]))
-          .setDescription(failed.length > 0 ? `**FAILED MEMBERS:**\n> ${failed.map(r => `\`${r}\``).join("\n")}`.substr(0, 2048) : "**FAILED MEMBERS:**\n> No one Failed")
+          .setDescription(failed.length > 0 ? `**FAILED MEMBERS:**\n> ${failed.map(r => `\`${r}\``).join("\n")}`.substring(0, 2048) : "**FAILED MEMBERS:**\n> No one Failed")
           .addField(eval(client.la[ls]["cmds"]["administration"]["dm"]["variablex_14"]), eval(client.la[ls]["cmds"]["administration"]["dm"]["variable14"]))
         ]})
       }

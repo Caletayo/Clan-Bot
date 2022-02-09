@@ -30,7 +30,7 @@ module.exports = {
       try{
         user = await GetUser(message, args)
       }catch (e){
-        return message.reply({content: String('```' + e.message ? String(e.message).substr(0, 1900) : String(e) + '```')})
+        return message.reply({content: String('```' + e.message ? String(e.message).substring(0, 1900) : String(e) + '```')})
       }
       message.reply({embeds : [new MessageEmbed()
         .setColor(es.color)

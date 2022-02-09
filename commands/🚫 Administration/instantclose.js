@@ -25,7 +25,7 @@ module.exports = {
       let adminroles = client.settings.get(message.guild.id, "adminroles")
       let cmdroles = client.settings.get(message.guild.id, "cmdadminroles.ticket")
       let cmdroles2 = client.settings.get(message.guild.id, "cmdadminroles.close")
-      try{for (const r of cmdroles2) cmdrole.push(r)}catch{}
+      try{for (const r of cmdroles2) cmdroles.push(r)}catch{}
      
       var cmdrole = []
         if(cmdroles.length > 0){
@@ -50,7 +50,10 @@ module.exports = {
       let ticketSystemNumber = String(Ticketdata.type).split("-");
       ticketSystemNumber = ticketSystemNumber[ticketSystemNumber.length - 1];
       let ticket = client.setups.get(message.guild.id, `${String(Ticketdata.type).includes("menu") ? "menu": ""}ticketsystem${ticketSystemNumber}`)
-      
+      let closedParent = ticket;
+      if(String(Ticketdata.type).includes("menu") && Ticketdata.menutickettype && Ticketdata.menutickettype > 0) {
+          closedParent = client[`menuticket${Ticketdata.menutickettype}`].get(guild.id, "closedParent")
+      }
       if (([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => cmdroles.includes(r.id))) && !cmdroles.includes(message.author.id) && ([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => adminroles.includes(r ? r.id : r))) && !Array(message.guild.ownerId, config.ownerid).includes(message.author.id) && !message.member.permissions.has([Permissions.FLAGS.ADMINISTRATOR]) && !message.member.roles.cache.some(r => ticket.adminroles.includes(r ? r.id : r)))
         return message.reply({embeds : [new MessageEmbed()
           .setColor(es.wrongcolor)
@@ -100,6 +103,7 @@ module.exports = {
                     console.log(String(e).grey)
                 });
                   let index = String(data.type).slice(-1);
+                  
                   if (data.type.includes("apply")) {
                       client.setups.remove("TICKETS", data.user, `applytickets${index}`);
                       client.setups.remove("TICKETS", data.channel, `applytickets${index}`);
@@ -113,6 +117,21 @@ module.exports = {
                   client.setups.set(msg.channel.id, "closed", "ticketdata.state");
                   data = client.setups.get(msg.channel.id, "ticketdata");
                   
+                  if(closedParent) {
+                    let ticketCh = msg.guild.channels.cache.get(closedParent);
+                    if(ticketCh && ticketCh.type == "GUILD_CATEGORY") {
+                        if(ticketCh.children.size < 50) {
+                            await msg.channel.setParent(ticketCh.id, { lockPermissions: false }).catch(async (e) => {
+                                await msg.channel.send(`Can't move to: ${ticketCh.name} (\`${ticketCh.id}\`) because an Error occurred:\n> \`\`\`${String(e.message ? e.message : e).substring(0, 100)}\`\`\``).catch(() => {});
+                            })
+                        } else {
+                            await msg.channel.send(`Ticket Category ${ticketCh.name} (\`${ticketCh.id}\`) is full, can't move!`).catch(() => {});
+                        }
+                    } else {
+                        await msg.channel.send(`Could not find ${closedParent} as a parent`).catch(() => {});
+                    }
+                  } 
+
                   if(msg.channel.permissionsFor(msg.channel.guild.me).has(Permissions.FLAGS.MANAGE_CHANNELS)){
                       await msg.channel.permissionOverwrites.edit(data.user, {
                           SEND_MESSAGES: false,
@@ -124,14 +143,14 @@ module.exports = {
                       embeds: [new Discord.MessageEmbed()
                           .setTitle(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable7"]))
                           .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                          .setDescription(`Closed the Ticket of <@${data.user}> and removed him from the Channel!`.substr(0, 2000))
+                          .setDescription(`Closed the Ticket of <@${data.user}> and removed him from the Channel!`.substring(0, 2000))
                           .addField("User: ", `<@${data.user}>`)
                           .addField(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variablex_8"]), eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable8"]))
                           .addField("State: ", `${data.state}`)
                           .setFooter(client.getFooter(es))
                       ]
                   })
-                  try { msg.channel.setName(String(msg.channel.name).replace("ticket", "closed").substr(0, 32)).catch((e)=>{console.log(e)}); } catch (e) { console.log(e) }
+                  try { msg.channel.setName(String(msg.channel.name).replace("ticket", "closed").substring(0, 32)).catch((e)=>{console.log(e)}); } catch (e) { console.log(e) }
                   if (client.settings.get(guild.id, `adminlog`) != "no") {
                       let message = msg; //NEEDED FOR THE EVALUATION!
                       try {

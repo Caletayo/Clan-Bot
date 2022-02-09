@@ -87,9 +87,9 @@ module.exports = {
           .setPlaceholder(client.la[ls].cmds.info.botfaq.placeholder)
           .addOptions(menuoptions.map(o => {
             let Obj = {}; 
-            Obj.value = o.value.substr(0, 25);
-            Obj.label = o.value.substr(0, 25);
-            Obj.description = o.description.substr(0, 50);
+            Obj.value = o.value.substring(0, 25);
+            Obj.label = o.value.substring(0, 25);
+            Obj.description = o.description.substring(0, 50);
             if(o.emoji){
               Obj.emoji = o.emoji;
             }
@@ -105,7 +105,7 @@ module.exports = {
       let menumsg = await message.reply({embeds: [MenuEmbed], components: [Selection]})
       //function to handle the menuselection
       function menuselection(interaction) {
-        let menuoptiondata = menuoptions.find(v=>v.value.substr(0, 25) == interaction?.values[0])
+        let menuoptiondata = menuoptions.find(v=>v.value.substring(0, 25) == interaction?.values[0])
         interaction?.reply({embeds: [new Discord.MessageEmbed()
         .setColor(es.color)
         .setAuthor(client.la[ls].cmds.info.botfaq.menuembed.title, client.user.displayAvatarURL(), "https://discord.gg/milrato")

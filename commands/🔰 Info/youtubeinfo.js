@@ -66,7 +66,7 @@ module.exports = {
         .addField(client.la[ls].cmds.info.youtubeinfo.field4, Channel.familySafe ? "✅" : "❌", true)
         .setFooter("ID: " + Channel.id)
         .setImage(Channel.mobileBanner[0] ? Channel.mobileBanner[0].url : null)
-        .setDescription(String(Channel.description).substr(0, 1500))
+        .setDescription(String(Channel.description).substring(0, 1500))
       let Videos = await getLatestVideos(url)
       let embed2 = new Discord.MessageEmbed()
         .setTitle(handlemsg(client.la[ls].cmds.info.youtubeinfo.videosof, {

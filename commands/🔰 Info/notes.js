@@ -61,7 +61,7 @@ module.exports = {
         embeds.push(new MessageEmbed().setColor(es.color)
           .setFooter(message.author.tag, message.author.displayAvatarURL({dynamic: true}))
           .setTitle(`All of your Notes you can jump to!`)
-          .setDescription(`${notes.map((data, index) => `**\`Page: ${index + 2}/${notes.length + 1}\`:** ${String(data.title).substr(0, 80)}`).join("\n")}`.substr(0, 2048))
+          .setDescription(`${notes.map((data, index) => `**\`Page: ${index + 2}/${notes.length + 1}\`:** ${String(data.title).substring(0, 80)}`).join("\n")}`.substring(0, 2048))
         );
         let counter = 1;
         for (const note of notes){
@@ -114,7 +114,7 @@ module.exports = {
                 var title = collected.first().content;
                 msgtodelete.push(collected.first());
                 if(title.length > 256) {
-                  title = title.substr(0, 256);
+                  title = title.substring(0, 256);
                   message.reply(`*This is a Note: I've shortend your __Title__, cause \`256 Letters\` is the Maximum!*`);
                 }
                 var mmmmm = await message.reply("What should be the __Description__ of your **new Note** ?").catch(e=>{
@@ -126,7 +126,7 @@ module.exports = {
                   var description = collected.first().content;
                   msgtodelete.push(collected.first());
                   if(description.length > 2048) {
-                    description = description.substr(0, 2048);
+                    description = description.substring(0, 2048);
                     message.reply(`*This is a Note: I've shortend your __Description__, cause \`2048 Letters\` is the Maximum!*`).catch(e=>{
                       console.log(String(e).grey)
                     });
@@ -156,7 +156,7 @@ module.exports = {
                     embeds.push(new MessageEmbed().setColor(es.color)
                       .setFooter(message.author.tag, message.author.displayAvatarURL({dynamic: true}))
                       .setTitle(`All of your Notes you can jump to!`)
-                      .setDescription(`${notes.map((data, index) => `**\`Page: ${index + 2}/${notes.length + 1}\`:** ${String(data.title).substr(0, 80)}`).join("\n")}`.substr(0, 2048))
+                      .setDescription(`${notes.map((data, index) => `**\`Page: ${index + 2}/${notes.length + 1}\`:** ${String(data.title).substring(0, 80)}`).join("\n")}`.substring(0, 2048))
                     );
                     let counter = 1;
                     for (const note of notes){
@@ -198,7 +198,7 @@ module.exports = {
                   return message.reply({embeds: [new Discord.MessageEmbed()
                     .setTitle("Your Time ran out!")
                     .setColor(es.wrongcolor)
-                    .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                    .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                     .setFooter(client.getFooter(es))
                   ]}).catch(e=>{
                     console.log(String(e).grey)
@@ -212,7 +212,7 @@ module.exports = {
                 return message.reply({embeds: [new Discord.MessageEmbed()
                   .setTitle("Your Time ran out!")
                   .setColor(es.wrongcolor)
-                  .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                  .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                   .setFooter(client.getFooter(es))
                 ]}).catch(e=>{
                   console.log(String(e).grey)
@@ -341,7 +341,7 @@ module.exports = {
               return message.reply({embeds: [new Discord.MessageEmbed()
                 .setTitle("Your Time ran out!")
                 .setColor(es.wrongcolor)
-                .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                 .setFooter(client.getFooter(es))
               ]}).catch(e=>{
                 console.log(String(e).grey)
@@ -375,7 +375,7 @@ module.exports = {
               embeds.push(new MessageEmbed().setColor(es.color)
                 .setFooter(message.author.tag, message.author.displayAvatarURL({dynamic: true}))
                 .setTitle(`All of your Notes you can jump to!`)
-                .setDescription(`${notes.map((data, index) => `**\`Page: ${index + 2}/${notes.length + 1}\`:** ${String(data.title).substr(0, 80)}`).join("\n")}`.substr(0, 2048))
+                .setDescription(`${notes.map((data, index) => `**\`Page: ${index + 2}/${notes.length + 1}\`:** ${String(data.title).substring(0, 80)}`).join("\n")}`.substring(0, 2048))
               );
               let counter = 1;
               for (const note of notes){
@@ -425,7 +425,7 @@ module.exports = {
                 var title = collected.first().content;
                 msgtodelete.push(collected.first())
                 if(title.length > 256) {
-                  title = title.substr(0, 256);
+                  title = title.substring(0, 256);
                   message.reply(`*This is a Note: I've shortend your __Title__, cause \`256 Letters\` is the Maximum!*`).catch(e=>{
                     console.log(String(e).grey)
                   });
@@ -439,7 +439,7 @@ module.exports = {
                   var description = collected.first().content;
                   msgtodelete.push(collected.first())
                   if(description.length > 2048) {
-                    description = description.substr(0, 2048);
+                    description = description.substring(0, 2048);
                     message.reply(`*This is a Note: I've shortend your __Description__, cause \`2048 Letters\` is the Maximum!*`).catch(e=>{
                       console.log(String(e).grey)
                     });
@@ -456,7 +456,7 @@ module.exports = {
                   embeds[0] = new MessageEmbed().setColor(es.color)
                   .setFooter(message.author.tag, message.author.displayAvatarURL({dynamic: true}))
                   .setTitle(`All of your Notes you can jump to!`)
-                  .setDescription(`${notes.map((data, index) => `**\`Page: ${index + 2}/${notes.length + 1}\`:** ${String(data.title).substr(0, 80)}`).join("\n")}`.substr(0, 2048));
+                  .setDescription(`${notes.map((data, index) => `**\`Page: ${index + 2}/${notes.length + 1}\`:** ${String(data.title).substring(0, 80)}`).join("\n")}`.substring(0, 2048));
                   embeds[thenote + 1] = new MessageEmbed().setColor(es.color)
                     .setFooter(message.author.tag + ` | Page: ${thenote + 2}/${embeds.length}` + ` | ${newnote.edited ? "Edited": "Created"} at: `, message.author.displayAvatarURL({dynamic: true}))
                     .setTitle(`${title}`)
@@ -491,7 +491,7 @@ module.exports = {
                   return message.reply({embeds: [new Discord.MessageEmbed()
                     .setTitle("Your Time ran out!")
                     .setColor(es.wrongcolor)
-                    .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                    .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                     .setFooter(client.getFooter(es))
                   ]}).catch(e=>{
                     console.log(String(e).grey)
@@ -505,7 +505,7 @@ module.exports = {
                 return message.reply({embeds: [new Discord.MessageEmbed()
                   .setTitle("Your Time ran out!")
                   .setColor(es.wrongcolor)
-                  .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                  .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                   .setFooter(client.getFooter(es))
                 ]}).catch(e=>{
                   console.log(String(e).grey)

@@ -67,7 +67,7 @@ module.exports = {
               else string += `${data.id == message.author.id ? "__" : ""}\`${j}\`. **${data.usertag}**: \`Invites: ${data.invites}\`${data.id == message.author.id ? "__" : ""}\n`;
               if(data.id == message.author.id) userrank = j;
           }
-          embed.setDescription(string.substr(0, 2048))
+          embed.setDescription(string.substring(0, 2048))
           embeds.push(embed);
       }
       swap_pages2(client, message, embeds.map(e => e.setFooter(client.getFooter(`You are #${userrank} on the Leaderboard`))))

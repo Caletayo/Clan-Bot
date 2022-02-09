@@ -75,13 +75,13 @@ module.exports = {
 **Warn Id:** \`${i}\`
 **Warned at:** \`${warnings[i].when}\`
 **Warned by:** \`${message.guild.members.cache.get(warnings[i].moderator) ? message.guild.members.cache.get(warnings[i].moderator).user.tag :  warnings[i].moderator}\`
-**Reason:** \`${warnings[i].reason.length > 50 ? warnings[i].reason.substr(0, 50) + ` ...` : warnings[i].reason}\`
+**Reason:** \`${warnings[i].reason.length > 50 ? warnings[i].reason.substring(0, 50) + ` ...` : warnings[i].reason}\`
 `
         }
         warnembed.setDescription(string)
         let k = warnembed.description
         for (let i = 0; i < k.length; i += 2048) {
-          await message.reply({embeds :[warnembed.setDescription(k.substr(i, i + 2048))]})
+          await message.reply({embeds :[warnembed.setDescription(k.substring(i, i + 2048))]})
         }
 
         if(client.settings.get(message.guild.id, `adminlog`) != "no"){

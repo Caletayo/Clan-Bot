@@ -1,0 +1,44 @@
+{
+  "files": {
+    "botconfig/config.json": [
+      {
+        "id": "d048ccfc-0e9d-4545-a26e-8e7cc17fbfe8",
+        "line": 6,
+        "version": 2,
+        "index": 142
+      },
+      {
+        "id": "aa7cc1ef-0b28-4c65-bf52-9dd752a845da",
+        "line": 7,
+        "version": 2,
+        "index": 148
+      },
+      {
+        "id": "cd0cc333-ac45-42e1-ae54-2fea29f66772",
+        "line": 12,
+        "version": 2,
+        "index": 346
+      },
+      {
+        "id": "48b618e5-d62b-4663-82ff-f19ac1986bb5",
+        "line": 24,
+        "version": 1,
+        "index": 592
+      }
+    ],
+    "index.js": [
+      {
+        "id": "34f75e64-f8e8-48a1-89ff-bb552c7f7306",
+        "line": 4,
+        "version": 1,
+        "index": 114
+      },
+      {
+        "id": "fa91ca9a-8147-4bee-b41c-b108c970836e",
+        "line": 5,
+        "version": 1,
+        "index": 157
+      }
+    ]
+  }
+}

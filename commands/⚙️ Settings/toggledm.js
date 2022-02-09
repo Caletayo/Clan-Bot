@@ -21,7 +21,7 @@ module.exports = {
         .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
         .setFooter(client.getFooter(es))
         .setTitle(eval(client.la[ls]["cmds"]["settings"]["toggledm"]["variable1"]))
-        .setDescription(`${client.settings.get(message.author.id, "dm") ? "I will now send you DMS after the COMMANDS, if needed" : "I will not send you DMS after the COMMANDS"}`.substr(0, 2048))
+        .setDescription(`${client.settings.get(message.author.id, "dm") ? "I will now send you DMS after the COMMANDS, if needed" : "I will not send you DMS after the COMMANDS"}`.substring(0, 2048))
       ]});
     } catch (e) {
       console.log(String(e.stack).grey.bgRed)

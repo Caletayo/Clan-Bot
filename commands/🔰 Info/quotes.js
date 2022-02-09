@@ -48,7 +48,7 @@ module.exports = {
           .addField("**Quote by:**", `<@${data[Number(args[0])].by}>`)
           .addField("**Quote at:**", `\`\`\`${moment(data[Number(args[0])].at).format("DD/MM/YYYY HH:mm")}\`\`\``)
           .setTitle("**Quote Text:**")
-          .setDescription(`${String(data[Number(args[0])].text).substr(0, 2000)}`)
+          .setDescription(`${String(data[Number(args[0])].text).substring(0, 2000)}`)
         if(data[Number(args[0])].image){
           embed.setImage(data[Number(args[0])].image)
         }
@@ -58,7 +58,7 @@ module.exports = {
       }
       if(!data || data.length == 0) return message.reply({content: ":x: **This User has no Quotes in this Server yet!**"})
       var datas = data.map((data, index) => 
-        `\` ${index}. \` By: <@${data.by}> | At: \`${moment(data.at).format("DD/MM/YYYY HH:mm")}\` \n> ${String(data.text).length > 80 ? String(data.text).substr(0, 75) + " ..." : String(data.text)}\n`
+        `\` ${index}. \` By: <@${data.by}> | At: \`${moment(data.at).format("DD/MM/YYYY HH:mm")}\` \n> ${String(data.text).length > 80 ? String(data.text).substring(0, 75) + " ..." : String(data.text)}\n`
         );
       swap_pages(client, message, datas, `Quotes of **\`${user.tag}\`** in **\`${message.guild.name}\`**\n*(Sorted after Date)*\n For more details type:\n> \`${prefix}quotes ${user.id} [ID]\``);
     } catch (e) {

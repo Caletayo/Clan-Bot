@@ -7,7 +7,7 @@ const {
   Permissions
 } = require(`discord.js`)
 const {
-  databasing
+  databasing, delay
 } = require(`${process.cwd()}/handlers/functions`);
 module.exports = {
   name: `mute`,
@@ -69,32 +69,32 @@ module.exports = {
 
       let mutesettings = client.settings.get(message.guild.id, "mute"); 
       /*
-        mute: {
-          style: "timeout",
-          roleId: "",
-          defaultTime: 60000,  
-        }
+          mute: {
+            style: "timeout",
+            roleId: "",
+            defaultTime: 60000,  
+          }
       */
       let time = args[0];
       if (!time) {
           message.reply(`No Time added, now using the default time: \`${mutesettings.defaultTime / 1000} ms\``);
           time = mutesettings.default;
       }
-      let mutedRole = mute.roleId ? message.guild.roles.cache.get(mute.roleId) || false : false;
-      if(mutedRole && mute.style == "timeout") {
-        if (!kickmember.manageable)
+      let mutedRole = mutesettings.roleId ? message.guild.roles.cache.get(mutesettings.roleId) || false : false;
+      
+      if(!mutedRole || mutesettings.style == "timeout") {
+        if (!member.manageable)
           return message.reply({embeds :[new MessageEmbed()
             .setColor(es.wrongcolor)
             .setFooter(client.getFooter(es))
             .setTitle(":x: **I am not able to manage this User**")
           ]}).catch(()=>{});
 
-
         args.shift();
 
         let reason = args.join(` `);
 
-        if(time.toLowerCase().includes("pe")) {
+        if(String(time).toLowerCase().includes("pe")) {
           message.reply("In the `timeout` mute-style you can't mute permament, using the maximum: `1 Week`")
           time = "1 Week";
         }
@@ -103,16 +103,18 @@ module.exports = {
         try {
           mutetime = ms(time);
         } catch (e) {
-          mutetime = mute.defaultTime;
+          mutetime = mutesettings.defaultTime;
         }
-
+        console.log(mutetime);
         member.timeout(mutetime, reason).then(() => {  
+          console.log("SUCCESS")
             //send Information in the Chat
             message.reply({
+              content: `||**Timeout until <t:${Math.floor((mutetime + Date.now()) / 1000)}:F>** - *Because no valid Role*||`,
               embeds: [new MessageEmbed()
               .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
               .setFooter(client.getFooter(es))
-              .setTitle(eval(client.la[ls]["cmds"]["administration"]["mute"]["variable14"]))
+              .setTitle(String(eval(client.la[ls]["cmds"]["administration"]["mute"]["variable14"])).replace("MUTED", "TIMEOUTED"))
               .setDescription(eval(client.la[ls]["cmds"]["administration"]["mute"]["variable15"]))
             ]}).catch((_) => {})
             //increase the Mod Stats
@@ -125,7 +127,8 @@ module.exports = {
               .setTitle(eval(client.la[ls]["cmds"]["administration"]["mute"]["variable16"]))
               .setDescription(eval(client.la[ls]["cmds"]["administration"]["mute"]["variable17"]))
             ]}).catch((_) => {})
-        }).catch(() => {
+        }).catch((e) => {
+            console.log(e)
             return message.reply(`:x: **I could not timeout ${member.user.tag}**`).then(m => {
                 setTimeout(() => { m.delete().catch(() => {}) }, 5000);
             });
@@ -139,8 +142,10 @@ module.exports = {
             .setFooter(client.getFooter(es))
             .setTitle(eval(client.la[ls]["cmds"]["administration"]["mute"]["variable10"]))
           ]});
-        if (time.toLowerCase().includes("pe")) {
+        if (String(time).toLowerCase().includes("pe")) {
           try{
+            args.shift();
+            let reason = args.join(` `);
             await member.roles.add(mutedRole).catch(e=>{
               console.log(e.stack ? String(e.stack).grey : String(e).grey)
             })
@@ -206,6 +211,8 @@ module.exports = {
            ] });
           }
         } else {
+          args.shift();
+          let reason = args.join(` `);
           let mutetime;
           try {
             mutetime = ms(time);
@@ -219,6 +226,7 @@ module.exports = {
             ]});
           }
           try {
+            
             await member.roles.add(mutedRole).catch(e=>{
               console.log(e.stack ? String(e.stack).grey : String(e).grey)
             })

@@ -108,7 +108,7 @@ module.exports = {
           .addField(`Warned by:`, `\`${warned_by}\``, true)
           .addField(`Warned at:`, `\`${warned_at}\``, true)
           .addField(`Warned in:`, `\`${warned_in}\``, true)
-          .addField(`Warn Reason:`, `\`${warning.reason.length > 900 ? warning.reason.substr(0, 900) + ` ...` : warning.reason}\``, true)
+          .addField(`Warn Reason:`, `\`${warning.reason.length > 900 ? warning.reason.substring(0, 900) + ` ...` : warning.reason}\``, true)
 
         ]}).catch(e => console.log(e.message))
 
@@ -119,7 +119,7 @@ module.exports = {
           .addField(`Warned by:`, `\`${warned_by}\``, true)
           .addField(`Warned at:`, `\`${warned_at}\``, true)
           .addField(`Warned in:`, `\`${warned_in}\``, true)
-          .addField(`Warn Reason:`, `\`${warning.reason.length > 900 ? warning.reason.substr(0, 900) + ` ...` : warning.reason}\``, true)
+          .addField(`Warn Reason:`, `\`${warning.reason.length > 900 ? warning.reason.substring(0, 900) + ` ...` : warning.reason}\``, true)
         ]});
         client.userProfiles.remove(warnmember.user.id, warnIDs[parseInt(args[1])], 'warnings')
 

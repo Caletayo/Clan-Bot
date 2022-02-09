@@ -70,7 +70,7 @@ module.exports = {
       let data = client.afkDB.get(user.id, "quotes")
       if(!data || data.length == 0) return message.reply({content: ":x: **This User has no Quotes in this Server yet!**"})
       var datas = data.sort((a,b)=> b?.at - a.at).map((data, index) => 
-        `\` ${index}. \` By: <@${data.by}> | At: \`${moment(data.at).format("DD/MM/YYYY HH:mm")}\` \n> ${String(data.text).length > 80 ? String(data.text).substr(0, 75) + " ..." : String(data.text)}\n`
+        `\` ${index}. \` By: <@${data.by}> | At: \`${moment(data.at).format("DD/MM/YYYY HH:mm")}\` \n> ${String(data.text).length > 80 ? String(data.text).substring(0, 75) + " ..." : String(data.text)}\n`
         );
       swap_pages(client, message, datas, `Latest Quotes of **\`${user.tag}\`** in **\`${message.guild.name}\`**\n\nFor more details type: \`${prefix}quotes ${user.id} [ID]\``);
     } catch (e) {

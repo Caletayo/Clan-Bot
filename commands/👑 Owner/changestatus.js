@@ -77,9 +77,9 @@ module.exports = {
           .addOptions(
           menuoptions.map(option => {
             let Obj = {
-              label: option.label ? option.label.substr(0, 50) : option.value.substr(0, 50),
-              value: option.value.substr(0, 50),
-              description: option.description.substr(0, 50),
+              label: option.label ? option.label.substring(0, 50) : option.value.substring(0, 50),
+              value: option.value.substring(0, 50),
+              description: option.description.substring(0, 50),
             }
           if(option.emoji) Obj.emoji = option.emoji;
           return Obj;
@@ -154,8 +154,8 @@ module.exports = {
                   .replace("{commands}", client.commands.size)
                   .replace("{usedcommands}", nFormatter(Math.ceil(client.stats.get("global", "commands") * [...client.guilds.cache.values()].length / 10), 2))
                   .replace("{songsplayed}", nFormatter(Math.ceil(client.stats.get("global", "songs") * [...client.guilds.cache.values()].length / 10), 2))
-                  newStatusText = String(newStatusText).substr(0, 128);
-                  status.status.text = String(msg).substr(0, 128);
+                  newStatusText = String(newStatusText).substring(0, 128);
+                  status.status.text = String(msg).substring(0, 128);
                   client.user.setActivity(newStatusText, {
                     type: config.status.type,
                     url: config.status.url
@@ -181,7 +181,7 @@ module.exports = {
                   return message.reply({embeds: [new MessageEmbed()
                     .setTitle(eval(client.la[ls]["cmds"]["owner"]["changestatus"]["variable11"]))
                     .setColor(es.wrongcolor)
-                    .setDescription(`\`\`\`${String(e.message ? e.message : e).substr(0, 2000)}\`\`\``.substr(0, 2000))
+                    .setDescription(`\`\`\`${String(e.message ? e.message : e).substring(0, 2000)}\`\`\``.substring(0, 2000))
                     .setFooter(client.getFooter(es))
                   ]});
                 })
@@ -226,8 +226,8 @@ module.exports = {
                   .replace("{commands}", client.commands.size)
                   .replace("{usedcommands}", nFormatter(Math.ceil(client.stats.get("global", "commands") * [...client.guilds.cache.values()].length / 10), 2))
                   .replace("{songsplayed}", nFormatter(Math.ceil(client.stats.get("global", "songs") * [...client.guilds.cache.values()].length / 10), 2))
-                  newStatusText = String(newStatusText).substr(0, 128);
-                  status.status.text2 = String(msg).substr(0, 128);
+                  newStatusText = String(newStatusText).substring(0, 128);
+                  status.status.text2 = String(msg).substring(0, 128);
                   client.user.setActivity(newStatusText, {
                     type: config.status.type,
                     url: config.status.url
@@ -253,7 +253,7 @@ module.exports = {
                   return message.reply({embeds: [new MessageEmbed()
                     .setTitle(eval(client.la[ls]["cmds"]["owner"]["changestatus"]["variable11"]))
                     .setColor(es.wrongcolor)
-                    .setDescription(`\`\`\`${String(e.message ? e.message : e).substr(0, 2000)}\`\`\``.substr(0, 2000))
+                    .setDescription(`\`\`\`${String(e.message ? e.message : e).substring(0, 2000)}\`\`\``.substring(0, 2000))
                     .setFooter(client.getFooter(es))
                   ]});
                 })
@@ -299,9 +299,9 @@ module.exports = {
                     .addOptions(
                     menuoptions.map(option => {
                       let Obj = {
-                        label: option.label ? option.label.substr(0, 50) : option.value.substr(0, 50),
-                        value: option.value.substr(0, 50),
-                        description: option.description.substr(0, 50),
+                        label: option.label ? option.label.substring(0, 50) : option.value.substring(0, 50),
+                        value: option.value.substring(0, 50),
+                        description: option.description.substring(0, 50),
                       }
                     if(option.emoji) Obj.emoji = option.emoji;
                     return Obj;
@@ -413,7 +413,7 @@ module.exports = {
                 return message.reply({embeds: [new MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["owner"]["changestatus"]["variable28"]))
                   .setColor(es.wrongcolor)
-                  .setDescription(`\`\`\`${String(e.message ? e.message : e).substr(0, 2000)}\`\`\``.substr(0, 2000))
+                  .setDescription(`\`\`\`${String(e.message ? e.message : e).substring(0, 2000)}\`\`\``.substring(0, 2000))
                   .setFooter(client.getFooter(es))
                 ]});
               })
@@ -453,9 +453,9 @@ module.exports = {
                     .addOptions(
                     menuoptions.map(option => {
                       let Obj = {
-                        label: option.label ? option.label.substr(0, 50) : option.value.substr(0, 50),
-                        value: option.value.substr(0, 50),
-                        description: option.description.substr(0, 50),
+                        label: option.label ? option.label.substring(0, 50) : option.value.substring(0, 50),
+                        value: option.value.substring(0, 50),
+                        description: option.description.substring(0, 50),
                       }
                     if(option.emoji) Obj.emoji = option.emoji;
                     return Obj;

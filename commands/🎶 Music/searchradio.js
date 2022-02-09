@@ -99,7 +99,7 @@ const { handlemsg } = require(`${process.cwd()}/handlers/functions`);
           let array = [];
 
           for (const track of data) {
-            string += `**${++counter})** [\`${String(track.name).substr(0, 15).split("[").join("{").split("]").join("}")}\`](${track.url})\n`
+            string += `**${++counter})** [\`${String(track.name).substring(0, 15).split("[").join("{").split("]").join("}")}\`](${track.url})\n`
             if (counter % 10 === 0) {
               array.push(string);
               string = "";
@@ -107,7 +107,7 @@ const { handlemsg } = require(`${process.cwd()}/handlers/functions`);
           }
 
           let embed = new MessageEmbed()
-            .setTitle(`Search result for: 🔎 **\`${filter.searchterm}`.substr(0, 256 - 3) + "`**")
+            .setTitle(`Search result for: 🔎 **\`${filter.searchterm}`.substring(0, 256 - 3) + "`**")
             .setColor(es.color)
             .setFooter(client.getFooter(`Search-Request by: ${message.author.tag}`, message.author.displayAvatarURL({
               dynamic: true

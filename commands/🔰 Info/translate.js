@@ -12,7 +12,7 @@ module.exports = {
   aliases: ["trans", "tran", "tr"],
   cooldown: 5,
   usage: "translate <from> <to> <TEXT>",
-  description: "Gives you an Invite link for this Bot",
+  description: "Translates Text from a Language to another one!",
   type: "util",
   run: async (client, message, args, cmduser, text, prefix) => {
     
@@ -31,9 +31,9 @@ module.exports = {
         message.reply({embeds: [embed]})
         }).catch(err => {
           let embed = new MessageEmbed()
-          .setColor(RED)
+          .setColor(es.wrongcolor)
           .setTitle(client.la[ls].common.erroroccur)
-          .setDescription(String("```"+err.stack+"```").substr(0, 2000))
+          .setDescription(String("```"+err.stack+"```").substring(0, 2000))
           message.reply({embeds: [embed]})
             console.log(err);
       });

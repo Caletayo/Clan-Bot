@@ -52,7 +52,7 @@ const {
 
         message.reply({embeds: [
             new MessageEmbed().setColor(es.color)
-            .setDescription(content.substr(0, 2048))
+            .setDescription(content.substring(0, 2048))
             .setAuthor(tag, avatar)
             .setImage(image)
             .setFooter(client.getFooter(`${moment(time).fromNow()} - Snipe ${snipe + 1} / ${snipes.length}\nUser-ID: ${id}`, avatar))

@@ -64,15 +64,15 @@ module.exports = {
         ee = ""
       }
       if(client.settings.get(message.author.id, "dm"))
-      message.author.send(`${ee}\`\`\`${message.content}`.substr(0, 2040) + "\`\`\`").catch(e => console.log("Couldn't Dm Him this log prevents a crash"))
+      message.author.send(`${ee}\`\`\`${message.content}`.substring(0, 2040) + "\`\`\`").catch(e => console.log("Couldn't Dm Him this log prevents a crash"))
 
       message.channel.messages.fetch(oldembedid).then(msg=>{
         msg.edit({embeds: [new MessageEmbed()
         .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
         .setFooter(client.getFooter(es))
         .setImage(image ? image.includes("http") ? image : message.author.displayAvatarURL : message.author.displayAvatarURL)
-        .setTitle(title ? title.substr(0, 256) : "")
-        .setDescription(desc ? desc.substr(0, 2048) : "")
+        .setTitle(title ? title.substring(0, 256) : "")
+        .setDescription(desc ? desc.substring(0, 2048) : "")
         ]}).then(d=>{
         var ee = "Here is your Command, if you wanna use it again!";
         if(message.content.length > 2000){
@@ -82,10 +82,10 @@ module.exports = {
           ee = ""
         }
         if(client.settings.get(message.author.id, "dm"))
-          message.author.send({content : `${ee}\`\`\`${message.content}`.substr(0, 2040) + "\`\`\`"}).catch(e => console.log("Couldn't Dm Him this log prevents a crash"))
+          message.author.send({content : `${ee}\`\`\`${message.content}`.substring(0, 2040) + "\`\`\`"}).catch(e => console.log("Couldn't Dm Him this log prevents a crash"))
       })
     }).catch(e=>{
-      return message.reply({content : `${e.message ? String(e.message).substr(0, 1900) : String(e).grey.substr(0, 1900)}`, code: "js"});
+      return message.reply({content : `${e.message ? String(e.message).substring(0, 1900) : String(e).grey.substring(0, 1900)}`, code: "js"});
     })
       
       client.stats.push(message.guild.id+message.author.id, new Date().getTime(), "says"); 

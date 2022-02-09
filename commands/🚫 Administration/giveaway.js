@@ -225,8 +225,8 @@ module.exports = {
                     theRoles = theRoles.map(r => r.id);
                     options.exemptMembers = new Function('member', `return !member || !member.roles ||!member.roles.cache.some((r) => \'${theRoles}\'.includes(r.id))`)
                 }
-                options.messages.giveaway = options.messages.giveaway.substr(0, 2000)
-                options.messages.giveawayEnded = options.messages.giveawayEnded.substr(0, 2000)
+                options.messages.giveaway = options.messages.giveaway.substring(0, 2000)
+                options.messages.giveawayEnded = options.messages.giveawayEnded.substring(0, 2000)
                 //role requirements
                 client.giveawaysManager.start(giveawayChannel, options);
 
@@ -288,7 +288,7 @@ module.exports = {
                         message.reply(eval(client.la[ls]["cmds"]["administration"]["giveaway"]["variable36"]));
                     } else {
                         console.error(e);
-                        message.reply({content : '<:no:833101993668771842> **An error occured...**```' + String(e.message).substr(0, 1900) + "```"});
+                        message.reply({content : '<:no:833101993668771842> **An error occured...**```' + String(e.message).substring(0, 1900) + "```"});
                     }
                 });
 
@@ -311,7 +311,7 @@ module.exports = {
                         message.reply(eval(client.la[ls]["cmds"]["administration"]["giveaway"]["variable36"]));
                     } else {
                         console.error(e);
-                        message.reply({content : '<:no:833101993668771842> **An error occured...**```' + String(e.message).substr(0, 1900) + "```"});
+                        message.reply({content : '<:no:833101993668771842> **An error occured...**```' + String(e.message).substring(0, 1900) + "```"});
                     }
                 });
         } else if (args[0].toLowerCase() === "unpause" || args[0].toLowerCase() === "resume") {
@@ -334,7 +334,7 @@ module.exports = {
                         message.reply(eval(client.la[ls]["cmds"]["administration"]["giveaway"]["variable36"]));
                     } else {
                         console.error(e);
-                        message.reply({content : '<:no:833101993668771842> **An error occured...**```' + String(e.message).substr(0, 1900) + "```"});
+                        message.reply({content : '<:no:833101993668771842> **An error occured...**```' + String(e.message).substring(0, 1900) + "```"});
                     }
                 });
         } else if (args[0].toLowerCase() === "edit") {
@@ -406,9 +406,9 @@ module.exports = {
                 return message.reply({content : ":x: Could not find Data of this Giveaway"});
             }
             if(giveaway.messages && giveaway.messages.winMessage && giveaway.messages.winMessage.includes("{winners}")){
-                return message.reply({content: `${giveaway.messages.winMessage.replace("{winners}", giveaway.winnerIds.map(d => `<@${d}>`).join(", ")).replace("{this.prize}", giveaway.prize).replace("{this.messageURL}", `https://discord.com/channels/${giveaway.guildId}/${giveaway.channelId}/${giveaway.messageId}`).replace("{this.hostedBy}", giveaway.hostedBy).substr(0, 2000)}`})
+                return message.reply({content: `${giveaway.messages.winMessage.replace("{winners}", giveaway.winnerIds.map(d => `<@${d}>`).join(", ")).replace("{this.prize}", giveaway.prize).replace("{this.messageURL}", `https://discord.com/channels/${giveaway.guildId}/${giveaway.channelId}/${giveaway.messageId}`).replace("{this.hostedBy}", giveaway.hostedBy).substring(0, 2000)}`})
             }
-            return message.reply({content: `The Winner of https://discord.com/channels/${giveaway.guildId}/${giveaway.channelId}/${giveaway.messageId} ${giveaway.winnerIds.length == 1 ? "is" : "are"} ${giveaway.winnerIds.map(d => `<@${d}>`).join(", ")}`.substr(0, 2000)})
+            return message.reply({content: `The Winner of https://discord.com/channels/${giveaway.guildId}/${giveaway.channelId}/${giveaway.messageId} ${giveaway.winnerIds.length == 1 ? "is" : "are"} ${giveaway.winnerIds.map(d => `<@${d}>`).join(", ")}`.substring(0, 2000)})
 
         } else {
             return message.reply({embeds: [new MessageEmbed()

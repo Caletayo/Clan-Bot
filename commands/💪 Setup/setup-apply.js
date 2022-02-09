@@ -30,6 +30,7 @@ module.exports = {
     let es = client.settings.get(message.guild.id, "embed");
     let ls = client.settings.get(message.guild.id, "language")
     let apply_for_here = client.apply;
+    let pre;
     let temptype = 0;
     let errored = false;
     let timeouterror = false;
@@ -41,64 +42,102 @@ module.exports = {
     first_layer()
     async function first_layer() {
       try {
-        let menuoptions = [{
-            value: "1 Apply System",
-            description: `Manage/Edit the 1 Apply Setup`,
-            emoji: NumberEmojiIds[1]
-          },
-          {
-            value: "2 Apply System",
-            description: `Manage/Edit the 2 Apply Setup`,
-            emoji: NumberEmojiIds[2]
-          },
-          {
-            value: "3 Apply System",
-            description: `Manage/Edit the 3 Apply Setup`,
-            emoji: NumberEmojiIds[3]
-          },
-          {
-            value: "4 Apply System",
-            description: `Manage/Edit the 4 Apply Setup`,
-            emoji: NumberEmojiIds[4]
-          },
-          {
-            value: "5 Apply System",
-            description: `Manage/Edit the 5 Apply Setup`,
-            emoji: NumberEmojiIds[5]
-          }
-        ]
-        require("fs").readdirSync("./handlers/applies").forEach((file, index) => {
+        let menuoptions = []
+        for(let i = 1; i<=100;i++) {
           menuoptions.push({
-            value: `${index + 5 + 1} Apply System`,
-            description: `Manage/Edit the ${index + 5 + 1} Apply Setup`,
-            emoji: NumberEmojiIds[index + 5 + 1]
+            value: `${i} Apply System`,
+            description: `Manage/Edit the ${i} Apply Setup`,
+            emoji: NumberEmojiIds[i]
           })
-        })
+        }
         //define the selection
-        let Selection = new MessageSelectMenu()
+        let row1 = new MessageActionRow().addComponents(new MessageSelectMenu()
           .setCustomId('MenuSelection')
           .setMaxValues(1) //OPTIONAL, this is how many values you can have at each selection
           .setMinValues(1) //OPTIONAL , this is how many values you need to have at each selection
           .setPlaceholder('Click me to setup the Application System(s)!')
           .addOptions(
-            menuoptions.map(option => {
+            menuoptions.slice(0, 25).map(option => {
               let Obj = {
-                label: option.label ? option.label.substr(0, 50) : option.value.substr(0, 50),
-                value: option.value.substr(0, 50),
-                description: option.description.substr(0, 50),
+                label: option.label ? option.label.substring(0, 50) : option.value.substring(0, 50),
+                value: option.value.substring(0, 50),
+                description: option.description.substring(0, 50),
               }
               if (option.emoji) Obj.emoji = option.emoji;
               return Obj;
-            }))
+            })
+          )
+        )
+        //define the selection
+        let row2 = new MessageActionRow().addComponents(new MessageSelectMenu()
+          .setCustomId('MenuSelection2')
+          .setMaxValues(1) //OPTIONAL, this is how many values you can have at each selection
+          .setMinValues(1) //OPTIONAL , this is how many values you need to have at each selection
+          .setPlaceholder('Click me to setup the Application System(s)!')
+          .addOptions(
+            menuoptions.slice(25, 50).map(option => {
+              let Obj = {
+                label: option.label ? option.label.substring(0, 50) : option.value.substring(0, 50),
+                value: option.value.substring(0, 50),
+                description: option.description.substring(0, 50),
+              }
+              if (option.emoji) Obj.emoji = option.emoji;
+              return Obj;
+            })
+          )
+        )
 
+        //define the selection
+        let row3 = new MessageActionRow().addComponents(new MessageSelectMenu()
+          .setCustomId('MenuSelection3')
+          .setMaxValues(1) //OPTIONAL, this is how many values you can have at each selection
+          .setMinValues(1) //OPTIONAL , this is how many values you need to have at each selection
+          .setPlaceholder('Click me to setup the Application System(s)!')
+          .addOptions(
+            menuoptions.slice(50, 75).map(option => {
+              let Obj = {
+                label: option.label ? option.label.substring(0, 50) : option.value.substring(0, 50),
+                value: option.value.substring(0, 50),
+                description: option.description.substring(0, 50),
+              }
+              if (option.emoji) Obj.emoji = option.emoji;
+              return Obj;
+            })
+          )
+        )
+    
+        //define the selection
+        let row4 = new MessageActionRow().addComponents(new MessageSelectMenu()
+          .setCustomId('MenuSelection4')
+          .setMaxValues(1) //OPTIONAL, this is how many values you can have at each selection
+          .setMinValues(1) //OPTIONAL , this is how many values you need to have at each selection
+          .setPlaceholder('Click me to setup the Application System(s)!')
+          .addOptions(
+            menuoptions.slice(75, 100).map(option => {
+              let Obj = {
+                label: option.label ? option.label.substring(0, 50) : option.value.substring(0, 50),
+                value: option.value.substring(0, 50),
+                description: option.description.substring(0, 50),
+              }
+              if (option.emoji) Obj.emoji = option.emoji;
+              return Obj;
+            })
+          )
+        )
+    
         //define the embed
         let MenuEmbed = new Discord.MessageEmbed()
           .setColor(es.color)
-          .setAuthor('Application Setup', 'https://cdn.discordapp.com/emojis/877653386747605032.png?size=96', 'https://discord.gg/milrato')
+          .setAuthor(client.getAuthor('Application Setup', 'https://cdn.discordapp.com/emojis/877653386747605032.png?size=96', 'https://discord.gg/milrato'))
           .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
         let used1 = false;
         //send the menu msg
-        let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
+        let menumsg = await message.reply({embeds: [MenuEmbed], components: [
+          row1,
+          row2,
+          row3,
+          row4
+        ]})
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({ 
           filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
@@ -112,8 +151,9 @@ module.exports = {
             if (menu?.values[0] == "Cancel") return menu?.reply(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable3"]))
             menu?.deferUpdate();
             let SetupNumber = menu?.values[0].split(" ")[0]
-            if (Number(SetupNumber) > 1) {
-              apply_for_here = client[`apply${SetupNumber}`]
+            if (Number(SetupNumber) >= 1) {
+              apply_for_here = client.apply;
+              pre = `apply${SetupNumber}` 
             }
             used1 = true;
             temptype = SetupNumber;
@@ -123,7 +163,7 @@ module.exports = {
         });
         //Once the Collections ended edit the menu message
         collector.on('end', collected => {
-          menumsg.edit({embeds: [menumsg.embeds[0].setDescription(`~~${menumsg.embeds[0].description}~~`)], components: [], content: `${collected && collected.first() && collected.first().values ? `<a:yes:833101995723194437> **Selected: \`${collected ? collected.first().values[0] : "Nothing"}\`**` : "❌ **NOTHING SELECTED - CANCELLED**" }`})
+          menumsg.edit({embeds: [menumsg.embeds[0].setDescription(`~~${menumsg.embeds[0].description}~~`)], components: [], content: `${collected && collected.first() && collected.first().values ? `<a:yes:929001012830806016> **Selected: \`${collected ? collected.first().values[0] : "Nothing"}\`**` : "❌ **NOTHING SELECTED - CANCELLED**" }`})
         });
       } catch (e) {
         console.log(String(e.stack).grey.bgRed)
@@ -197,7 +237,8 @@ module.exports = {
               "url": ""
             }
           }
-        });
+        }, pre);
+        console.log("APPLY DB NUMBER: ".green, pre);
         let menuoptions = [{
             value: "Create Apply-System",
             description: `Create/Overwrite the ${SetupNumber} Apply System`,
@@ -280,8 +321,8 @@ module.exports = {
             emoji: "🔵"
           },
           {
-            value: apply_for_here.get(message.guild.id, "last_verify") ? "Enable Last Verify" : "Disable Last Verify",
-            description: apply_for_here.get(message.guild.id, "last_verify") ? "Enabled Last Verification Message for the User" : "Disabled Last Verification Message for the User",
+            value: apply_for_here.get(message.guild.id, `${pre}.last_verify`) ? "Enable Last Verify" : "Disable Last Verify",
+            description: apply_for_here.get(message.guild.id, `${pre}.last_verify`) ? "Enabled Last Verification Message for the User" : "Disabled Last Verification Message for the User",
             emoji: "✋"
           },
           {
@@ -299,9 +340,9 @@ module.exports = {
           .addOptions(
             menuoptions.map(option => {
               let Obj = {
-                label: option.label ? option.label.substr(0, 50) : option.value.substr(0, 50),
-                value: option.value.substr(0, 50),
-                description: option.description.substr(0, 50),
+                label: option.label ? option.label.substring(0, 50) : option.value.substring(0, 50),
+                value: option.value.substring(0, 50),
+                description: option.description.substring(0, 50),
               }
               if (option.emoji) Obj.emoji = option.emoji;
               return Obj;
@@ -333,7 +374,7 @@ module.exports = {
         });
         //Once the Collections ended edit the menu message
         collector.on('end', collected => {
-          menumsg.edit({embeds: [menumsg.embeds[0].setDescription(`~~${menumsg.embeds[0].description}~~`)], components: [], content: `${collected && collected.first() && collected.first().values ? `<a:yes:833101995723194437> **Selected: \`${collected ? collected.first().values[0] : "Nothing"}\`**` : "❌ **NOTHING SELECTED - CANCELLED**" }`})
+          menumsg.edit({embeds: [menumsg.embeds[0].setDescription(`~~${menumsg.embeds[0].description}~~`)], components: [], content: `${collected && collected.first() && collected.first().values ? `<a:yes:929001012830806016> **Selected: \`${collected ? collected.first().values[0] : "Nothing"}\`**` : "❌ **NOTHING SELECTED - CANCELLED**" }`})
         });
       } catch (e) {
         console.log(String(e.stack).grey.bgRed)
@@ -367,7 +408,7 @@ module.exports = {
         if (optionhandletype == "Remove a Question") args = "removequestion"
         if (optionhandletype == "Set new Apply-Channel") args = "applychannel"
         if (optionhandletype == "Set new Log-Channel") args = "finishedapplychannel"
-        if (optionhandletype == "Enable Last Verify" || optionhandletype == "Disable Last Verify") args = "last_verify"
+        if (optionhandletype == "Enable Last Verify" || optionhandletype == "Disable Last Verify") args = `${pre}.last_verify`
         switch (args) {
           case "create": {
 
@@ -420,7 +461,7 @@ module.exports = {
                   }]
                 }).then(ch => {
                   f_applychannel = ch.id
-                  apply_for_here.set(ch.guild.id, ch.id, "f_channel_id")
+                  apply_for_here.set(ch.guild.id, ch.id, pre+".f_channel_id")
                 })
                 ch.guild.channels.create("✅|apply-here", {
                   type: "GUILD_TEXT",
@@ -477,7 +518,7 @@ module.exports = {
                           embeds: [new Discord.MessageEmbed()
                             .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable12"]))
                             .setColor(es.wrongcolor)
-                            .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                            .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                             .setFooter(client.getFooter(es))
                           ]
                         });
@@ -505,14 +546,14 @@ module.exports = {
                               embeds: [setupembed],
                               components: allbuttons
                             }).then(msg => {
-                              apply_for_here.set(msg.guild.id, msg.id, "message_id")
-                              apply_for_here.set(msg.guild.id, msg.channel.id, "channel_id")
+                              apply_for_here.set(msg.guild.id, msg.id, pre+".message_id")
+                              apply_for_here.set(msg.guild.id, msg.channel.id, pre+".channel_id")
                               applychannel = msg.channel.id;
                             });
                             var counter = 0;
                             apply_for_here.set(msg.guild.id, [{
                               "1": "DEFAULT"
-                            }], "QUESTIONS")
+                            }], pre+".QUESTIONS")
                             ask_which_qu();
 
                             function ask_which_qu() {
@@ -539,126 +580,126 @@ module.exports = {
                                   }
                                   switch (counter) {
                                     case 1: {
-                                      apply_for_here.set(msg.guild.id, [], "QUESTIONS");
+                                      apply_for_here.set(msg.guild.id, [], pre+".QUESTIONS");
                                       apply_for_here.push(msg.guild.id, {
                                         "1": collected.first().content
-                                      }, "QUESTIONS");
+                                      }, pre+".QUESTIONS");
                                     }
                                     break;
                                   case 2:
                                     apply_for_here.push(msg.guild.id, {
                                       "2": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 3:
                                     apply_for_here.push(msg.guild.id, {
                                       "3": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 4:
                                     apply_for_here.push(msg.guild.id, {
                                       "4": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 5:
                                     apply_for_here.push(msg.guild.id, {
                                       "5": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 6:
                                     apply_for_here.push(msg.guild.id, {
                                       "6": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 7:
                                     apply_for_here.push(msg.guild.id, {
                                       "7": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 8:
                                     apply_for_here.push(msg.guild.id, {
                                       "8": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 9:
                                     apply_for_here.push(msg.guild.id, {
                                       "9": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 10:
                                     apply_for_here.push(msg.guild.id, {
                                       "10": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 11:
                                     apply_for_here.push(msg.guild.id, {
                                       "11": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 12:
                                     apply_for_here.push(msg.guild.id, {
                                       "12": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 13:
                                     apply_for_here.push(msg.guild.id, {
                                       "13": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 14:
                                     apply_for_here.push(msg.guild.id, {
                                       "14": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 15:
                                     apply_for_here.push(msg.guild.id, {
                                       "15": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 16:
                                     apply_for_here.push(msg.guild.id, {
                                       "16": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 17:
                                     apply_for_here.push(msg.guild.id, {
                                       "17": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 18:
                                     apply_for_here.push(msg.guild.id, {
                                       "18": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 19:
                                     apply_for_here.push(msg.guild.id, {
                                       "19": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 20:
                                     apply_for_here.push(msg.guild.id, {
                                       "20": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 21:
                                     apply_for_here.push(msg.guild.id, {
                                       "21": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 22:
                                     apply_for_here.push(msg.guild.id, {
                                       "22": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 23:
                                     apply_for_here.push(msg.guild.id, {
                                       "23": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   case 24:
                                     apply_for_here.push(msg.guild.id, {
                                       "24": collected.first().content
-                                    }, "QUESTIONS");
+                                    }, pre+".QUESTIONS");
                                     break;
                                   }
                                   ask_which_qu();
@@ -668,7 +709,7 @@ module.exports = {
                                     embeds: [new Discord.MessageEmbed()
                                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable18"]))
                                       .setColor(es.wrongcolor)
-                                      .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                                      .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                                       .setFooter(client.getFooter(es))
                                     ]
                                   });
@@ -727,7 +768,7 @@ module.exports = {
                                         ]
                                       });
                                     }
-                                    apply_for_here.set(message.guild.id, role.id, "TEMP_ROLE")
+                                    apply_for_here.set(message.guild.id, role.id, pre+".TEMP_ROLE")
                                     return message.reply({
                                       embeds: [new Discord.MessageEmbed()
                                         .setFooter(client.getFooter(es))
@@ -743,7 +784,7 @@ module.exports = {
                                     embeds: [new Discord.MessageEmbed()
                                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable31"]))
                                       .setColor(es.wrongcolor)
-                                      .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                                      .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                                       .setFooter(client.getFooter(es))
                                     ]
                                   });
@@ -756,7 +797,7 @@ module.exports = {
                               embeds: [new Discord.MessageEmbed()
                                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable32"]))
                                 .setColor(es.wrongcolor)
-                                .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                                .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                                 .setFooter(client.getFooter(es))
                               ]
                             });
@@ -950,14 +991,14 @@ module.exports = {
                     embeds: [setupembed],
                     components: allbuttons
                   }).then(msg => {
-                    apply_for_here.set(msg.guild.id, msg.id, "message_id")
-                    apply_for_here.set(message.guild.id, f_applychannel, "f_channel_id")
-                    apply_for_here.set(msg.guild.id, applychannel, "channel_id")
+                    apply_for_here.set(msg.guild.id, msg.id, pre+".message_id")
+                    apply_for_here.set(message.guild.id, f_applychannel, pre+".f_channel_id")
+                    apply_for_here.set(msg.guild.id, applychannel, pre+".channel_id")
                   });
                   var counter = 0;
                   apply_for_here.set(msg.guild.id, [{
                     "1": "DEFAULT"
-                  }], "QUESTIONS")
+                  }], pre+".QUESTIONS")
                   ask_which_qu();
 
                   function ask_which_qu() {
@@ -985,126 +1026,126 @@ module.exports = {
                         }
                         switch (counter) {
                           case 1: {
-                            apply_for_here.set(msg.guild.id, [], "QUESTIONS");
+                            apply_for_here.set(msg.guild.id, [], pre+".QUESTIONS");
                             apply_for_here.push(msg.guild.id, {
                               "1": collected.first().content
-                            }, "QUESTIONS");
+                            }, pre+".QUESTIONS");
                           }
                           break;
                         case 2:
                           apply_for_here.push(msg.guild.id, {
                             "2": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 3:
                           apply_for_here.push(msg.guild.id, {
                             "3": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 4:
                           apply_for_here.push(msg.guild.id, {
                             "4": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 5:
                           apply_for_here.push(msg.guild.id, {
                             "5": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 6:
                           apply_for_here.push(msg.guild.id, {
                             "6": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 7:
                           apply_for_here.push(msg.guild.id, {
                             "7": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 8:
                           apply_for_here.push(msg.guild.id, {
                             "8": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 9:
                           apply_for_here.push(msg.guild.id, {
                             "9": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 10:
                           apply_for_here.push(msg.guild.id, {
                             "10": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 11:
                           apply_for_here.push(msg.guild.id, {
                             "11": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 12:
                           apply_for_here.push(msg.guild.id, {
                             "12": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 13:
                           apply_for_here.push(msg.guild.id, {
                             "13": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 14:
                           apply_for_here.push(msg.guild.id, {
                             "14": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 15:
                           apply_for_here.push(msg.guild.id, {
                             "15": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 16:
                           apply_for_here.push(msg.guild.id, {
                             "16": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 17:
                           apply_for_here.push(msg.guild.id, {
                             "17": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 18:
                           apply_for_here.push(msg.guild.id, {
                             "18": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 19:
                           apply_for_here.push(msg.guild.id, {
                             "19": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 20:
                           apply_for_here.push(msg.guild.id, {
                             "20": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 21:
                           apply_for_here.push(msg.guild.id, {
                             "21": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 22:
                           apply_for_here.push(msg.guild.id, {
                             "22": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 23:
                           apply_for_here.push(msg.guild.id, {
                             "23": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         case 24:
                           apply_for_here.push(msg.guild.id, {
                             "24": collected.first().content
-                          }, "QUESTIONS");
+                          }, pre+".QUESTIONS");
                           break;
                         }
                         ask_which_qu();
@@ -1178,7 +1219,7 @@ module.exports = {
                               ]
                             });
                           }
-                          apply_for_here.set(message.guild.id, role.id, "TEMP_ROLE")
+                          apply_for_here.set(message.guild.id, role.id, pre+".TEMP_ROLE")
                           return message.reply({
                             embeds: [new Discord.MessageEmbed()
                               .setFooter(client.getFooter(es))
@@ -1236,7 +1277,7 @@ module.exports = {
               time: 180000,
               errors: ["TIME"]
             }).then(collected => {
-              apply_for_here.set(message.guild.id, collected.first().content, "accept")
+              apply_for_here.set(message.guild.id, collected.first().content, pre+".accept")
               return message.reply({
                 embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT MESSAGE!", message.author.displayAvatarURL({
                   dynamic: true
@@ -1248,7 +1289,7 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable68"]))
                   .setColor(es.wrongcolor)
-                  .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                  .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                   .setFooter(client.getFooter(es))
                 ]
               });
@@ -1283,7 +1324,7 @@ module.exports = {
               var botrole = message.guild.me.roles.highest
 
               if (guildrole.rawPosition <= botrole.rawPosition) {
-                apply_for_here.set(message.guild.id, role.id, "accept_role")
+                apply_for_here.set(message.guild.id, role.id, pre+".accept_role")
                 return message.reply({
                   embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT ROLE!", message.author.displayAvatarURL({
                     dynamic: true
@@ -1302,7 +1343,7 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable72"]))
                   .setColor(es.wrongcolor)
-                  .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                  .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                   .setFooter(client.getFooter(es))
                 ]
               });
@@ -1322,7 +1363,7 @@ module.exports = {
               time: 180000,
               errors: ["TIME"]
             }).then(collected => {
-              apply_for_here.set(message.guild.id, collected.first().content, "deny")
+              apply_for_here.set(message.guild.id, collected.first().content, pre+".deny")
               return message.reply({
                 embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the DENY MESSAGE!", message.author.displayAvatarURL({
                   dynamic: true
@@ -1334,7 +1375,7 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable73"]))
                   .setColor(es.wrongcolor)
-                  .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                  .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                   .setFooter(client.getFooter(es))
                 ]
               });
@@ -1354,7 +1395,7 @@ module.exports = {
               time: 180000,
               errors: ["TIME"]
             }).then(collected => {
-              apply_for_here.set(message.guild.id, collected.first().content, "ticket")
+              apply_for_here.set(message.guild.id, collected.first().content, pre+".ticket")
               return message.reply({
                 embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the TICKET MESSAGE!", message.author.displayAvatarURL({
                   dynamic: true
@@ -1366,7 +1407,7 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable74"]))
                   .setColor(es.wrongcolor)
-                  .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                  .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                   .setFooter(client.getFooter(es))
                 ]
               });
@@ -1395,7 +1436,7 @@ module.exports = {
               embeds: [new Discord.MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable77"]))
                 .setColor("RED")
-                .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable111"]).substr(0, 2000))
+                .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable111"]).substring(0, 2000))
                 .setFooter(client.getFooter(es))
               ]
             });
@@ -1426,7 +1467,7 @@ module.exports = {
               embeds: [new Discord.MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable78"]))
                 .setColor(es.wrongcolor)
-                .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                 .setFooter(client.getFooter(es))
               ]
             });
@@ -1443,7 +1484,7 @@ module.exports = {
                   time: 180000,
                   errors: ["TIME"]
                 }).then(collected => {
-                  apply_for_here.set(message.guild.id, collected.first().content, "one.message")
+                  apply_for_here.set(message.guild.id, collected.first().content, pre+".one.message")
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT MESSAGE for emoji one!", message.author.displayAvatarURL({
                       dynamic: true
@@ -1455,7 +1496,7 @@ module.exports = {
                     embeds: [new Discord.MessageEmbed()
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable79"]))
                       .setColor(es.wrongcolor)
-                      .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                      .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                       .setFooter(client.getFooter(es))
                     ]
                   });
@@ -1490,7 +1531,7 @@ module.exports = {
                 var botrole = message.guild.me.roles.highest
 
                 if (guildrole.rawPosition <= botrole.rawPosition) {
-                  apply_for_here.set(message.guild.id, role.id, "one.role")
+                  apply_for_here.set(message.guild.id, role.id, pre+".one.role")
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT ROLE for emoji one!", message.author.displayAvatarURL({
                       dynamic: true
@@ -1509,7 +1550,7 @@ module.exports = {
                   embeds: [new Discord.MessageEmbed()
                     .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable83"]))
                     .setColor(es.wrongcolor)
-                    .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                    .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                     .setFooter(client.getFooter(es))
                   ]
                 });
@@ -1518,7 +1559,7 @@ module.exports = {
           }
           break;
           case "delrole": {
-            apply_for_here.set(message.guild.id, "", "one.role")
+            apply_for_here.set(message.guild.id, "", pre+".one.role")
             return message.reply({
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully deleted the ACCEPT ROLE for emoji one!", message.author.displayAvatarURL({
                 dynamic: true
@@ -1527,8 +1568,8 @@ module.exports = {
           }
           break;
           case "delimage": {
-            apply_for_here.set(message.guild.id, false, "one.image.enabled")
-            apply_for_here.set(message.guild.id, "", "one.image.url")
+            apply_for_here.set(message.guild.id, false, pre+".one.image.enabled")
+            apply_for_here.set(message.guild.id, "", pre+".one.image.url")
             return message.reply({
               embeds: [new Discord.MessageEmbed()
                 .setFooter(client.getFooter(es))
@@ -1557,8 +1598,8 @@ module.exports = {
                 }).then(collected => {
                   if (collected.first().attachments.size > 0) {
                     if (collected.first().attachments.every(attachIsImage)) {
-                      apply_for_here.set(message.guild.id, true, "one.image.enabled")
-                      apply_for_here.set(message.guild.id, url, "one.image.url")
+                      apply_for_here.set(message.guild.id, true, pre+".one.image.enabled")
+                      apply_for_here.set(message.guild.id, url, pre+".one.image.url")
                       return message.reply({
                         embeds: [new Discord.MessageEmbed()
                           .setFooter(client.getFooter(es))
@@ -1576,8 +1617,8 @@ module.exports = {
                       });
                     }
                   } else if (collected.first().content.includes("https") || collected.first().content.includes("http")) {
-                    apply_for_here.set(message.guild.id, true, "one.image.enabled")
-                    apply_for_here.set(message.guild.id, collected.first().content, "one.image.url")
+                    apply_for_here.set(message.guild.id, true, pre+".one.image.enabled")
+                    apply_for_here.set(message.guild.id, collected.first().content, pre+".one.image.url")
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setFooter(client.getFooter(es))
@@ -1645,7 +1686,7 @@ module.exports = {
               embeds: [new Discord.MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable95"]))
                 .setColor("RED")
-                .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable151"]).substr(0, 2000))
+                .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable151"]).substring(0, 2000))
                 .setFooter(client.getFooter(es))
               ]
             });
@@ -1676,7 +1717,7 @@ module.exports = {
               embeds: [new Discord.MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable96"]))
                 .setColor(es.wrongcolor)
-                .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                 .setFooter(client.getFooter(es))
               ]
             });
@@ -1693,7 +1734,7 @@ module.exports = {
                   time: 180000,
                   errors: ["TIME"]
                 }).then(collected => {
-                  apply_for_here.set(message.guild.id, collected.first().content, "two.message")
+                  apply_for_here.set(message.guild.id, collected.first().content, pre+".two.message")
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT MESSAGE for emoji two!", message.author.displayAvatarURL({
                       dynamic: true
@@ -1705,7 +1746,7 @@ module.exports = {
                     embeds: [new Discord.MessageEmbed()
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable97"]))
                       .setColor(es.wrongcolor)
-                      .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                      .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                       .setFooter(client.getFooter(es))
                     ]
                   });
@@ -1745,7 +1786,7 @@ module.exports = {
                 var botrole = message.guild.me.roles.highest
 
                 if (guildrole.rawPosition <= botrole.rawPosition) {
-                  apply_for_here.set(message.guild.id, role.id, "two.role")
+                  apply_for_here.set(message.guild.id, role.id, pre+".two.role")
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT ROLE for emoji two!", message.author.displayAvatarURL({
                       dynamic: true
@@ -1764,7 +1805,7 @@ module.exports = {
                   embeds: [new Discord.MessageEmbed()
                     .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable102"]))
                     .setColor(es.wrongcolor)
-                    .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                    .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                     .setFooter(client.getFooter(es))
                   ]
                 });
@@ -1773,7 +1814,7 @@ module.exports = {
           }
           break;
           case "delrole": {
-            apply_for_here.set(message.guild.id, "", "two.role")
+            apply_for_here.set(message.guild.id, "", pre+".two.role")
             return message.reply({
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully deleted the ACCEPT ROLE for emoji two!", message.author.displayAvatarURL({
                 dynamic: true
@@ -1782,8 +1823,8 @@ module.exports = {
           }
           break;
           case "delimage": {
-            apply_for_here.set(message.guild.id, false, "two.image.enabled")
-            apply_for_here.set(message.guild.id, "", "two.image.url")
+            apply_for_here.set(message.guild.id, false, pre+".two.image.enabled")
+            apply_for_here.set(message.guild.id, "", pre+".two.image.url")
             return message.reply({
               embeds: [new Discord.MessageEmbed()
                 .setFooter(client.getFooter(es))
@@ -1814,8 +1855,8 @@ module.exports = {
                 }).then(collected => {
                   if (collected.first().attachments.size > 0) {
                     if (collected.first().attachments.every(attachIsImage)) {
-                      apply_for_here.set(message.guild.id, true, "two.image.enabled")
-                      apply_for_here.set(message.guild.id, url, "two.image.url")
+                      apply_for_here.set(message.guild.id, true, pre+".two.image.enabled")
+                      apply_for_here.set(message.guild.id, url, pre+".two.image.url")
                       return message.reply({
                         embeds: [new Discord.MessageEmbed()
                           .setFooter(client.getFooter(es))
@@ -1833,8 +1874,8 @@ module.exports = {
                       });
                     }
                   } else if (collected.first().content.includes("https") || collected.first().content.includes("http")) {
-                    apply_for_here.set(message.guild.id, true, "two.image.enabled")
-                    apply_for_here.set(message.guild.id, collected.first().content, "two.image.url")
+                    apply_for_here.set(message.guild.id, true, pre+".two.image.enabled")
+                    apply_for_here.set(message.guild.id, collected.first().content, pre+".two.image.url")
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setFooter(client.getFooter(es))
@@ -1901,7 +1942,7 @@ module.exports = {
               embeds: [new Discord.MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable114"]))
                 .setColor("RED")
-                .setDescription(`\`\`\`${String(JSON.stringify(e)).substr(0, 2000)}\`\`\``.substr(0, 2000))
+                .setDescription(`\`\`\`${String(JSON.stringify(e)).substring(0, 2000)}\`\`\``.substring(0, 2000))
                 .setFooter(client.getFooter(es))
               ]
             });
@@ -1932,7 +1973,7 @@ module.exports = {
               embeds: [new Discord.MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable115"]))
                 .setColor(es.wrongcolor)
-                .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                 .setFooter(client.getFooter(es))
               ]
             });
@@ -1949,7 +1990,7 @@ module.exports = {
                   time: 180000,
                   errors: ["TIME"]
                 }).then(collected => {
-                  apply_for_here.set(message.guild.id, collected.first().content, "three.message")
+                  apply_for_here.set(message.guild.id, collected.first().content, pre+".three.message")
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT MESSAGE for emoji three!", message.author.displayAvatarURL({
                       dynamic: true
@@ -1961,7 +2002,7 @@ module.exports = {
                     embeds: [new Discord.MessageEmbed()
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable116"]))
                       .setColor(es.wrongcolor)
-                      .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                      .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                       .setFooter(client.getFooter(es))
                     ]
                   });
@@ -2002,7 +2043,7 @@ module.exports = {
                 var botrole = message.guild.me.roles.highest
 
                 if (guildrole.rawPosition <= botrole.rawPosition) {
-                  apply_for_here.set(message.guild.id, role.id, "three.role")
+                  apply_for_here.set(message.guild.id, role.id, pre+".three.role")
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT ROLE for emoji three!", message.author.displayAvatarURL({
                       dynamic: true
@@ -2021,7 +2062,7 @@ module.exports = {
                   embeds: [new Discord.MessageEmbed()
                     .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable121"]))
                     .setColor(es.wrongcolor)
-                    .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                    .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                     .setFooter(client.getFooter(es))
                   ]
                 });
@@ -2030,7 +2071,7 @@ module.exports = {
           }
           break;
           case "delrole": {
-            apply_for_here.set(message.guild.id, "", "three.role")
+            apply_for_here.set(message.guild.id, "", pre+".three.role")
             return message.reply({
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully deleted the ACCEPT ROLE for emoji three!", message.author.displayAvatarURL({
                 dynamic: true
@@ -2039,8 +2080,8 @@ module.exports = {
           }
           break;
           case "delimage": {
-            apply_for_here.set(message.guild.id, false, "three.image.enabled")
-            apply_for_here.set(message.guild.id, "", "three.image.url")
+            apply_for_here.set(message.guild.id, false, pre+".three.image.enabled")
+            apply_for_here.set(message.guild.id, "", pre+".three.image.url")
             return message.reply({
               embeds: [new Discord.MessageEmbed()
                 .setFooter(client.getFooter(es))
@@ -2069,8 +2110,8 @@ module.exports = {
                 }).then(collected => {
                   if (collected.first().attachments.size > 0) {
                     if (collected.first().attachments.every(attachIsImage)) {
-                      apply_for_here.set(message.guild.id, true, "three.image.enabled")
-                      apply_for_here.set(message.guild.id, url, "three.image.url")
+                      apply_for_here.set(message.guild.id, true, pre+".three.image.enabled")
+                      apply_for_here.set(message.guild.id, url, pre+".three.image.url")
                       return message.reply({
                         embeds: [new Discord.MessageEmbed()
                           .setFooter(client.getFooter(es))
@@ -2088,8 +2129,8 @@ module.exports = {
                       });
                     }
                   } else if (collected.first().content.includes("https") || collected.first().content.includes("http")) {
-                    apply_for_here.set(message.guild.id, true, "three.image.enabled")
-                    apply_for_here.set(message.guild.id, collected.first().content, "three.image.url")
+                    apply_for_here.set(message.guild.id, true, pre+".three.image.enabled")
+                    apply_for_here.set(message.guild.id, collected.first().content, pre+".three.image.url")
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setFooter(client.getFooter(es))
@@ -2124,7 +2165,7 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable129"]))
                   .setColor("RED")
-                  .setDescription(`\`\`\`${String(JSON.stringify(e)).substr(0, 2000)}\`\`\``)
+                  .setDescription(`\`\`\`${String(JSON.stringify(e)).substring(0, 2000)}\`\`\``)
                   .setFooter(client.getFooter(es))
                 ]
               });
@@ -2161,7 +2202,7 @@ module.exports = {
               embeds: [new Discord.MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable135"]))
                 .setColor("RED")
-                .setDescription(`\`\`\`${String(JSON.stringify(e)).substr(0, 2000)}\`\`\``.substr(0, 2000))
+                .setDescription(`\`\`\`${String(JSON.stringify(e)).substring(0, 2000)}\`\`\``.substring(0, 2000))
                 .setFooter(client.getFooter(es))
               ]
             });
@@ -2192,7 +2233,7 @@ module.exports = {
               embeds: [new Discord.MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable136"]))
                 .setColor(es.wrongcolor)
-                .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                 .setFooter(client.getFooter(es))
               ]
             });
@@ -2209,7 +2250,7 @@ module.exports = {
                   time: 180000,
                   errors: ["TIME"]
                 }).then(collected => {
-                  apply_for_here.set(message.guild.id, collected.first().content, "four.message")
+                  apply_for_here.set(message.guild.id, collected.first().content, pre+".four.message")
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT MESSAGE for emoji four!", message.author.displayAvatarURL({
                       dynamic: true
@@ -2221,7 +2262,7 @@ module.exports = {
                     embeds: [new Discord.MessageEmbed()
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable137"]))
                       .setColor(es.wrongcolor)
-                      .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                      .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                       .setFooter(client.getFooter(es))
                     ]
                   });
@@ -2261,7 +2302,7 @@ module.exports = {
                 var botrole = message.guild.me.roles.highest
 
                 if (guildrole.rawPosition <= botrole.rawPosition) {
-                  apply_for_here.set(message.guild.id, role.id, "four.role")
+                  apply_for_here.set(message.guild.id, role.id, pre+".four.role")
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT ROLE for emoji four!", message.author.displayAvatarURL({
                       dynamic: true
@@ -2280,7 +2321,7 @@ module.exports = {
                   embeds: [new Discord.MessageEmbed()
                     .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable142"]))
                     .setColor(es.wrongcolor)
-                    .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                    .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                     .setFooter(client.getFooter(es))
                   ]
                 });
@@ -2289,7 +2330,7 @@ module.exports = {
           }
           break;
           case "delrole": {
-            apply_for_here.set(message.guild.id, "", "four.role")
+            apply_for_here.set(message.guild.id, "", pre+".four.role")
             return message.reply({
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully deleted the ACCEPT ROLE for emoji four!", message.author.displayAvatarURL({
                 dynamic: true
@@ -2298,8 +2339,8 @@ module.exports = {
           }
           break;
           case "delimage": {
-            apply_for_here.set(message.guild.id, false, "four.image.enabled")
-            apply_for_here.set(message.guild.id, "", "four.image.url")
+            apply_for_here.set(message.guild.id, false, pre+".four.image.enabled")
+            apply_for_here.set(message.guild.id, "", pre+".four.image.url")
             return message.reply({
               embeds: [new Discord.MessageEmbed()
                 .setFooter(client.getFooter(es))
@@ -2328,8 +2369,8 @@ module.exports = {
                 }).then(collected => {
                   if (collected.first().attachments.size > 0) {
                     if (collected.first().attachments.every(attachIsImage)) {
-                      apply_for_here.set(message.guild.id, true, "four.image.enabled")
-                      apply_for_here.set(message.guild.id, url, "four.image.url")
+                      apply_for_here.set(message.guild.id, true, pre+".four.image.enabled")
+                      apply_for_here.set(message.guild.id, url, pre+".four.image.url")
                       return message.reply({
                         embeds: [new Discord.MessageEmbed()
                           .setFooter(client.getFooter(es))
@@ -2347,8 +2388,8 @@ module.exports = {
                       });
                     }
                   } else if (collected.first().content.includes("https") || collected.first().content.includes("http")) {
-                    apply_for_here.set(message.guild.id, true, "four.image.enabled")
-                    apply_for_here.set(message.guild.id, collected.first().content, "four.image.url")
+                    apply_for_here.set(message.guild.id, true, pre+".four.image.enabled")
+                    apply_for_here.set(message.guild.id, collected.first().content, pre+".four.image.url")
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setFooter(client.getFooter(es))
@@ -2383,7 +2424,7 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable150"]))
                   .setColor("RED")
-                  .setDescription(`\`\`\`${String(JSON.stringify(e)).substr(0, 2000)}\`\`\``)
+                  .setDescription(`\`\`\`${String(JSON.stringify(e)).substring(0, 2000)}\`\`\``)
                   .setFooter(client.getFooter(es))
                 ]
               });
@@ -2420,7 +2461,7 @@ module.exports = {
               embeds: [new Discord.MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable156"]))
                 .setColor("RED")
-                .setDescription(`\`\`\`${String(JSON.stringify(e)).substr(0, 2000)}\`\`\``.substr(0, 2000))
+                .setDescription(`\`\`\`${String(JSON.stringify(e)).substring(0, 2000)}\`\`\``.substring(0, 2000))
                 .setFooter(client.getFooter(es))
               ]
             });
@@ -2451,7 +2492,7 @@ module.exports = {
               embeds: [new Discord.MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable157"]))
                 .setColor(es.wrongcolor)
-                .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                 .setFooter(client.getFooter(es))
               ]
             });
@@ -2468,7 +2509,7 @@ module.exports = {
                   time: 180000,
                   errors: ["TIME"]
                 }).then(collected => {
-                  apply_for_here.set(message.guild.id, collected.first().content, "five.message")
+                  apply_for_here.set(message.guild.id, collected.first().content, pre+".five.message")
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT MESSAGE for emoji five!", message.author.displayAvatarURL({
                       dynamic: true
@@ -2480,7 +2521,7 @@ module.exports = {
                     embeds: [new Discord.MessageEmbed()
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable158"]))
                       .setColor(es.wrongcolor)
-                      .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                      .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                       .setFooter(client.getFooter(es))
                     ]
                   });
@@ -2521,7 +2562,7 @@ module.exports = {
                 var botrole = message.guild.me.roles.highest
 
                 if (guildrole.rawPosition <= botrole.rawPosition) {
-                  apply_for_here.set(message.guild.id, role.id, "five.role")
+                  apply_for_here.set(message.guild.id, role.id, pre+".five.role")
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT ROLE for emoji five!", message.author.displayAvatarURL({
                       dynamic: true
@@ -2540,7 +2581,7 @@ module.exports = {
                   embeds: [new Discord.MessageEmbed()
                     .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable163"]))
                     .setColor(es.wrongcolor)
-                    .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                    .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                     .setFooter(client.getFooter(es))
                   ]
                 });
@@ -2549,7 +2590,7 @@ module.exports = {
           }
           break;
           case "delrole": {
-            apply_for_here.set(message.guild.id, "", "five.role")
+            apply_for_here.set(message.guild.id, "", pre+".five.role")
             return message.reply({
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully deleted the ACCEPT ROLE for emoji five!", message.author.displayAvatarURL({
                 dynamic: true
@@ -2558,8 +2599,8 @@ module.exports = {
           }
           break;
           case "delimage": {
-            apply_for_here.set(message.guild.id, false, "five.image.enabled")
-            apply_for_here.set(message.guild.id, "", "five.image.url")
+            apply_for_here.set(message.guild.id, false, pre+".five.image.enabled")
+            apply_for_here.set(message.guild.id, "", pre+".five.image.url")
             return message.reply({
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully deleted the ACCEPT IMAGE for emoji five!", message.author.displayAvatarURL({
                 dynamic: true
@@ -2586,8 +2627,8 @@ module.exports = {
                 }).then(collected => {
                   if (collected.first().attachments.size > 0) {
                     if (collected.first().attachments.every(attachIsImage)) {
-                      apply_for_here.set(message.guild.id, true, "five.image.enabled")
-                      apply_for_here.set(message.guild.id, url, "five.image.url")
+                      apply_for_here.set(message.guild.id, true, pre+".five.image.enabled")
+                      apply_for_here.set(message.guild.id, url, pre+".five.image.url")
                       return message.reply({
                         embeds: [new Discord.MessageEmbed()
                           .setFooter(client.getFooter(es))
@@ -2606,8 +2647,8 @@ module.exports = {
                       });
                     }
                   } else if (collected.first().content.includes("https") || collected.first().content.includes("http")) {
-                    apply_for_here.set(message.guild.id, true, "five.image.enabled")
-                    apply_for_here.set(message.guild.id, collected.first().content, "five.image.url")
+                    apply_for_here.set(message.guild.id, true, pre+".five.image.enabled")
+                    apply_for_here.set(message.guild.id, collected.first().content, pre+".five.image.url")
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setFooter(client.getFooter(es))
@@ -2643,7 +2684,7 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable170"]))
                   .setColor("RED")
-                  .setDescription(`\`\`\`${String(JSON.stringify(e)).substr(0, 2000)}\`\`\``)
+                  .setDescription(`\`\`\`${String(JSON.stringify(e)).substring(0, 2000)}\`\`\``)
                   .setFooter(client.getFooter(es))
                 ]
               });
@@ -2660,7 +2701,7 @@ module.exports = {
         }
         break;
         case "editquestion": {
-          var Questions = apply_for_here.get(message.guild.id, "QUESTIONS");
+          var Questions = apply_for_here.get(message.guild.id, pre+".QUESTIONS");
           var embed = new Discord.MessageEmbed()
             .setFooter(client.getFooter(es))
 
@@ -2673,7 +2714,7 @@ module.exports = {
 
           for (var i = 0; i < Questions.length; i++) {
             try {
-              embed.addField("**" + Object.keys(Questions[i]) + ".** ", Object.values(Questions[i]))
+              embed.addField(`**${Object.keys(Questions[i])}.**`, `>>> ${Object.values(Questions[i])}`)
             } catch (e) {
               console.log(e.stack ? String(e.stack).grey : String(e).grey)
             }
@@ -2693,7 +2734,7 @@ module.exports = {
               time: 180000,
               errors: ["TIME"]
             }).then(collected => {
-              var arr = apply_for_here.get(message.guild.id, "QUESTIONS");
+              var arr = apply_for_here.get(message.guild.id, pre+".QUESTIONS");
               var quindex = collected.first().content
               if (arr.length >= Number(quindex)) {
                 message.reply({
@@ -2832,8 +2873,8 @@ module.exports = {
                         break;
                     }
                     arr[index] = obj;
-                    apply_for_here.set(message.guild.id, arr, "QUESTIONS")
-                    Questions = apply_for_here.get(message.guild.id, "QUESTIONS");
+                    apply_for_here.set(message.guild.id, arr, pre+".QUESTIONS")
+                    Questions = apply_for_here.get(message.guild.id, pre+".QUESTIONS");
                     var new_embed = new Discord.MessageEmbed().setFooter(client.getFooter(es))
                       .setColor(es.color)
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable177"])) //Tomato#6966
@@ -2843,7 +2884,7 @@ module.exports = {
                       .setTimestamp()
                     for (var i = 0; i < Questions.length; i++) {
                       try {
-                        new_embed.addField("**" + Object.keys(Questions[i]) + ".** ", Object.values(Questions[i]))
+                        new_embed.addField(`**${Object.keys(Questions[i])}.**`, `>>> ${Object.values(Questions[i])}`)
                       } catch {}
                     }
                     message.reply({
@@ -2855,7 +2896,7 @@ module.exports = {
                       embeds: [new Discord.MessageEmbed()
                         .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable178"]))
                         .setColor(es.wrongcolor)
-                        .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                        .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                         .setFooter(client.getFooter(es))
                       ]
                     });
@@ -2877,7 +2918,7 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable179"]))
                   .setColor(es.wrongcolor)
-                  .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                  .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                   .setFooter(client.getFooter(es))
                 ]
               });
@@ -2918,7 +2959,7 @@ module.exports = {
               var botrole = message.guild.me.roles.highest
 
               if (guildrole.rawPosition <= botrole.rawPosition) {
-                apply_for_here.set(message.guild.id, role.id, "TEMP_ROLE")
+                apply_for_here.set(message.guild.id, role.id, pre+".TEMP_ROLE")
                 return message.reply({
                   embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the TEMP ROLE!", message.author.displayAvatarURL({
                     dynamic: true
@@ -2937,7 +2978,7 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable185"]))
                   .setColor(es.wrongcolor)
-                  .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                  .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                   .setFooter(client.getFooter(es))
                 ]
               });
@@ -2959,7 +3000,7 @@ module.exports = {
               time: 180000,
               errors: ["TIME"]
             }).then(collected => {
-              var Questions = apply_for_here.get(message.guild.id, "QUESTIONS")
+              var Questions = apply_for_here.get(message.guild.id, pre+".QUESTIONS")
               var obj;
               switch (Questions.length + 1) {
                 case 1:
@@ -3083,13 +3124,13 @@ module.exports = {
                   };
                   break;
               }
-              apply_for_here.push(message.guild.id, obj, "QUESTIONS")
+              apply_for_here.push(message.guild.id, obj, pre+".QUESTIONS")
               message.reply({
                 embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully added your Question!", message.author.displayAvatarURL({
                   dynamic: true
                 }))]
               })
-              Questions = apply_for_here.get(message.guild.id, "QUESTIONS");
+              Questions = apply_for_here.get(message.guild.id, pre+".QUESTIONS");
               var embed = new Discord.MessageEmbed().setFooter(client.getFooter(es))
                 .setColor(es.color)
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable188"])) //Tomato#6966
@@ -3100,7 +3141,7 @@ module.exports = {
 
               for (var i = 0; i < Questions.length; i++) {
                 try {
-                  embed.addField("**" + Object.keys(Questions[i]) + ".** ", Object.values(Questions[i]))
+                  embed.addField(`**${Object.keys(Questions[i])}.**`, `>>> ${Object.values(Questions[i])}`)
                 } catch (e) {
                   console.log(e.stack ? String(e.stack).grey : String(e).grey)
                 }
@@ -3114,7 +3155,7 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable189"]))
                   .setColor(es.wrongcolor)
-                  .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                  .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                   .setFooter(client.getFooter(es))
                 ]
               });
@@ -3123,7 +3164,7 @@ module.exports = {
         }
         break;
         case "removequestion": {
-          var Questions = apply_for_here.get(message.guild.id, "QUESTIONS");
+          var Questions = apply_for_here.get(message.guild.id, pre+".QUESTIONS");
           var embed = new Discord.MessageEmbed()
             .setFooter(client.getFooter(es))
 
@@ -3136,7 +3177,7 @@ module.exports = {
 
           for (var i = 0; i < Questions.length; i++) {
             try {
-              embed.addField("**" + Object.keys(Questions[i]) + ".** ", Object.values(Questions[i]))
+              embed.addField(`**${Object.keys(Questions[i])}.**`, `>>> ${Object.values(Questions[i])}`)
             } catch (e) {
               console.log(e.stack ? String(e.stack).grey : String(e).grey)
             }
@@ -3157,7 +3198,7 @@ module.exports = {
               time: 180000,
               errors: ["TIME"]
             }).then(collected => {
-              var arr = apply_for_here.get(message.guild.id, "QUESTIONS");
+              var arr = apply_for_here.get(message.guild.id, pre+".QUESTIONS");
               var quindex = collected.first().content
               if (arr.length >= Number(quindex)) {
 
@@ -3180,8 +3221,8 @@ module.exports = {
                   }
                   counter++;
                 }
-                apply_for_here.set(message.guild.id, arr, "QUESTIONS")
-                Questions = apply_for_here.get(message.guild.id, "QUESTIONS");
+                apply_for_here.set(message.guild.id, arr, pre+".QUESTIONS")
+                Questions = apply_for_here.get(message.guild.id, pre+".QUESTIONS");
                 var new_embed = new Discord.MessageEmbed().setFooter(client.getFooter(es))
                   .setColor(es.color)
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable193"])) //Tomato#6966
@@ -3191,7 +3232,7 @@ module.exports = {
                   .setTimestamp()
                 for (var i = 0; i < Questions.length; i++) {
                   try {
-                    new_embed.addField("**" + Object.keys(Questions[i]) + ".** ", Object.values(Questions[i]))
+                    new_embed.addField(`**${Object.keys(Questions[i])}.**`, `>>> ${Object.values(Questions[i])}`)
                   } catch {}
                 }
                 message.reply({
@@ -3214,7 +3255,7 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable194"]))
                   .setColor(es.wrongcolor)
-                  .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                  .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                   .setFooter(client.getFooter(es))
                 ]
               });
@@ -3355,8 +3396,8 @@ module.exports = {
                 embeds: [setupembed],
                 components: allbuttons
               }).then(msg => {
-                apply_for_here.set(msg.guild.id, msg.id, "message_id")
-                apply_for_here.set(msg.guild.id, msg.channel.id, "channel_id")
+                apply_for_here.set(msg.guild.id, msg.id, pre+".message_id")
+                apply_for_here.set(msg.guild.id, msg.channel.id, pre+".channel_id")
               }).catch(e => console.log(e.stack ? String(e.stack).grey : String(e).grey))
 
               return message.reply({
@@ -3446,7 +3487,7 @@ module.exports = {
               }).then(msg => msg.delete({
                 timeout: 7500
               }))
-            apply_for_here.set(message.guild.id, f_applychannel, "f_channel_id")
+            apply_for_here.set(message.guild.id, f_applychannel, pre+".f_channel_id")
             return message.reply({
               content: eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable216"])
             });
@@ -3465,8 +3506,8 @@ module.exports = {
             }))
           }
           break;
-        case "last_verify": {
-          apply_for_here.set(message.guild.id, !apply_for_here.get(message.guild.id, "last_verify"), "last_verify")
+        case `${pre}.last_verify`: {
+          apply_for_here.set(message.guild.id, !apply_for_here.get(message.guild.id, `${pre}.last_verify`), `${pre}.last_verify`)
           var embed = new Discord.MessageEmbed()
             .setFooter(client.getFooter(es))
             .setColor(es.color)

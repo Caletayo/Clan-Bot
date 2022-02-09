@@ -49,7 +49,7 @@ module.exports = {
           .setFooter(client.getFooter(es))
           .setColor(es.wrongcolor)
           .setTitle(`<:no:833101993668771842> Something went wrong`)
-          .setDescription(`\`\`\`${String(e.message ? e.message : e).substr(0, 2000)}\`\`\``)
+          .setDescription(`\`\`\`${String(e.message ? e.message : e).substring(0, 2000)}\`\`\``)
         ]})
       }
       return message.channel.send({embeds: [new MessageEmbed()

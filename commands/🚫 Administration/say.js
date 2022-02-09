@@ -63,7 +63,7 @@ module.exports = {
         ee = ""
       }
       if(client.settings.get(message.author.id, "dm"))
-      message.author.send({content:`${ee}\`\`\`${message.content}`.substr(0, 2040) + "\`\`\`"}).catch(e => console.log("Couldn't Dm Him this log prevents a crash"))
+      message.author.send({content:`${ee}\`\`\`${message.content}`.substring(0, 2040) + "\`\`\`"}).catch(e => console.log("Couldn't Dm Him this log prevents a crash"))
 
       if(client.settings.get(message.guild.id, `adminlog`) != "no"){
         try{

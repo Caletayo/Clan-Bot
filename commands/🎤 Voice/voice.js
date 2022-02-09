@@ -395,7 +395,7 @@ module.exports = {
                 member.user.send({embeds : [new Discord.MessageEmbed()
                   .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
                   .setTitle(eval(client.la[ls]["cmds"]["voice"]["voice"]["variable29"]))
-                  .setDescription(`[Click here](${invite.url}) to join **${channel.name}**\n\n${txt ? txt : ""}`.substr(0, 2000))
+                  .setDescription(`[Click here](${invite.url}) to join **${channel.name}**\n\n${txt ? txt : ""}`.substring(0, 2000))
                   .setFooter(client.getFooter(es))
                 ]}).catch(e => {
                   return message.reply({embeds : [new Discord.MessageEmbed()

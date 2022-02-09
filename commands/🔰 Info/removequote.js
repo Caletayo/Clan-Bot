@@ -61,7 +61,7 @@ module.exports = {
         .addField("**Quote by:**", `<@${data[Number(id)].by}>`)
         .addField("**Quote at:**", `\`\`\`${moment(data[Number(id)].at).format("DD/MM/YYYY HH:mm")}\`\`\``)
         .setTitle("**Quote Text:**")
-        .setDescription(`${String(data[Number(id)].text).substr(0, 2000)}`)
+        .setDescription(`${String(data[Number(id)].text).substring(0, 2000)}`)
       if(data[Number(id)].image){
         embed.setImage(data[Number(id)].image)
       }

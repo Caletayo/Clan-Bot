@@ -25,7 +25,7 @@ module.exports = {
       let adminroles = client.settings.get(message.guild.id, "adminroles")
       let cmdroles = client.settings.get(message.guild.id, "cmdadminroles.ticket")
       let cmdroles2 = client.settings.get(message.guild.id, "cmdadminroles.close")
-      try{for (const r of cmdroles2) cmdrole.push(r)}catch{}
+      try{for (const r of cmdroles2) cmdroles.push(r)}catch{}
         var cmdrole = []
         if(cmdroles.length > 0){
           for(const r of cmdroles){
@@ -175,7 +175,7 @@ module.exports = {
                     embeds: [new Discord.MessageEmbed()
                         .setTitle(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable14"]))
                         .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                        .setDescription(`Deleting Ticket in less then **\`3 Seconds\`** ....\n\n*If not you can do it manually*`.substr(0, 2000))
+                        .setDescription(`Deleting Ticket in less then **\`3 Seconds\`** ....\n\n*If not you can do it manually*`.substring(0, 2000))
                         .setFooter(client.getFooter(es))
                     ]
                 })

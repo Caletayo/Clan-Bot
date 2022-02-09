@@ -63,9 +63,9 @@ module.exports = {
           .setPlaceholder('Click me to setup the Owners!')
           .addOptions(menuoptions.map(option => {
             let Obj = {
-              label: option.label ? option.label.substr(0, 50) : option.value.substr(0, 50),
-              value: option.value.substr(0, 50),
-              description: option.description.substr(0, 50),
+              label: option.label ? option.label.substring(0, 50) : option.value.substring(0, 50),
+              value: option.value.substring(0, 50),
+              description: option.description.substring(0, 50),
             }
           if(option.emoji) Obj.emoji = option.emoji;
           return Obj;
@@ -163,7 +163,7 @@ module.exports = {
                 return message.reply({embeds: [new Discord.MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["owner"]["setup-owner"]["variable15"]))
                   .setColor(es.wrongcolor)
-                  .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                  .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                   .setFooter(client.getFooter(es))
                 ]});
               })    
@@ -258,7 +258,7 @@ module.exports = {
                 return message.reply({embeds: [new Discord.MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["owner"]["setup-owner"]["variable15"]))
                   .setColor(es.wrongcolor)
-                  .setDescription(`Cancelled the Operation!`.substr(0, 2000))
+                  .setDescription(`Cancelled the Operation!`.substring(0, 2000))
                   .setFooter(client.getFooter(es))
                 ]});
               })  
@@ -269,8 +269,8 @@ module.exports = {
             var embed = new MessageEmbed()
               .setTitle(`There are ${config.ownerIDS.length} Owners`)
               .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-              .addField(`__Original Owner__:`, `<@${originalOwner}>`.substr(0, 1024))
-              .addField(`__Other Owner${config.ownerIDS.filter(id => id != originalOwner).length > 1 ? "s" : ""}__:`, `${config.ownerIDS.filter(id => id != originalOwner).map(id => `<@${id}>`).join("︲")}`.substr(0, 1024))
+              .addField(`__Original Owner__:`, `<@${originalOwner}>`.substring(0, 1024))
+              .addField(`__Other Owner${config.ownerIDS.filter(id => id != originalOwner).length > 1 ? "s" : ""}__:`, `${config.ownerIDS.filter(id => id != originalOwner).map(id => `<@${id}>`).join("︲")}`.substring(0, 1024))
               .setFooter(client.getFooter(es))
             return message.reply({embeds: [embed]});
           } break;

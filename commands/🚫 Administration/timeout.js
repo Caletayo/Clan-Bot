@@ -92,7 +92,7 @@ module.exports = {
             .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
             .setFooter(client.getFooter(es))
             .setTitle(`You got timeouted by \`${message.author.tag}\` for ${duration(time).map(t => `\`${t}\``).join(" ")}`)
-            .setDescription(`Reason:\n>>> ${reason}`.substr(0, 2048))
+            .setDescription(`Reason:\n>>> ${reason}`.substring(0, 2048))
           ]}).catch((e)=>{
             console.log(e.stack ? String(e.stack).grey : String(e).grey)
           });
@@ -113,7 +113,7 @@ module.exports = {
             .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
             .setFooter(client.getFooter(es))
             .setTitle(`**${kickmember.user.tag}** got timeouted by \`${message.author.tag}\` for ${duration(time).map(t => `\`${t}\``).join(" ")}`)
-            .setDescription(`Reason:\n>>> ${reason}`.substr(0, 2048))
+            .setDescription(`Reason:\n>>> ${reason}`.substring(0, 2048))
           ]}).catch((e)=>{console.log(e)})
           if (client.settings.get(message.guild.id, `adminlog`) != "no") {
             try {

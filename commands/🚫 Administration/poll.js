@@ -122,7 +122,7 @@ module.exports = {
                             if(String(collected.first().content).toLowerCase() == "finish") send_poll();
                             else{
                               emojicounter++;
-                              emojicontent.push(String(collected.first().content).substr(0, 1024))
+                              emojicontent.push(String(collected.first().content).substring(0, 1024))
                               ask_emoji();
                             }
                           })

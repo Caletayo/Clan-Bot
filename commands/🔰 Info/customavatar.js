@@ -29,7 +29,7 @@ module.exports = {
         user = await GetUser(message, args)
       } catch (e) {
         return message.reply({
-          content: String('```' + e.message ? String(e.message).substr(0, 1900) : String(e) + '```')
+          content: String('```' + e.message ? String(e.message).substring(0, 1900) : String(e) + '```')
         })
       }
       try {

@@ -82,8 +82,8 @@ module.exports = {
         let sendembed = new MessageEmbed()
           .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
           .setFooter(client.getFooter(es))
-          .setTitle(title && desc ? title.substr(0, 256) : "")
-          .setDescription(desc ? desc : title ? title.substr(0, 2048) : "")
+          .setTitle(title && desc ? title.substring(0, 256) : "")
+          .setDescription(desc ? desc : title ? title.substring(0, 2048) : "")
         if(attachment) {
           sendembed.setImage("attachment://" + name)
         }
@@ -122,10 +122,10 @@ module.exports = {
             ee = ""
           }
           if(client.settings.get(message.author.id, "dm"))
-            message.author.send({content : `${ee}\`\`\`${message.content}`.substr(0, 2040) + "\`\`\`"}).catch(e => console.log("Couldn't Dm Him this log prevents a crash"))
+            message.author.send({content : `${ee}\`\`\`${message.content}`.substring(0, 2040) + "\`\`\`"}).catch(e => console.log("Couldn't Dm Him this log prevents a crash"))
         })
       }).catch(e=>{
-        return message.reply({content : `${e.message ? String(e.message).substr(0, 1900) : String(e).grey.substr(0, 1900)}`, code: "js"});
+        return message.reply({content : `${e.message ? String(e.message).substring(0, 1900) : String(e).grey.substring(0, 1900)}`, code: "js"});
       })
       
 

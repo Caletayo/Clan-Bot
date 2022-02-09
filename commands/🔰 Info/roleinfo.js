@@ -23,7 +23,7 @@ module.exports = {
           role = await GetRole(message, args)
         }catch (e){
           if(!e) return message.reply(client.la[ls].common.rolenotfound)
-          return message.reply({content: String('```' + e.message ? String(e.message).substr(0, 1900) : String(e) + '```')})
+          return message.reply({content: String('```' + e.message ? String(e.message).substring(0, 1900) : String(e) + '```')})
         }
       }else{
         role = message.member.roles.highest;

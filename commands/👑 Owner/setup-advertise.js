@@ -61,9 +61,9 @@ module.exports = {
           .setPlaceholder('Click me to setup the Advertising System!')
           .addOptions(menuoptions.map(option => {
             let Obj = {
-              label: option.label ? option.label.substr(0, 50) : option.value.substr(0, 50),
-              value: option.value.substr(0, 50),
-              description: option.description.substr(0, 50),
+              label: option.label ? option.label.substring(0, 50) : option.value.substring(0, 50),
+              value: option.value.substring(0, 50),
+              description: option.description.substring(0, 50),
             }
           if(option.emoji) Obj.emoji = option.emoji;
           return Obj;
@@ -134,7 +134,7 @@ module.exports = {
             var embed = new MessageEmbed()
             .setTitle(eval(client.la[ls]["cmds"]["owner"]["setup-advertise"]["variable9"]))
             .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-            .setDescription(`**Enabled:** ${d2p2(client.ad.enabled)}\n**Statusad:** \`${client.ad.statusad.name}\`\n**Textad:** \`${client.ad.textad}\`\n**Space Dot:** \`${client.ad.spacedot}\``.substr(0, 2048))
+            .setDescription(`**Enabled:** ${d2p2(client.ad.enabled)}\n**Statusad:** \`${client.ad.statusad.name}\`\n**Textad:** \`${client.ad.textad}\`\n**Space Dot:** \`${client.ad.spacedot}\``.substring(0, 2048))
             .setFooter(client.getFooter(es))
   
           return message.channel.send({embeds: [embed]});

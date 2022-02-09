@@ -113,7 +113,7 @@ module.exports = {
           .setThumbnail(warnmember.user.displayAvatarURL({
             dynamic: true
           }))
-          .setDescription(`**He now has: ${warnings.length} Warnings in ${message.guild.name}**`.substr(0, 2048))
+          .setDescription(`**He now has: ${warnings.length} Warnings in ${message.guild.name}**`.substring(0, 2048))
         ]});
 
         let warnsettings = client.settings.get(message.guild.id, "warnsettings")

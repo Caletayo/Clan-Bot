@@ -19,7 +19,7 @@ module.exports = {
       try{
         user = await GetUser(message, args)
       }catch (e){
-        return message.reply({content: String('```' + e.message ? String(e.message).substr(0, 1900) : String(e) + '```')})
+        return message.reply({content: String('```' + e.message ? String(e.message).substring(0, 1900) : String(e) + '```')})
       }      
       // Fetch guild and member data from the db
       client.invitesdb?.ensure(message.guild.id + user.id, {
