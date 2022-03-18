@@ -2,12 +2,12 @@ var {
   MessageEmbed
 } = require(`discord.js`);
 var Discord = require(`discord.js`);
-var config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-var emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+var config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+var emoji = require(`../../botconfig/emojis.json`);
 var {
-  databasing
-} = require(`${process.cwd()}/handlers/functions`);
+  dbEnsure
+} = require(`../../handlers/functions`);
 const { MessageButton, MessageActionRow, MessageSelectMenu } = require('discord.js')
 module.exports = {
   name: "setup-autowarn",
@@ -18,9 +18,11 @@ module.exports = {
   description: "Enable / Disable Auto-Warn-Rules, on my Security Systems, like antispam, anticaps, antilinks, blacklist and more!",
   memberpermissions: ["ADMINISTRATOR"],
   type: "security",
-  run: async (client, message, args, cmduser, text, prefix) => {
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
+    
+    return message.reply(`<a:Milrato_Animated:900394164829708388> **Since the last update, this got not fixxed yet, will be fixxed as soon as possible** :cry:!
+> Join https://discord.gg/dcdev for updates!`);
     try {
       client.settings.ensure(message.guild.id,{
           autowarn: {
@@ -101,13 +103,13 @@ module.exports = {
         //define the embed
         let MenuEmbed = new Discord.MessageEmbed()
           .setColor(es.color)
-          .setAuthor('Auto-Warn Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/apple/285/prohibited_1f6ab?.png', 'https://discord.gg/milrato')
+          .setAuthor('Auto-Warn Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/apple/285/prohibited_1f6ab?.png', 'https://discord.gg/dcdev')
           .setDescription('***Select all Auto-Warn Rules you want to enable/disable in the `Selection` down below!***\n> *The Warns will only be applied, if the responsible System for it, is enabled!*\n> **You must select at least 1 or more!**')
         //send the menu msg
         let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
-        const collector = menumsg.createMessageComponentCollector({filter: (i) => i?.isSelectMenu() && i?.user && i?.message.author.id == client.user.id, time: 180e3, max: 1 });
+        const collector = menumsg.createMessageComponentCollector({filter: (i) => i?.isSelectMenu() && i?.user && i?.message.author?.id == client.user.id, time: 180e3, max: 1 });
         collector.on("collect", async b => {
-          if(b?.user.id !== message.author.id)
+          if(b?.user.id !== message.author?.id)
           return b?.reply({content: ":x: Only the one who typed the Command is allowed to select Things!", ephemeral: true});
        
           let enabled = 0, disabled = 0;
@@ -139,7 +141,7 @@ module.exports = {
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

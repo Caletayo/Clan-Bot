@@ -6,15 +6,15 @@ var {
   MessageSelectMenu,
 } = require(`discord.js`);
 var Discord = require(`discord.js`);
-var config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-var emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+var config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+var emoji = require(`../../botconfig/emojis.json`);
 const fs = require('fs');
 var {
-  databasing,
+  dbEnsure,
   isValidURL,
   nFormatter
-} = require(`${process.cwd()}/handlers/functions`);
+} = require(`../../handlers/functions`);
 const moment = require("moment")
 module.exports = {
   name: "changestatus",
@@ -24,10 +24,10 @@ module.exports = {
   cooldown: 5,
   usage: "changestatus  -->  Follow the Steps",
   description: "Changes the Status of the BOT",
-  run: async (client, message, args, cmduser, text, prefix) => {
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
-    if (!config.ownerIDS.some(r => r.includes(message.author.id)))
+    
+    if (!config.ownerIDS.some(r => r.includes(message.author?.id)))
       return message.channel.send({embeds: [new MessageEmbed()
         .setColor(es.wrongcolor).setFooter(client.getFooter(es))
         .setTitle(eval(client.la[ls]["cmds"]["owner"]["changestatus"]["variable1"]))
@@ -88,17 +88,17 @@ module.exports = {
         //define the embed
         let MenuEmbed = new MessageEmbed()
           .setColor(es.color)
-          .setAuthor('Change Status', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/au-kddi/190/purple-heart_1f49c.png', 'https://discord.gg/milrato')
+          .setAuthor('Change Status', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/au-kddi/190/purple-heart_1f49c.png', 'https://discord.gg/dcdev')
           .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
         //send the menu msg
         let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({ 
-          filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+          filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
           time: 90000
         })
         //Menu Collections
-        collector.on('collect', menu => {
+        collector.on('collect', async menu => {
           if (menu?.user.id === cmduser.id) {
             collector.stop();
             if(menu?.values[0] == "Cancel") return menu?.reply(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable3"]))
@@ -310,17 +310,17 @@ module.exports = {
                   //define the embed
                   let MenuEmbed = new MessageEmbed()
                     .setColor(es.color)
-                    .setAuthor('Change Status', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/au-kddi/190/purple-heart_1f49c.png', 'https://discord.gg/milrato')
+                    .setAuthor('Change Status', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/au-kddi/190/purple-heart_1f49c.png', 'https://discord.gg/dcdev')
                     .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
                   //send the menu msg
                   let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
                   //Create the collector
                   const collector = menumsg.createMessageComponentCollector({ 
-                    filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+                    filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
                     time: 90000
                   })
                   //Menu Collections
-                  collector.on('collect', menu => {
+                  collector.on('collect', async menu => {
                     if (menu?.user.id === cmduser.id) {
                       collector.stop();
                       if(menu?.values[0] == "Cancel") return menu?.reply(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable3"]))
@@ -464,17 +464,17 @@ module.exports = {
                   //define the embed
                   let MenuEmbed = new MessageEmbed()
                     .setColor(es.color)
-                    .setAuthor('Change Status', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/au-kddi/190/purple-heart_1f49c.png', 'https://discord.gg/milrato')
+                    .setAuthor('Change Status', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/au-kddi/190/purple-heart_1f49c.png', 'https://discord.gg/dcdev')
                     .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
                   //send the menu msg
                   let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
                   //Create the collector
                   const collector = menumsg.createMessageComponentCollector({ 
-                    filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+                    filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
                     time: 90000
                   })
                   //Menu Collections
-                  collector.on('collect', menu => {
+                  collector.on('collect', async menu => {
                     if (menu?.user.id === cmduser.id) {
                       collector.stop();
                       if(menu?.values[0] == "Cancel") return menu?.reply(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable3"]))
@@ -511,7 +511,7 @@ module.exports = {
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

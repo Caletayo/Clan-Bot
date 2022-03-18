@@ -2,7 +2,7 @@ const twitconfig = require("./twitter.json")
 const Twit = require('twit')
 const { databasing, delay } = require('../handlers/functions');
 
-module.exports = client => {
+module.exports = async (client) => {
 }
 async function create_twit(client){/*
       //ensure the db for each guild

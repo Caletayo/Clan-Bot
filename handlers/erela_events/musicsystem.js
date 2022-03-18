@@ -3,19 +3,16 @@ const { check_if_dj, autoplay, escapeRegex, format, duration, createBar } = requ
 const config = require(`${process.cwd()}/botconfig/config.json`);
 const ee = require(`${process.cwd()}/botconfig/embed.json`);
 const emoji = require(`${process.cwd()}/botconfig/emojis.json`);
-const playermanager = require(`../../handlers/playermanager`);
+const playermanager = require(`../playermanager`);
 //we need to create the music system, somewhere...
-module.exports = client => {
+module.exports = async (client) => {
     client.on("interactionCreate", async (interaction) => {
         if(!interaction?.isButton()) return;
         var { guild, message, channel, member, user } = interaction;
-        if(!guild) guild = client.guilds.cache.get(interaction?.guildId);
-        if(!guild) return;
-        client.musicsettings.ensure(guild.id, {
-            "channel": "",
-            "message": ""
-        })
-        var data = client.musicsettings.get(guild.id);
+        if(!guild) guild = client.guilds.cache.get(interaction.guildId)
+        if(!guild) return 
+        var data = await client.musicsettings.get(guild.id);
+        if(!data) return
         var musicChannelId = data.channel;
         var musicChannelMessage = data.message;
         //if not setupped yet, return
@@ -61,8 +58,9 @@ module.exports = client => {
                 ],
                 ephemeral: true});
         }
-        let es = client.settings.get(guild.id, "embed")
-        let ls = client.settings.get(guild.id, "language")
+        let settings = await client.settings.get(guild.id)
+        let es = settings.embed;
+        let ls = settings.language;
         switch(interaction?.customId){
             case "Join": {
                 //create the player
@@ -315,18 +313,15 @@ module.exports = client => {
 
     client.on("messageCreate", async message => {
         if(!message.guild) return;
-        client.musicsettings.ensure(message.guild.id, {
-            "channel": "",
-            "message": ""
-        })
-        var data = client.musicsettings.get(message.guild.id);
+        var data = await client.musicsettings.get(message.guild.id);
+        if(!data) return
         var musicChannelId = data.channel;
         //if not setupped yet, return
         if(!musicChannelId || musicChannelId.length < 5) return;
         //if not the right channel return
         if(musicChannelId != message.channel.id) return;
         //Delete the message once it got sent into the channel, bot messages after 5 seconds, user messages instantly!
-        if (message.author.id === client.user.id) 
+        if (message.author?.id === client.user.id) 
             setTimeout(()=>{
               try{
                 message.delete().catch(() => {
@@ -336,8 +331,8 @@ module.exports = client => {
             {
               try{message.delete().catch(() => {setTimeout(()=>{try{message.delete().catch(() => {});}catch(e){ }}, 5000)});}catch(e){setTimeout(()=>{try{message.delete().catch(() => {});}catch(e){ }}, 5000)}
             }
-        if (message.author.bot) return; // if the message  author is a bot, return aka ignore the inputs
-        var prefix = client.settings.get(message.guild.id, "prefix")
+        if (message.author?.bot) return; // if the message  author is a bot, return aka ignore the inputs
+        var prefix = await client.settings.get(message.guild.id+".prefix")
         //get the prefix regex system
         const prefixRegex = new RegExp(`^(<@!?${client.user.id}>|${escapeRegex(prefix)})\\s*`); //the prefix can be a Mention of the Bot / The defined Prefix of the Bot
         var args;
@@ -375,11 +370,15 @@ module.exports = client => {
 
 
 }
-function generateQueueEmbed(client, guildId, leave){
+async function generateQueueEmbed(client, guildId, leave){
     let guild = client.guilds.cache.get(guildId)
     if(!guild) return;
-    let es = client.settings.get(guild.id, "embed")
-    let ls = client.settings.get(guild.id, "language")
+    
+    let settings = await client.settings.get(guild.id);
+    
+    let es = settings.embed;
+    let ls = settings.language;
+
     var embeds = [
       new MessageEmbed()
         .setColor(es.color)
@@ -411,10 +410,10 @@ function generateQueueEmbed(client, guildId, leave){
         embeds[0] = new MessageEmbed()
         .setTitle(`📃 Queue of __${guild.name}__  -  [ ${player.queue.length} Tracks ]`)
         .setColor(es.color)
-        .setDescription(String(songs.map((track, index) => `**\` ${++index}. \` ${track.uri ? `[${track.title.substr(0, 60).replace(/\[/igu, "\\[").replace(/\]/igu, "\\]")}](${track.uri})` : track.title}** - \`${track.isStream ? `LIVE STREAM` : format(track.duration).split(` | `)[0]}\`\n> *Requested by: __${track.requester.tag}__*`).join(`\n`)).substr(0, 2048));
+        .setDescription(String(songs.map((track, index) => `**\` ${++index}. \` ${track.uri ? `[${track.title.substring(0, 60).replace(/\[/igu, "\\[").replace(/\]/igu, "\\]")}](${track.uri})` : track.title}** - \`${track.isStream ? `LIVE STREAM` : format(track.duration).split(` | `)[0]}\`\n> *Requested by: __${track.requester.tag}__*`).join(`\n`)).substring(0, 2048));
         if(player.queue.length > 10)
           embeds[0].addField(`**\` N. \` *${player.queue.length > maxTracks ? player.queue.length - maxTracks : player.queue.length} other Tracks ...***`, `\u200b`)
-        embeds[0].addField(`**\` 0. \` __CURRENT TRACK__**`, `**${player.queue.current.uri ? `[${player.queue.current.title.substr(0, 60).replace(/\[/igu, "\\[").replace(/\]/igu, "\\]")}](${player.queue.current.uri})`:player.queue.current.title}** - \`${player.queue.current.isStream ? `LIVE STREAM` : format(player.queue.current.duration).split(` | `)[0]}\`\n> *Requested by: __${player.queue.current.requester.tag}__*`)
+        embeds[0].addField(`**\` 0. \` __CURRENT TRACK__**`, `**${player.queue.current.uri ? `[${player.queue.current.title.substring(0, 60).replace(/\[/igu, "\\[").replace(/\]/igu, "\\]")}](${player.queue.current.uri})`:player.queue.current.title}** - \`${player.queue.current.isStream ? `LIVE STREAM` : format(player.queue.current.duration).split(` | `)[0]}\`\n> *Requested by: __${player.queue.current.requester.tag}__*`)
             
     }
     var joinbutton = new MessageButton().setStyle('SUCCESS').setCustomId('Join').setEmoji(`👌`).setLabel(`Join`).setDisabled(false);

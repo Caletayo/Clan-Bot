@@ -1,10 +1,10 @@
 //here the event starts
 module.exports = (client, info) => {
-  console.log(String(info).grey);
+  //console.log(String(info).dim);
 }
 /**
   * @INFO
-  * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+  * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
   * @INFO
   * Work for Milrato Development | https://milrato.eu
   * @INFO

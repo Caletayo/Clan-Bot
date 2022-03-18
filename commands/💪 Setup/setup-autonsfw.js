@@ -2,12 +2,12 @@ var {
   MessageEmbed
 } = require(`discord.js`);
 var Discord = require(`discord.js`);
-var config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-var emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+var config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+var emoji = require(`../../botconfig/emojis.json`);
 var {
-  databasing
-} = require(`${process.cwd()}/handlers/functions`);
+  dbEnsure
+} = require(`../../handlers/functions`);
 const { MessageButton, MessageActionRow, MessageSelectMenu } = require('discord.js')
 module.exports = {
   name: "setup-autonsfw",
@@ -18,9 +18,8 @@ module.exports = {
   description: "This Setup allows you to send logs into a specific Channel, when someone enters a the Command: report",
   memberpermissions: ["ADMINISTRATOR"],
   type: "fun",
-  run: async (client, message, args, cmduser, text, prefix) => {
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
     try {
       
 
@@ -68,18 +67,18 @@ module.exports = {
         //define the embed
         let MenuEmbed = new Discord.MessageEmbed()
         .setColor(es.color)
-        .setAuthor('Auto NSFW Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/google/298/no-one-under-eighteen_1f51e.png', 'https://discord.gg/milrato')
+        .setAuthor(client.getAuthor('Auto NSFW Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/google/298/no-one-under-eighteen_1f51e.png', 'https://discord.gg/dcdev'))
         .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
         let used1 = false;
         //send the menu msg
         let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({ 
-          filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+          filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
           time: 90000
         })
         //Menu Collections
-        collector.on('collect', menu => {
+        collector.on('collect', async menu => {
           if (menu?.user.id === cmduser.id) {
             collector.stop();
             let menuoptiondata = menuoptions.find(v=>v.value == menu?.values[0])
@@ -104,7 +103,7 @@ module.exports = {
               .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-autonsfw"]["variable6"])).setFooter(client.getFooter(es))]
             })
             var thecmd;
-            await tempmsg.channel.awaitMessages({filter: m => m.author.id == message.author.id, 
+            await tempmsg.channel.awaitMessages({filter: m => m.author.id == message.author?.id, 
                 max: 1,
                 time: 90000,
                 errors: ["time"]
@@ -122,7 +121,7 @@ module.exports = {
                       .setFooter(client.getFooter(es))]}
                     );
                   }
-                  client.settings.set(message.guild.id, channel.id, `autonsfw`)
+                  await client.settings.set(message.guild.id+`.autonsfw`, channel.id)
                   return message.reply({embeds: [new Discord.MessageEmbed()
                     .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-autonsfw"]["variable8"]))
                     .setColor(es.color)
@@ -145,7 +144,7 @@ module.exports = {
               })
           }break;
           case "Disable Auto-Nsfw": { 
-            client.settings.set(message.guild.id, "no", `autonsfw`)
+            await client.settings.set(message.guild.id+`.autonsfw`, "no")
             return message.reply({embeds: [new Discord.MessageEmbed()
               .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-autonsfw"]["variable10"]))
               .setColor(es.color)
@@ -154,7 +153,7 @@ module.exports = {
             );
           }break;
           case "Show Settings": { 
-            let thesettings = client.settings.get(message.guild.id, `autonsfw`)
+            let thesettings = await client.settings.get(message.guild.id+`.autonsfw`)
             return message.reply({embeds: [new Discord.MessageEmbed()
               .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-autonsfw"]["variable11"]))
               .setColor(es.color)
@@ -176,7 +175,7 @@ module.exports = {
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

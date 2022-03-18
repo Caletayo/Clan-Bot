@@ -2,12 +2,12 @@ var {
   MessageEmbed
 } = require(`discord.js`);
 var Discord = require(`discord.js`);
-var config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-var emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+var config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+var emoji = require(`../../botconfig/emojis.json`);
 var {
-  databasing
-} = require(`${process.cwd()}/handlers/functions`);
+  dbEnsure
+} = require(`../../handlers/functions`);
 const { MessageButton, MessageActionRow, MessageSelectMenu } = require('discord.js')
 module.exports = {
   name: "setup",
@@ -18,9 +18,9 @@ module.exports = {
   description: "Shows all setup commands",
   memberpermissions: ["ADMINISTRATOR"],
   type: "info",
-  run: async (client, message, args, cmduser, text, prefix) => {
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language");
+    return message.reply(`<a:Milrato_Animated:900394164829708388> **Since the last update, this got not fixxed yet, will be fixxed as soon as possible** :cry:!\n> Join https://discord.gg/dcdev for updates!`);
     try {
       first_layer()
         async function first_layer(){
@@ -48,7 +48,7 @@ module.exports = {
             {
               value: "setup-antidiscord",
               description: `Setup a Anit-DISCORD System to prevent DC-LINKS`,
-              emoji: "787321652345438228"
+              emoji: "<:DiscordLogo:936723374644789370>"
             },
             {
               value: "setup-antilink",
@@ -271,19 +271,19 @@ module.exports = {
             .setColor(es.color)
             .setAuthor("Setup-Systems | (1/3) [A-C]", 
             "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/lg/57/gear_2699.png",
-            "https://discord.gg/milrato")
+            "https://discord.gg/dcdev")
             .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup"]["variable1"]))
           let MenuEmbed2 = new Discord.MessageEmbed()
             .setColor(es.color)
             .setAuthor("Setup-Systems | (2/3) [C-R]", 
             "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/lg/57/gear_2699.png",
-            "https://discord.gg/milrato")
+            "https://discord.gg/dcdev")
             .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup"]["variable2"]))
           let MenuEmbed3 = new Discord.MessageEmbed()
             .setColor(es.color)
             .setAuthor("Setup-Systems | (3/3) [R-Z]", 
             "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/lg/57/gear_2699.png",
-            "https://discord.gg/milrato")
+            "https://discord.gg/dcdev")
             .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup"]["variable3"]))
           //send the menu msg
           let menumsg1 = await message.reply({embeds: [MenuEmbed1], components: [new MessageActionRow().addComponents(Selection1)]})
@@ -297,7 +297,7 @@ module.exports = {
             handle_the_picks(menuoptionindex, menuoptiondata)
           }
           //Event
-          client.on('interactionCreate',  (menu) => {
+          client.on('interactionCreate', async (menu) => {
             if (menu?.message.id === menumsg1.id) {
               if (menu?.user.id === cmduser.id) {
                 menumsg1.edit({components: [], embeds: menumsg1.embeds}).catch(() => {});
@@ -323,7 +323,7 @@ module.exports = {
         }
 
         async function handle_the_picks(menuoptionindex, menuoptiondata) {
-          require(`./${menuoptiondata.value.toLowerCase()}`).run(client, message, args, cmduser, text, prefix);
+          require(`./${menuoptiondata.value.toLowerCase()}`).run(client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings);
         }
       } catch (e) {
       console.log(String(e.stack).grey.bgRed)
@@ -337,7 +337,7 @@ module.exports = {
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

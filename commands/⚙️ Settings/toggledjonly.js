@@ -1,6 +1,6 @@
 /*const { MessageEmbed } = require("discord.js");
-const config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
+const config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
 const emoji = require("../../botconfig/emojis.json");
 module.exports = {
     name: "toggledjonly",
@@ -9,9 +9,9 @@ module.exports = {
     description: "Set's a Command to the DJ ONLY State, by typing it again, it gets to not DJ ONLY aka its a toggle",
     usage: "adddj @role",
     memberpermissions: ["ADMINISTRATOR"],
-    run: async (client, message, args, cmduser, text, prefix) => {
+    run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     
-      let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
+      
     try{
       
       //get the role of the mention
@@ -95,7 +95,7 @@ module.exports = {
 */
 /**
   * @INFO
-  * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+  * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
   * @INFO
   * Work for Milrato Development | https://milrato.eu
   * @INFO

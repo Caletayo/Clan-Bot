@@ -108,7 +108,7 @@ module.exports = {
 			//create the EMBED
 			const embeduserinfo = new MessageEmbed()
 			embeduserinfo.setThumbnail(customavatar ? customavatar : member.user.displayAvatarURL({ dynamic: true, size: 512 }))
-			embeduserinfo.setAuthor(handlemsg(client.la[ls].cmds.info.userinfo.author, { usertag: member.user.tag}), member.user.displayAvatarURL({ dynamic: true }), "https://discord.gg/milrato")
+			embeduserinfo.setAuthor(handlemsg(client.la[ls].cmds.info.userinfo.author, { usertag: member.user.tag}), member.user.displayAvatarURL({ dynamic: true }), "https://discord.gg/dcdev")
 			embeduserinfo.addField(client.la[ls].cmds.info.userinfo.field1,`> <@${member.user.id}>\n\`${member.user.tag}\``,true)
 			embeduserinfo.addField(client.la[ls].cmds.info.userinfo.field2,`> \`${member.id}\``,true)
 			embeduserinfo.addField(client.la[ls].cmds.info.userinfo.field3,`> [\`Link to avatar\`](${member.user.displayAvatarURL({ format: "png" })})${customavatar ? `\n\n> [\`Link to Custom Avatar\`](${customavatar})`: ""}`,true)
@@ -129,7 +129,7 @@ module.exports = {
 			  }
 			}
 			embeduserinfo.addField(client.la[ls].cmds.info.userinfo.field10,`> ${userstatus}`)
-			embeduserinfo.addField(client.la[ls].cmds.info.userinfo.field11,`> ${member.permissions.toArray().includes("ADMINISTRATOR") ? "\`ADMINISTRATOR\`": member.permissions.toArray().sort((a, b) => a.localeCompare(b)).map(p=>`\`${p}\``).join("︲")}`.substr(0, 2048))
+			embeduserinfo.addField(client.la[ls].cmds.info.userinfo.field11,`> ${member.permissions.toArray().includes("ADMINISTRATOR") ? "\`ADMINISTRATOR\`": member.permissions.toArray().sort((a, b) => a.localeCompare(b)).map(p=>`\`${p}\``).join("︲")}`.substring(0, 2048))
 			embeduserinfo.addField(handlemsg(client.la[ls].cmds.info.userinfo.field12, { rolesize: roles.cache.size}), roles.cache.size < 25 ? [...roles.cache.values()].sort((a, b) => b?.rawPosition - a.rawPosition).map(role => `<@&${role.id}>`).join(', ') : roles.cache.size > 25 ? trimArray(roles.cache) : client.la[ls].cmds.info.userinfo.noroles)
 			embeduserinfo.setColor(es.color)
 			embeduserinfo.setFooter(client.getFooter(es))
@@ -142,7 +142,7 @@ module.exports = {
 			//create the EMBED
 			const embeduserinfo = new MessageEmbed()
 			embeduserinfo.setThumbnail(customavatar ? customavatar : user.displayAvatarURL({ dynamic: true, size: 512 }))
-			embeduserinfo.setAuthor(handlemsg(client.la[ls].cmds.info.userinfo.author, { usertag: user.tag}), user.displayAvatarURL({ dynamic: true }), "https://discord.gg/milrato")
+			embeduserinfo.setAuthor(handlemsg(client.la[ls].cmds.info.userinfo.author, { usertag: user.tag}), user.displayAvatarURL({ dynamic: true }), "https://discord.gg/dcdev")
 			embeduserinfo.addField(client.la[ls].cmds.info.userinfo.field1,`<@${user.id}>\n\`${user.tag}\``,true)
 			embeduserinfo.addField(client.la[ls].cmds.info.userinfo.field2,`\`${user.id}\``,true)
 			embeduserinfo.addField(client.la[ls].cmds.info.userinfo.field3,`[\`Link to avatar\`](${user.displayAvatarURL({ format: "png" })})`,true)

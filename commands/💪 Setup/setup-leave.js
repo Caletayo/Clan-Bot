@@ -2,13 +2,13 @@ var {
   MessageEmbed
 } = require(`discord.js`);
 var Discord = require(`discord.js`);
-var config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-var emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+var config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+var emoji = require(`../../botconfig/emojis.json`);
 var {
-  databasing,
+  dbEnsure,
   isValidURL
-} = require(`${process.cwd()}/handlers/functions`);
+} = require(`../../handlers/functions`);
 const { MessageButton, MessageActionRow, MessageSelectMenu } = require('discord.js')
 module.exports = {
   name: "setup-leave",
@@ -19,9 +19,11 @@ module.exports = {
   description: "Manage the Leave Message System",
   memberpermissions: ["ADMINISTRATOR"],
   type: "info",
-  run: async (client, message, args, cmduser, text, prefix) => {
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
+    
+    return message.reply(`<a:Milrato_Animated:900394164829708388> **Since the last update, this got not fixxed yet, will be fixxed as soon as possible** :cry:!
+> Join https://discord.gg/dcdev for updates!`);
     try {
       var timeouterror;
       var tempmsg;
@@ -68,17 +70,17 @@ module.exports = {
         //define the embed
         let MenuEmbed = new MessageEmbed()
           .setColor(es.color)
-          .setAuthor('Leave Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/samsung/306/waving-hand_1f44b?.png', 'https://discord.gg/milrato')
+          .setAuthor('Leave Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/samsung/306/waving-hand_1f44b?.png', 'https://discord.gg/dcdev')
           .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
         //send the menu msg
         let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({ 
-          filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+          filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
           time: 90000
         })
         //Menu Collections
-        collector.on('collect', menu => {
+        collector.on('collect', async menu => {
           if (menu?.user.id === cmduser.id) {
             collector.stop();
             let menuoptiondata = menuoptions.find(v=>v.value == menu?.values[0])
@@ -153,17 +155,17 @@ module.exports = {
               //define the embed
               let MenuEmbed = new MessageEmbed()
                 .setColor(es.color)
-                .setAuthor('Leave Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/samsung/306/waving-hand_1f44b?.png', 'https://discord.gg/milrato')
+                .setAuthor('Leave Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/samsung/306/waving-hand_1f44b?.png', 'https://discord.gg/dcdev')
                 .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
               //send the menu msg
               let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
               //Create the collector
               const collector = menumsg.createMessageComponentCollector({ 
-                filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+                filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
                 time: 90000
               })
               //Menu Collections
-              collector.on('collect', menu => {
+              collector.on('collect', async menu => {
                 if (menu?.user.id === cmduser.id) {
                   collector.stop();
                   let menuoptiondata = menuoptions.find(v=>v.value == menu?.values[0])
@@ -188,12 +190,12 @@ module.exports = {
                     .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-leave"]["variable8"]))
                     .setFooter(client.getFooter(es))]
                   })
-                  await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+                  await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
                       max: 1,
                       time: 90000,
                       errors: ["time"]
                     })
-                    .then(collected => {
+                    .then(async collected => {
                       var message = collected.first();
                       var channel = message.mentions.channels.filter(ch=>ch.guild.id==message.guild.id).first() || message.guild.channels.cache.get(message.content.trim().split(" ")[0]);
                       if (channel) {
@@ -312,17 +314,17 @@ module.exports = {
                     //define the embed
                     let MenuEmbed = new MessageEmbed()
                       .setColor(es.color)
-                      .setAuthor('Leave Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/samsung/306/waving-hand_1f44b?.png', 'https://discord.gg/milrato')
+                      .setAuthor('Leave Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/samsung/306/waving-hand_1f44b?.png', 'https://discord.gg/dcdev')
                       .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
                     //send the menu msg
                     let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
                     //Create the collector
                     const collector = menumsg.createMessageComponentCollector({ 
-                      filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+                      filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
                       time: 90000
                     })
                     //Menu Collections
-                    collector.on('collect', menu => {
+                    collector.on('collect', async menu => {
                       if (menu?.user.id === cmduser.id) {
                         collector.stop();
                         let menuoptiondata = menuoptions.find(v=>v.value == menu?.values[0])
@@ -365,12 +367,12 @@ module.exports = {
                           .setColor(es.color)
                           .setFooter(client.getFooter(es))]
                         });
-                        await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+                        await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
                             max: 1,
                             time: 60000,
                             errors: ["time"]
                           })
-                          .then(collected => {
+                          .then(async collected => {
     
                             //push the answer of the user into the answers lmfao
                             if (collected.first().attachments.size > 0) {
@@ -445,12 +447,12 @@ module.exports = {
                           .setColor(es.color)
                           .setFooter(client.getFooter(es))]
                         });
-                        await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+                        await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
                             max: 1,
                             time: 60000,
                             errors: ["time"]
                           })
-                          .then(collected => {
+                          .then(async collected => {
     
                             //push the answer of the user into the answers lmfao
                             if (collected.first().attachments.size > 0) {
@@ -582,7 +584,7 @@ module.exports = {
                         ]})
                         //Create the collector
                         const collector = tempmsg.createMessageComponentCollector({ 
-                          filter: i => i?.isButton() && i?.message.author.id == client.user.id && i?.user,
+                          filter: i => i?.isButton() && i?.message.author?.id == client.user.id && i?.user,
                           time: 90000
                         })
                         //Once the Collections ended edit the menu message
@@ -616,12 +618,12 @@ module.exports = {
                     .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-leave"]["variable65"]))
                     .setFooter(client.getFooter(es))]
                   })
-                  await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+                  await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
                       max: 1,
                       time: 90000,
                       errors: ["time"]
                     })
-                    .then(collected => {
+                    .then(async collected => {
                       var message = collected.first();
                         client.settings.set(message.guild.id, message.content, "leave.msg")
                         return message.reply({embeds: [new Discord.MessageEmbed()
@@ -704,17 +706,17 @@ module.exports = {
               //define the embed
               let MenuEmbed = new MessageEmbed()
                 .setColor(es.color)
-                .setAuthor('Leave Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/samsung/306/waving-hand_1f44b?.png', 'https://discord.gg/milrato')
+                .setAuthor('Leave Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/samsung/306/waving-hand_1f44b?.png', 'https://discord.gg/dcdev')
                 .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
               //send the menu msg
               let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
               //Create the collector
               const collector = menumsg.createMessageComponentCollector({ 
-                filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+                filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
                 time: 90000
               })
               //Menu Collections
-              collector.on('collect', menu => {
+              collector.on('collect', async menu => {
                 if (menu?.user.id === cmduser.id) {
                   collector.stop();
                   let menuoptiondata = menuoptions.find(v=>v.value == menu?.values[0])
@@ -834,17 +836,17 @@ module.exports = {
                     //define the embed
                     let MenuEmbed = new MessageEmbed()
                       .setColor(es.color)
-                      .setAuthor('Leave Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/samsung/306/waving-hand_1f44b?.png', 'https://discord.gg/milrato')
+                      .setAuthor('Leave Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/samsung/306/waving-hand_1f44b?.png', 'https://discord.gg/dcdev')
                       .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
                     //send the menu msg
                     let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
                     //Create the collector
                     const collector = menumsg.createMessageComponentCollector({ 
-                      filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+                      filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
                       time: 90000
                     })
                     //Menu Collections
-                    collector.on('collect', menu => {
+                    collector.on('collect', async menu => {
                       if (menu?.user.id === cmduser.id) {
                         collector.stop();
                         let menuoptiondata = menuoptions.find(v=>v.value == menu?.values[0])
@@ -887,12 +889,12 @@ module.exports = {
                           .setColor(es.color)
                           .setFooter(client.getFooter(es))]
                         });
-                        await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+                        await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
                             max: 1,
                             time: 60000,
                             errors: ["time"]
                           })
-                          .then(collected => {
+                          .then(async collected => {
     
                             //push the answer of the user into the answers lmfao
                             if (collected.first().attachments.size > 0) {
@@ -967,12 +969,12 @@ module.exports = {
                           .setColor(es.color)
                           .setFooter(client.getFooter(es))]
                         });
-                        await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+                        await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
                             max: 1,
                             time: 60000,
                             errors: ["time"]
                           })
-                          .then(collected => {
+                          .then(async collected => {
     
                             //push the answer of the user into the answers lmfao
                             if (collected.first().attachments.size > 0) {
@@ -1104,7 +1106,7 @@ module.exports = {
                         ]})
                         //Create the collector
                         const collector = tempmsg.createMessageComponentCollector({ 
-                          filter: i => i?.isButton() && i?.message.author.id == client.user.id && i?.user,
+                          filter: i => i?.isButton() && i?.message.author?.id == client.user.id && i?.user,
                           time: 90000
                         })
                         //Once the Collections ended edit the menu message
@@ -1138,12 +1140,12 @@ module.exports = {
                     .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-leave"]["variable65"]))
                     .setFooter(client.getFooter(es))]
                   })
-                  await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+                  await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
                       max: 1,
                       time: 90000,
                       errors: ["time"]
                     })
-                    .then(collected => {
+                    .then(async collected => {
                       var message = collected.first();
                         client.settings.set(message.guild.id, message.content, "leave.msgdm")
                         return message.reply({embeds: [new Discord.MessageEmbed()
@@ -1189,7 +1191,7 @@ module.exports = {
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

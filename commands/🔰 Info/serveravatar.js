@@ -1,10 +1,10 @@
 const Discord = require("discord.js");
 const {MessageEmbed} = require("discord.js");
-const config = require(`${process.cwd()}/botconfig/config.json`)
-var ee = require(`${process.cwd()}/botconfig/embed.json`)
-const emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+const config = require(`../../botconfig/config.json`)
+var ee = require(`../../botconfig/embed.json`)
+const emoji = require(`../../botconfig/emojis.json`);
 const moment = require("moment")
-const { swap_pages, handlemsg } = require(`${process.cwd()}/handlers/functions`)
+const { swap_pages, handlemsg } = require(`../../handlers/functions`)
 module.exports = {
   name: "serveravatar",
   aliases: ["savatar", "guildavatar", "gavatar"],
@@ -12,12 +12,12 @@ module.exports = {
   description: "Shows the ServerAvatar",
   usage: "serveravatar",
   type: "server",
-  run: async (client, message, args, cmduser, text, prefix) => {
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
+    
     try {
       message.reply({embeds: [new Discord.MessageEmbed()
-      .setAuthor(handlemsg(client.la[ls].cmds.info.serveravatar.author, { servername: message.guild.name }), message.guild.iconURL({dynamic: true}), "https://discord.gg/milrato")
+      .setAuthor(handlemsg(client.la[ls].cmds.info.serveravatar.author, { servername: message.guild.name }), message.guild.iconURL({dynamic: true}), "https://discord.gg/dcdev")
       .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
       .addField("<:arrow:832598861813776394> PNG",`[\`LINK\`](${message.guild.iconURL({format: "png"})})`, true)
       .addField("<:arrow:832598861813776394> JPEG",`[\`LINK\`](${message.guild.iconURL({format: "jpg"})})`, true)
@@ -43,7 +43,7 @@ module.exports = {
 }
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

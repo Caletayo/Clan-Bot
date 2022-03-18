@@ -12,9 +12,9 @@ module.exports = {
   description: "Shows info about a server",
   usage: "serverinfo",
   type: "server",
-  run: async (client, message, args, cmduser, text, prefix, player) => {
-    let es = client.settings.get(message.guild.id, "embed");
-    let ls = client.settings.get(message.guild.id, "language");
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
+    
+    
     try {
       function trimArray(arr, maxLen = 40) {
         if ([...arr.values()].length > maxLen) {
@@ -139,7 +139,7 @@ module.exports = {
 }
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

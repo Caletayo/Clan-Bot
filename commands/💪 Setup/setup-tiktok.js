@@ -2,12 +2,12 @@ var {
   MessageEmbed
 } = require(`discord.js`);
 var Discord = require(`discord.js`);
-var config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-var emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+var config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+var emoji = require(`../../botconfig/emojis.json`);
 var {
-  databasing
-} = require(`${process.cwd()}/handlers/functions`);
+  dbEnsure, dbRemove
+} = require(`../../handlers/functions`);
 const { MessageButton, MessageActionRow, MessageSelectMenu } = require('discord.js')
 module.exports = {
   name: "setup-tiktok",
@@ -18,16 +18,16 @@ module.exports = {
   description: "Manage the tiktok logger, addstreamer, editstreamer, removestreamer, etc.",
   memberpermissions: ["ADMINISTRATOR"],
   type: "fun",
-  run: async (client, message, args, cmduser, text, prefix) => {
-    
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
+  
+    return message.reply(`<a:Milrato_Animated:900394164829708388> **This got disabled, since it's currently not working!**`);
     try {
-      var adminroles = client.settings.get(message.guild.id, "adminroles")
+      var adminroles = GuildSettings.adminroles ? GuildSettings.adminroles : []
 
 
       var timeouterror = false;
       var filter = (reaction, user) => {
-        return user.id === message.author.id;
+        return user.id === message.author?.id;
       };
       var temptype = ""
       var tempmsg;
@@ -64,9 +64,9 @@ module.exports = {
           time: 90000,
           errors: ["time"]
         })
-        .then(collected => {
+        .then(async collected => {
           var reaction = collected.first()
-          reaction.users.remove(message.author.id)
+          reaction.users.remove(message.author?.id)
           if (reaction.emoji?.name === "1️⃣") temptype = "set"
           else if (reaction.emoji?.name === "2️⃣") temptype = "add"
           else if (reaction.emoji?.name === "3️⃣") temptype = "remove"
@@ -91,7 +91,7 @@ module.exports = {
           .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-tiktok"]["variable5"]))
           .setFooter(client.getFooter(es))]
         })
-        await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+        await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
             max: 1,
             time: 90000,
             errors: ["time"]
@@ -140,7 +140,7 @@ module.exports = {
 https://www.tiktok.com/@milratodev`)
           .setFooter(client.getFooter(es))]
         })
-        await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+        await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
             max: 1,
             time: 90000,
             errors: ["time"]
@@ -207,7 +207,7 @@ https://www.tiktok.com/@milratodev`)
           for(const emoji of emojis){
             tempmsg.react(emoji).catch(e=>console.log(e.stack ? String(e.stack).grey : String(e).grey))
           }
-        await tempmsg.awaitReactions({ filter: (reaction, user) => user.id == message.author.id && emojis.includes(reaction.emoji?.name), 
+        await tempmsg.awaitReactions({ filter: (reaction, user) => user.id == message.author?.id && emojis.includes(reaction.emoji?.name), 
             max: 1,
             time: 90000,
             errors: ["time"]
@@ -255,7 +255,7 @@ https://www.tiktok.com/@milratodev`)
           for(const emoji of emojis){
             tempmsg.react(emoji).catch(e=>console.log(e.stack ? String(e.stack).grey : String(e).grey))
           }
-        await tempmsg.awaitReactions({ filter: (reaction, user) => user.id == message.author.id && emojis.includes(reaction.emoji?.name), 
+        await tempmsg.awaitReactions({ filter: (reaction, user) => user.id == message.author?.id && emojis.includes(reaction.emoji?.name), 
             max: 1,
             time: 90000,
             errors: ["time"]
@@ -279,7 +279,7 @@ https://www.tiktok.com/@milratodev`)
 > \`{title}\` ... will be replaced with the video's **title**`)
               .setFooter(client.getFooter(es))
             ]})
-            await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+            await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
               max: 1,
               time: 90000,
               errors: ["time"]
@@ -344,7 +344,7 @@ https://www.tiktok.com/@milratodev`)
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

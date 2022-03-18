@@ -84,9 +84,9 @@ module.exports = {
           .setPlaceholder(client.la[ls].cmds.info.botfaq.placeholder)
           .addOptions(menuoptions.map(o => {
             let Obj = {}; 
-            Obj.value = o.value.substr(0, 25);
-            Obj.label = o.value.substr(0, 25);
-            Obj.description = o.description.substr(0, 50);
+            Obj.value = o.value.substring(0, 25);
+            Obj.label = o.value.substring(0, 25);
+            Obj.description = o.description.substring(0, 50);
             Obj.emoji = o.emoji;
             return Obj;
           }))
@@ -94,16 +94,16 @@ module.exports = {
       //define the embed
       let MenuEmbed = new Discord.MessageEmbed()
       .setColor(es.color)
-      .setAuthor(client.la[ls].cmds.info.botfaq.menuembed.title, client.user.displayAvatarURL(), "https://discord.gg/milrato")
+      .setAuthor(client.la[ls].cmds.info.botfaq.menuembed.title, client.user.displayAvatarURL(), "https://discord.gg/dcdev")
       .setDescription(client.la[ls].cmds.info.botfaq.menuembed.description)
       //send the menu msg
       await interaction?.reply({embeds: [MenuEmbed], components: [Selection], ephemeral: true})
       //function to handle the menuselection
       function menuselection(interaction) {
-        let menuoptiondata = menuoptions.find(v=>v.value.substr(0, 25) == interaction?.values[0])
+        let menuoptiondata = menuoptions.find(v=>v.value.substring(0, 25) == interaction?.values[0])
         interaction?.reply({embeds: [new Discord.MessageEmbed()
         .setColor(es.color)
-        .setAuthor(client.la[ls].cmds.info.botfaq.menuembed.title, client.user.displayAvatarURL(), "https://discord.gg/milrato")
+        .setAuthor(client.la[ls].cmds.info.botfaq.menuembed.title, client.user.displayAvatarURL(), "https://discord.gg/dcdev")
         .setDescription(menuoptiondata.replymsg)], ephemeral: true});
       }
       //Event
@@ -120,7 +120,7 @@ module.exports = {
 };
 /**
   * @INFO
-  * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+  * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
   * @INFO
   * Work for Milrato Development | https://milrato.eu
   * @INFO

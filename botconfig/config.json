@@ -1,38 +1,48 @@
 {
-   "token": "OTM0NjI0ODI4NDQxMzc4ODM3.YeyzMw.OedN1ZOe1jh0mqqI85WBB6CGGyo",
-   "prefix": ",",
-   "ownerIDS": [
-      "760938184661008455"
-   ],
-   "memer_api": "WNyBStXWCU4",
-   "status": {
-      "text": "🎈 | Todo funcionando correctamente | ,help",
-      "text2": "😂 | Si tienes dudas pregúntale a Google XD",
-      "type": "WATCHING",
-      "url": "https://twitch.tv/milratoDiscordBot"
-   },
-   "clientsettings": {
-      "nodes": [
-         {
-            "host": "lava.link",
-            "port": 80,
-            "password": "youshallnotpass"
-         }
-      ]
-   },
-   "spotify": {
-      "clientSecret": "0522108b2cb24c708fefface0348455a",
-      "clientID": "ac536c48444b430c8e4d83ff6e5329c8"
-   },
-   "settings": {
-      "leaveOnEmpty_Channel": {
-         "enabled": true,
-         "time_delay": 30000
-      },
-      "LeaveOnEmpty_Queue": {
-         "enabled": true,
-         "time_delay": 30000
-      },
-      "selfDeaf": true
-   }
+    "token": "OTM0NjI0ODI4NDQxMzc4ODM3.YeyzMw.m1OtdAKb4uee0axQDtb0xCgZOIw",
+    "prefix": "-",
+    "ownerIDS": [
+        "760938184661008455"
+    ],
+    "fnbr": "",
+    "fortnitetracker": "",
+    "memer_api": "WNyBStXWCU4",
+    "status": {
+        "text": "{prefix}help | Todo funcionando correctamente",
+        "type": "PLAYING",
+        "url": "https://twitch.tv/milratodiscordbot",
+        "text2": "💎 | By: replit.com"
+    },
+    "clientsettings": {
+        "nodes": [
+            {
+                "host": "lava.link",
+                "port": 80,
+                "password": "youshallnotpass"
+            }
+        ]
+    },
+    "spotify": {
+        "clientSecret": "19343ea27d8e481fa22255b79e3d572a",
+        "clientID": "1790f373aba247bca6e2ffda8a49b83b"
+    },
+    "settings": {
+        "COMMENT": "time_delay 0 === insta leave",
+        "leaveOnEmpty_Channel": {
+            "enabled": true,
+            "time_delay": 30000
+        },
+        "LeaveOnEmpty_Queue": {
+            "enabled": true,
+            "time_delay": 30000
+        },
+        "selfDeaf": true
+    },
+    "lyricssettings": {
+        "lyrics_finder": true,
+        "ksoft_api": {
+            "use_this_instead": true,
+            "api_key": "DISABLED"
+        }
+    }
 }

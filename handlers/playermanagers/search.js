@@ -11,7 +11,7 @@ var {
 
 //function for searching songs
 async function search(client, message, args, type, slashCommand) {
-  let ls = client.settings.get(message.guild.id, "language")
+  let ls = await client.settings.get(message.guild.id+".language")
   var search = args.join(" ");
   try {
     var res;
@@ -32,7 +32,7 @@ async function search(client, message, args, type, slashCommand) {
     if (state !== "CONNECTED") {
       //set the variables
       player.set("message", message);
-      player.set("playerauthor", message.author.id);
+      player.set("playerauthor", message.author?.id);
       player.connect();
       try{message.react("863876115584385074").catch(() => {});}catch(e){console.log(String(e).grey)}
       player.stop();
@@ -65,17 +65,17 @@ async function search(client, message, args, type, slashCommand) {
 
 
     var max = 10,
-      collected, filter = (r, u) => u.id === message.author.id;
+      collected, filter = (r, u) => u.id === message.author?.id;
     if (res.tracks.length < max) max = res.tracks.length;
     track = res.tracks[0]
     var theresults = res.tracks
       .slice(0, max)
-    var results = theresults.map((track, index) => `**${++index})** [\`${String(track.title).substr(0, 60).split("[").join("{").split("]").join("}")}\`](${track.uri}) - \`${format(track.duration).split(" | ")[0]}\``)
+    var results = theresults.map((track, index) => `**${++index})** [\`${String(track.title).substring(0, 60).split("[").join("{").split("]").join("}")}\`](${track.uri}) - \`${format(track.duration).split(" | ")[0]}\``)
       .join('\n');
     let toreact;
     if(slashCommand)
       toreact = await message.channel.send({embeds: [new MessageEmbed()
-        .setTitle(`Search-Result for: 🔎 **\`${search}`.substr(0, 256 - 3) + "`**")
+        .setTitle(`Search-Result for: 🔎 **\`${search}`.substring(0, 256 - 3) + "`**")
         .setColor(ee.color)
         .setDescription(results)
         .setFooter(client.getFooter(`Search-Request by: ${track.requester.tag}`, track.requester.displayAvatarURL({
@@ -83,7 +83,7 @@ async function search(client, message, args, type, slashCommand) {
         })))
       ]}).catch(() => {});
     else toreact = await message.reply({embeds: [new MessageEmbed()
-      .setTitle(`Search-Result for: 🔎 **\`${search}`.substr(0, 256 - 3) + "`**")
+      .setTitle(`Search-Result for: 🔎 **\`${search}`.substring(0, 256 - 3) + "`**")
       .setColor(ee.color)
       .setDescription(results)
       .setFooter(client.getFooter((`Search-Request by: ${track.requester.tag}`, track.requester.displayAvatarURL({
@@ -136,12 +136,12 @@ async function search(client, message, args, type, slashCommand) {
 
     var index = emojiarray.findIndex(emoji => emoji == first) - 1;
 
-    var pickedresults = theresults.map((track, ii) => `${index == ii ? "" : "~~"}**${++ii})** [\`${String(track.title).substr(0, 60).split("[").join("{").split("]").join("}")}\`](${track.uri}) - \`${format(track.duration).split(" | ")[0]}\`${index == ii ? "" : "~~"}`)
+    var pickedresults = theresults.map((track, ii) => `${index == ii ? "" : "~~"}**${++ii})** [\`${String(track.title).substring(0, 60).split("[").join("{").split("]").join("}")}\`](${track.uri}) - \`${format(track.duration).split(" | ")[0]}\`${index == ii ? "" : "~~"}`)
       .join('\n');
 
     toreact.edit({
       embeds: [new MessageEmbed()
-        .setTitle(`Search-Result-PICKED for: 🔎 **\`${search}`.substr(0, 256 - 3) + "`**")
+        .setTitle(`Search-Result-PICKED for: 🔎 **\`${search}`.substring(0, 256 - 3) + "`**")
         .setColor(ee.color)
         .setDescription(pickedresults)
         .setFooter(client.getFooter(`Search-Request by: ${track.requester.tag}`, track.requester.displayAvatarURL({
@@ -154,7 +154,7 @@ async function search(client, message, args, type, slashCommand) {
     if (player.state !== "CONNECTED") {
       //set the variables
       player.set("message", message);
-      player.set("playerauthor", message.author.id);
+      player.set("playerauthor", message.author?.id);
       player.connect();
       try{message.react("863876115584385074").catch(() => {});}catch(e){console.log(String(e).grey)}
       //add track
@@ -183,11 +183,12 @@ async function search(client, message, args, type, slashCommand) {
         slashCommand.reply({ephemeral: true,embeds: [embed3]}).catch(() => {});
         else message.reply({embeds: [embed3]}).catch(() => {});
     }
-    if(client.musicsettings.get(player.guild, "channel") && client.musicsettings.get(player.guild, "channel").length > 5){
-      let messageId = client.musicsettings.get(player.guild, "message");
+    var musicsettings = await client.musicsettings.get(player.guild+".channel")
+    if(musicsettings && musicsettings.length > 5){
+      let messageId = musicsettings.message;
       let guild = client.guilds.cache.get(player.guild);
       if(!guild) return 
-      let channel = guild.channels.cache.get(client.musicsettings.get(player.guild, "channel"));
+      let channel = guild.channels.cache.get(musicsettings);
       if(!channel) return 
       let message = channel.messages.cache.get(messageId);
       if(!message) message = await channel.messages.fetch(messageId).catch(()=>{});
@@ -195,7 +196,7 @@ async function search(client, message, args, type, slashCommand) {
       //edit the message so that it's right!
       var data = require("../erela_events/musicsystem").generateQueueEmbed(client, player.guild)
       message.edit(data).catch(() => {})
-      if(client.musicsettings.get(player.guild, "channel") == player.textChannel){
+      if(musicsettings == player.textChannel){
         return;
       }
     }
@@ -205,11 +206,11 @@ async function search(client, message, args, type, slashCommand) {
     if(slashCommand)
     return slashCommand.reply({ephemeral: true,embeds: [new MessageEmbed()
       .setColor(ee.wrongcolor)
-      .setTitle(String("❌ Error | Found nothing for: **`" + search).substr(0, 256 - 3) + "`**")
+      .setTitle(String("❌ Error | Found nothing for: **`" + search).substring(0, 256 - 3) + "`**")
     ]}).catch(() => {});
     message.reply({embeds: [new MessageEmbed()
       .setColor(ee.wrongcolor)
-      .setTitle(String("❌ Error | Found nothing for: **`" + search).substr(0, 256 - 3) + "`**")
+      .setTitle(String("❌ Error | Found nothing for: **`" + search).substring(0, 256 - 3) + "`**")
     ]}).catch(() => {}).then(msg => {
       setTimeout(()=>{
         msg.delete().catch(() => {})

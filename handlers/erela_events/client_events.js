@@ -11,7 +11,7 @@ var {
 
     {
       databasing,
-    } = require(`${process.cwd()}/handlers/functions`);
+    } = require(`../functions`);
   module.exports = (client) => {
 
       client.once("ready", () => {

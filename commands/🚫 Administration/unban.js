@@ -2,12 +2,12 @@ const {
   MessageEmbed,
   Permissions
 } = require(`discord.js`);
-const config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-const emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+const config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+const emoji = require(`../../botconfig/emojis.json`);
 const {
   databasing
-} = require(`${process.cwd()}/handlers/functions`);
+} = require(`../../handlers/functions`);
 module.exports = {
   name: `unban`,
   category: `🚫 Administration`,
@@ -16,9 +16,9 @@ module.exports = {
   usage: `unban <ID>`,
   memberpermissions: ["ADMINISTRATOR"],
   type: "member",
-  run: async (client, message, args, cmduser, text, prefix) => {
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
+    
 
     try {
       if(!message.guild.me.permissions.has([Permissions.FLAGS.BAN_MEMBERS]))      
@@ -26,14 +26,14 @@ module.exports = {
           .setColor(es.wrongcolor).setFooter(client.getFooter(es))
           .setTitle(eval(client.la[ls]["cmds"]["administration"]["ban"]["variable1"]))
         ]})
-      //databasing(client, message.guild.id, message.author.id);
+      //databasing(client, message.guild.id, message.author?.id);
       //message.guild.members.unban("564036254111629332");
       if(!args[0])
         return message.reply({embeds :[new MessageEmbed()
           .setColor(es.wrongcolor)
           .setFooter(client.getFooter(es))
           .setTitle(`${emoji?.msg.ERROR} Please add a valid USERID`)
-          .setDescription(`Usage: \`${prefix}unban <ID>\`\nExample: \`${prefix}unban ${message.author.id}\``)
+          .setDescription(`Usage: \`${prefix}unban <ID>\`\nExample: \`${prefix}unban ${message.author?.id}\``)
         ]});
       
       let bans = await message.guild.bans.fetch().catch(() => {});
@@ -74,7 +74,7 @@ module.exports = {
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

@@ -2,13 +2,13 @@ const {
   MessageEmbed, Collection, MessageAttachment, Permissions
 } = require("discord.js");
 const Discord = require("discord.js");
-const config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
+const config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
 const moment = require("moment")
 const fs = require('fs')
 const {
   databasing, delay, create_transcript, GetUser, GetRole
-} = require(`${process.cwd()}/handlers/functions`);
+} = require(`../../handlers/functions`);
 const { MessageButton, MessageActionRow } = require('discord.js')
 module.exports = {
   name: "instantdelete",
@@ -18,14 +18,14 @@ module.exports = {
   usage: "instantdelete",
   description: "Instant Deletes the Ticket",
   type: "channel",
-  run: async (client, message, args, cmduser, text, prefix) => {
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     const guild = message.guild;
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
+    
     try {
-      let adminroles = client.settings.get(message.guild.id, "adminroles")
-      let cmdroles = client.settings.get(message.guild.id, "cmdadminroles.ticket")
-      let cmdroles2 = client.settings.get(message.guild.id, "cmdadminroles.close")
-      try{for (const r of cmdroles2) cmdroles.push(r)}catch{}
+        let adminroles = GuildSettings?.adminroles || [];
+        let cmdroles = GuildSettings?.cmdadminroles?.ticket || [];
+        let cmdroles2 = GuildSettings?.cmdadminroles?.close || [];
+        try{for (const r of cmdroles2) cmdroles.push(r)}catch{}
         var cmdrole = []
         if(cmdroles.length > 0){
           for(const r of cmdroles){
@@ -36,9 +36,18 @@ module.exports = {
               cmdrole.push(` | <@${r}>`)
             }
             else {
-              //console.log(r)
-              try{ client.settings.remove(message.guild.id, r, `cmdadminroles.ticket`) }catch{ }
-              try{ client.settings.remove(message.guild.id, r, `cmdadminroles.close`) }catch{ }
+                const File = `ticket`;
+                let index = GuildSettings && GuildSettings.cmdadminroles && typeof GuildSettings.cmdadminroles == "object" ? GuildSettings.cmdadminroles[File]?.indexOf(r) || -1 : -1;
+                if(index > -1) {
+                  GuildSettings.cmdadminroles[File].splice(index, 1);
+                  client.settings.set(`${message.guild.id}.cmdadminroles`, GuildSettings.cmdadminroles)
+                }
+                const File2 = `close`;
+                let index2 = GuildSettings && GuildSettings.cmdadminroles && typeof GuildSettings.cmdadminroles == "object" ? GuildSettings.cmdadminroles[File2]?.indexOf(r) || -1 : -1;
+                if(index2 > -1) {
+                  GuildSettings.cmdadminroles[File2].splice(index2, 1);
+                  client.settings.set(`${message.guild.id}.cmdadminroles`, GuildSettings.cmdadminroles)
+                }
             }
           }
         }
@@ -49,7 +58,7 @@ module.exports = {
       ticketSystemNumber = ticketSystemNumber[ticketSystemNumber.length - 1];
       let ticket = client.setups.get(message.guild.id, `${String(Ticketdata.type).includes("menu") ? "menu": ""}ticketsystem${ticketSystemNumber}`)
       
-      if (([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => cmdroles.includes(r.id))) && !cmdroles.includes(message.author.id) && ([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => adminroles.includes(r ? r.id : r))) && !Array(message.guild.ownerId, config.ownerid).includes(message.author.id) && !message.member.permissions.has([Permissions.FLAGS.ADMINISTRATOR]) && !message.member.roles.cache.some(r => ticket.adminroles.includes(r ? r.id : r)))
+      if (([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => cmdroles.includes(r.id))) && !cmdroles.includes(message.author?.id) && ([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => adminroles.includes(r ? r.id : r))) && !Array(message.guild.ownerId, config.ownerid).includes(message.author?.id) && !message.member?.permissions?.has([Permissions.FLAGS.ADMINISTRATOR]) && !message.member.roles.cache.some(r => ticket.adminroles.includes(r ? r.id : r)))
         return message.reply({embeds : [new MessageEmbed()
           .setColor(es.wrongcolor)
           .setFooter(client.getFooter(es))
@@ -185,11 +194,11 @@ module.exports = {
                     });
                 }, 3500)
 
-                if (client.settings.get(guild.id, `adminlog`) != "no") {
+                if (GuildSettings && GuildSettings.adminlog && GuildSettings.adminlog != "no") {
                     let message = msg; //NEEDED FOR THE EVALUATION!
                     try {
-                        var adminchannel = guild.channels.cache.get(client.settings.get(guild.id, `adminlog`))
-                        if (!adminchannel) return client.settings.set(guild.id, "no", `adminlog`);
+                        var adminchannel = guild.channels.cache.get(GuildSettings.adminlog)
+                        if (!adminchannel) return client.settings.set(`${message.guild.id}.adminlog`, "no");
                         adminchannel.send({
                             embeds: [new MessageEmbed()
                                 .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null).setFooter(client.getFooter(es))
@@ -199,7 +208,7 @@ module.exports = {
                                 .setDescription(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable15"]))
                                 .addField(eval(client.la[ls]["cmds"]["administration"]["ban"]["variablex_15"]), eval(client.la[ls]["cmds"]["administration"]["ban"]["variable15"]))
                                 .addField(eval(client.la[ls]["cmds"]["administration"]["ban"]["variablex_16"]), eval(client.la[ls]["cmds"]["administration"]["ban"]["variable16"]))
-                                .setTimestamp().setFooter(client.getFooter("ID: " + message.author.id, message.author.displayAvatarURL({dynamic: true})))
+                                .setTimestamp().setFooter(client.getFooter("ID: " + message.author?.id, message.author.displayAvatarURL({dynamic: true})))
                             ]
                         })
                     } catch (e) {

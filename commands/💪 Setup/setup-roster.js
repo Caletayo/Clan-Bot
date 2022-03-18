@@ -2,14 +2,14 @@ var {
   MessageEmbed
 } = require(`discord.js`);
 var Discord = require(`discord.js`);
-var config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-var emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+var config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+var emoji = require(`../../botconfig/emojis.json`);
 var {
-  databasing,
+  dbEnsure, dbRemove,
   edit_Roster_msg,
   send_roster_msg,
-} = require(`${process.cwd()}/handlers/functions`);
+} = require(`../../handlers/functions`);
 const {
   MessageButton,
   MessageActionRow,
@@ -24,10 +24,7 @@ module.exports = {
   description: "Manage 25 different Roster Systems",
   memberpermissions: ["ADMINISTRATOR"],
   type: "system",
-  run: async (client, message, args, cmduser, text, prefix) => {
-
-    let es = client.settings.get(message.guild.id, "embed");
-    let ls = client.settings.get(message.guild.id, "language")
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     let pre;
     const filter = (reaction, user) => {
       return user.id == cmduser.id
@@ -45,7 +42,7 @@ module.exports = {
             inline: false,
           }
       }
-      client.roster.ensure(message.guild.id, obj);
+      await dbEnsure(client.roster, message.guild.id, obj);
 
       let NumberEmojiIds = getNumberEmojis().map(emoji => emoji?.replace(">", "").split(":")[2])
       first_layer()
@@ -134,7 +131,7 @@ module.exports = {
         //define the embed
         let MenuEmbed = new Discord.MessageEmbed()
         .setColor(es.color)
-        .setAuthor(client.getAuthor('Server Roster Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/facebook/65/page-with-curl_1f4c3.png', 'https://discord.gg/milrato'))
+        .setAuthor(client.getAuthor('Server Roster Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/facebook/65/page-with-curl_1f4c3.png', 'https://discord.gg/dcdev'))
         .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
         let used1 = false;
         //send the menu msg
@@ -151,11 +148,11 @@ module.exports = {
         }
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({ 
-          filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+          filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
           time: 90000
         })
         //Menu Collections
-        collector.on('collect', menu => {
+        collector.on('collect', async menu => {
           if (menu?.user.id === cmduser.id) {
             collector.stop();
             let menuoptiondata = menuoptions.find(v=>v.value == menu?.values[0])
@@ -207,13 +204,13 @@ module.exports = {
             emoji: "🗞"
           },
           {
-            value: `${thedb?.get(message.guild.id, pre+".inline") ? "Disable Multiple Rows": "Enable Roster Rows"}`,
-            description: `${thedb?.get(message.guild.id, pre+".inline") ? "Disable that i inline all Fields": "Enable that i inline all Fields"}`,
+            value: `${await thedb?.get(`${message.guild.id}.${pre}.inline`) ? "Disable Multiple Rows": "Enable Roster Rows"}`,
+            description: `${await thedb?.get(`${message.guild.id}.${pre}.inline`) ? "Disable that i inline all Fields": "Enable that i inline all Fields"}`,
             emoji: "📰"
           },
           {
-            value: `${thedb?.get(message.guild.id, pre+".showallroles") ? "Cut Members off" : "Show all members"}`,
-            description: `${thedb?.get(message.guild.id, pre+".showallroles") ? "Cut Members off and show the rest amount": "Don't cut Off, show all of them"}`,
+            value: `${await thedb?.get(`${message.guild.id}.${pre}.showallroles`) ? "Cut Members off" : "Show all members"}`,
+            description: `${await thedb?.get(`${message.guild.id}.${pre}.showallroles`) ? "Cut Members off and show the rest amount": "Don't cut Off, show all of them"}`,
             emoji: "📰"
           },
 
@@ -248,7 +245,7 @@ module.exports = {
         //define the embed
         let MenuEmbed = new Discord.MessageEmbed()
           .setColor(es.color)
-          .setAuthor(SetupNumber + " Server Roster Setup", "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/facebook/65/page-with-curl_1f4c3.png", "https://discord.gg/milrato")
+          .setAuthor(SetupNumber + " Server Roster Setup", "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/facebook/65/page-with-curl_1f4c3.png", "https://discord.gg/dcdev")
           .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable4"]))
         //send the menu msg
         let menumsg = await message.reply({
@@ -264,11 +261,11 @@ module.exports = {
         }
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({
-          filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+          filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
           time: 90000
         })
         //Menu Collections
-        collector.on('collect', menu => {
+        collector.on('collect', async menu => {
           if (menu?.user.id === cmduser.id) {
             collector.stop();
             let menuoptiondata = menuoptions.find(v => v.value == menu?.values[0])
@@ -303,17 +300,17 @@ module.exports = {
               ]
             })
             await tempmsg.channel.awaitMessages({
-                filter: m => m.author.id === message.author.id,
+                filter: m => m.author.id === message.author?.id,
                 max: 1,
                 time: 90000,
                 errors: ["time"]
               })
-              .then(collected => {
+              .then(async collected => {
                 var message = collected.first();
                 var channel = message.mentions.channels.filter(ch => ch.guild.id == message.guild.id).first() || message.guild.channels.cache.get(message.content.trim().split(" ")[0]);
                 if (channel) {
                   try {
-                    thedb?.set(message.guild.id, channel.id, pre+".rosterchannel")
+                    await thedb?.set(`${message.guild.id}.${pre}.rosterchannel`, channel.id)
                     send_roster_msg(client, message.guild, thedb, pre)
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
@@ -359,16 +356,16 @@ module.exports = {
               ]
             })
             await tempmsg.channel.awaitMessages({
-                filter: m => m.author.id === message.author.id,
+                filter: m => m.author.id === message.author?.id,
                 max: 1,
                 time: 90000,
                 errors: ["time"]
               })
-              .then(collected => {
+              .then(async collected => {
                 var message = collected.first();
                 var role = message.mentions.roles.filter(role => role.guild.id == message.guild.id).first();
                 if (role) {
-                  var rosteroles = thedb?.get(message.guild.id, pre+".rosterroles")
+                  var rosteroles = await thedb?.get(`${message.guild.id}.${pre}.rosterroles`)
                   if (rosteroles.includes(role.id)) return message.reply({
                     embeds: [new Discord.MessageEmbed()
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-roster"]["variable15"]))
@@ -378,7 +375,7 @@ module.exports = {
                     ]
                   });
                   try {
-                    thedb?.push(message.guild.id, role.id, pre+".rosterroles")
+                    await thedb?.push(`${message.guild.id}.${pre}.rosterroles`, role.id)
                     edit_Roster_msg(client, message.guild, thedb, pre)
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
@@ -426,16 +423,16 @@ module.exports = {
               ]
             })
             await tempmsg.channel.awaitMessages({
-                filter: m => m.author.id === message.author.id,
+                filter: m => m.author.id === message.author?.id,
                 max: 1,
                 time: 90000,
                 errors: ["time"]
               })
-              .then(collected => {
+              .then(async collected => {
                 var message = collected.first();
                 var role = message.mentions.roles.filter(role => role.guild.id == message.guild.id).first();
                 if (role) {
-                  var rosteroles = thedb?.get(message.guild.id, pre+".rosterroles")
+                  var rosteroles = await thedb?.get(`${message.guild.id}.${pre}.rosterroles`)
                   if (!rosteroles.includes(role.id)) return message.reply({
                     embeds: [new Discord.MessageEmbed()
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-roster"]["variable24"]))
@@ -445,7 +442,7 @@ module.exports = {
                     ]
                   });
                   try {
-                    thedb?.remove(message.guild.id, role.id, pre+".rosterroles")
+                    await dbRemove(thedb, `${message.guild.id}.${pre}.rosterroles`, role.id)
                     edit_Roster_msg(client, message.guild, thedb, pre)
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
@@ -511,11 +508,11 @@ module.exports = {
                 time: 90000,
                 errors: ["time"]
               })
-              .then(collected => {
+              .then(async collected => {
                 var reaction = collected.first()
-                reaction.users.remove(message.author.id)
+                reaction.users.remove(message.author?.id)
                 if (reaction.emoji?.name === "1️⃣") {
-                  thedb?.set(message.guild.id, "1", pre+".rosterstyle")
+                  await thedb?.set(`${message.guild.id}.${pre}.rosterstyle`, "1")
                   edit_Roster_msg(client, message.guild, thedb, pre)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed()
@@ -526,7 +523,7 @@ module.exports = {
                     ]
                   });
                 } else if (reaction.emoji?.name === "2️⃣") {
-                  thedb?.set(message.guild.id, "2", pre+".rosterstyle")
+                  await thedb?.set(`${message.guild.id}.${pre}.rosterstyle`, "2")
                   edit_Roster_msg(client, message.guild, thedb, pre)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed()
@@ -537,7 +534,7 @@ module.exports = {
                     ]
                   });
                 } else if (reaction.emoji?.name === "3️⃣") {
-                  thedb?.set(message.guild.id, "3", pre+".rosterstyle")
+                  await thedb?.set(`${message.guild.id}.${pre}.rosterstyle`, "3")
                   edit_Roster_msg(client, message.guild, thedb, pre)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed()
@@ -548,7 +545,7 @@ module.exports = {
                     ]
                   });
                 } else if (reaction.emoji?.name === "4️⃣") {
-                  thedb?.set(message.guild.id, "4", pre+".rosterstyle")
+                  await thedb?.set(`${message.guild.id}.${pre}.rosterstyle`, "4")
                   edit_Roster_msg(client, message.guild, thedb, pre)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed()
@@ -559,7 +556,7 @@ module.exports = {
                     ]
                   });
                 } else if (reaction.emoji?.name === "5️⃣") {
-                  thedb?.set(message.guild.id, "5", pre+".rosterstyle")
+                  await thedb?.set(`${message.guild.id}.${pre}.rosterstyle`, "5")
                   edit_Roster_msg(client, message.guild, thedb, pre)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed()
@@ -570,7 +567,7 @@ module.exports = {
                     ]
                   });
                 } else if (reaction.emoji?.name === "6️⃣") {
-                  thedb?.set(message.guild.id, "6", pre+".rosterstyle")
+                  await thedb?.set(`${message.guild.id}.${pre}.rosterstyle`, "6")
                   edit_Roster_msg(client, message.guild, thedb, pre)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed()
@@ -581,7 +578,7 @@ module.exports = {
                     ]
                   });
                 } else if (reaction.emoji?.name === "7️⃣") {
-                  thedb?.set(message.guild.id, "7", "rosterstyle")
+                  await thedb?.set(`${message.guild.id}.${pre}.rosterstyle`, 7)
                   edit_Roster_msg(client, message.guild, thedb, pre)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed()
@@ -619,23 +616,23 @@ module.exports = {
               ]
             })
             await tempmsg.channel.awaitMessages({
-                filter: m => m.author.id === message.author.id,
+                filter: m => m.author.id === message.author?.id,
                 max: 1,
                 time: 90000,
                 errors: ["time"]
               })
-              .then(collected => {
+              .then(async collected => {
                 var msg = collected.first().content;
     
                 if (msg) {
                   if (msg.toLowerCase() == "noemoji") {
-                    thedb?.set(message.guild.id, "", pre+".rosteremoji")
+                    await thedb?.set(`${message.guild.id}.${pre}.rosteremoji`)
                     edit_Roster_msg(client, message.guild, thedb, pre)
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-roster"]["variable45"]))
                         .setColor(es.color)
-                        .setDescription(`To add Roles to the Roster type: \`${prefix}setup-roster\`\n\nExample: \n<@${message.author.id}> | \`${message.author.tag}\`\n\nIt will update in less then **5 Minutes**, *If it did not update yet*`.substring(0, 2048))
+                        .setDescription(`To add Roles to the Roster type: \`${prefix}setup-roster\`\n\nExample: \n<@${message.author?.id}> | \`${message.author.tag}\`\n\nIt will update in less then **5 Minutes**, *If it did not update yet*`.substring(0, 2048))
                         .setFooter(client.getFooter(es))
                       ]
                     });
@@ -643,24 +640,24 @@ module.exports = {
                   }
                   try {
                     if (msg.includes(":")) {
-                      thedb?.set(message.guild.id, msg, pre+".rosteremoji")
+                      await thedb?.set(`${message.guild.id}.${pre}.rosteremoji`, msg)
                       edit_Roster_msg(client, message.guild, thedb, pre)
                       return message.reply({
                         embeds: [new Discord.MessageEmbed()
                           .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-roster"]["variable46"]))
                           .setColor(es.color)
-                          .setDescription(`To add Roles to the Roster type: \`${prefix}setup-roster\`\n\nExample: \n${msg} <@${message.author.id}> | \`${message.author.tag}\`\n\nIt will update in less then **5 Minutes**, *If it did not update yet*`.substring(0, 2048))
+                          .setDescription(`To add Roles to the Roster type: \`${prefix}setup-roster\`\n\nExample: \n${msg} <@${message.author?.id}> | \`${message.author.tag}\`\n\nIt will update in less then **5 Minutes**, *If it did not update yet*`.substring(0, 2048))
                           .setFooter(client.getFooter(es))
                         ]
                       });
                     } else {
-                      thedb?.set(message.guild.id, msg.substring(0, 5), pre+".rosteremoji")
+                      await thedb?.set(`${message.guild.id}.${pre}.rosteremoji`, msg.substring(0, 5))
                       edit_Roster_msg(client, message.guild, thedb, pre)
                       return message.reply({
                         embeds: [new Discord.MessageEmbed()
                           .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-roster"]["variable47"]))
                           .setColor(es.color)
-                          .setDescription(`To add Roles to the Roster type: \`${prefix}setup-roster\`\n\nExample: \n${msg.substring(0, 5)} <@${message.author.id}> | \`${message.author.tag}\`\n\nIt will update in less then **5 Minutes**, *If it did not update yet*`.substring(0, 2048))
+                          .setDescription(`To add Roles to the Roster type: \`${prefix}setup-roster\`\n\nExample: \n${msg.substring(0, 5)} <@${message.author?.id}> | \`${message.author.tag}\`\n\nIt will update in less then **5 Minutes**, *If it did not update yet*`.substring(0, 2048))
                           .setFooter(client.getFooter(es))
                         ]
                       });
@@ -702,17 +699,17 @@ module.exports = {
               ]
             })
             await tempmsg.channel.awaitMessages({
-                filter: m => m.author.id === message.author.id,
+                filter: m => m.author.id === message.author?.id,
                 max: 1,
                 time: 90000,
                 errors: ["time"]
               })
-              .then(collected => {
+              .then(async collected => {
                 var msg = collected.first().content;
     
                 if (msg) {
                   try {
-                    thedb?.set(message.guild.id, msg.substring(0, 256), pre+".rostertitle")
+                    await thedb?.set(`${message.guild.id}.${pre}.rostertitle`, msg.substring(0, 256))
                     edit_Roster_msg(client, message.guild, thedb, pre)
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
@@ -748,8 +745,8 @@ module.exports = {
                 });
               })
           }break;
-          case `${thedb?.get(message.guild.id, pre+".inline") ? "Disable Multiple Rows": "Enable Roster Rows"}`:{
-            thedb?.set(message.guild.id, !thedb?.get(message.guild.id, pre+".inline"), "inline")
+          case `${await thedb?.get(`${message.guild.id}.${pre}.inline`) ? "Disable Multiple Rows": "Enable Roster Rows"}`:{
+            await thedb?.set(`${message.guild.id}.${pre}.inline`, !await thedb?.get(`${message.guild.id}.${pre}.inline`))
             edit_Roster_msg(client, message.guild, thedb, pre)    
             return message.reply({
               embeds: [new Discord.MessageEmbed()
@@ -760,8 +757,8 @@ module.exports = {
               ]
             });
           }break;
-          case `${thedb?.get(message.guild.id, pre+".showallroles") ? "Cut Members off" : "Show all members"}`:{
-            thedb?.set(message.guild.id, !thedb?.get(message.guild.id, pre+".showallroles"), pre+".showallroles")
+          case `${await thedb?.get(`${message.guild.id}.${pre}.showallroles`) ? "Cut Members off" : "Show all members"}`:{
+            await thedb?.set(`${message.guild.id}.${pre}.showallroles`, !await thedb?.get(`${message.guild.id}.${pre}.showallroles`))
             edit_Roster_msg(client, message.guild, thedb, pre)    
             return message.reply({
               embeds: [new Discord.MessageEmbed()
@@ -773,7 +770,7 @@ module.exports = {
             });
           }break;
           case `Delete & Reset`:{
-            thedb?.set(message.guild.id, {
+            await thedb?.set(`${message.guild.id}.${pre}`, {
               rosterchannel: "notvalid",
               rosteremoji: "➤",
               showallroles: false,
@@ -782,7 +779,7 @@ module.exports = {
               rosterstyle: "1",
               rosterroles: [],
               inline: false,
-            }, pre)
+            })
             return message.reply({
               embeds: [new Discord.MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-roster"]["variable59"]))
@@ -809,7 +806,7 @@ module.exports = {
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

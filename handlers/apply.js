@@ -1,52 +1,79 @@
 //all reactions for the finished channel
-let all_finished_reactions = [
-  "✅", "❌", "🎟️", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"
-]
-var moment = require('moment'); // require
-//import the config.json file
-const config = require(`${process.cwd()}/botconfig/config.json`)
-//import the Discord Library
-const Discord = require("discord.js");
-
-//antispam SET
+const moment = require('moment');
+const { dbEnsure } = require(`./functions`);
+const config = require(`../botconfig/config.json`)
+const Discord = require(`discord.js`);
 const antimap = new Map()
-
-//apply cooldown
 const cooldown = new Set();
-
 const { MessageButton, MessageActionRow, Permissions } = require('discord.js')
+
+const Buttons = {
+  acceptbutton: new MessageButton().setStyle('SUCCESS').setEmoji(`✅`).setCustomId(`Apply_accept`).setLabel(`Accept`),
+  declinebutton: new MessageButton().setStyle('DANGER').setEmoji(`❌`).setCustomId(`Apply_deny`).setLabel(`Decline`),
+  ticketbutton: new MessageButton().setStyle('SECONDARY').setEmoji(`🎟️`).setCustomId(`Apply_ticket`).setLabel(`Ask Question`),
+  emoji1button: new MessageButton().setStyle('PRIMARY').setEmoji(`1️⃣`).setCustomId(`Apply_1`),
+  emoji2button: new MessageButton().setStyle('PRIMARY').setEmoji(`2️⃣`).setCustomId(`Apply_2`),
+  emoji3button: new MessageButton().setStyle('PRIMARY').setEmoji(`3️⃣`).setCustomId(`Apply_3`),
+  emoji4button: new MessageButton().setStyle('PRIMARY').setEmoji(`4️⃣`).setCustomId(`Apply_4`),
+  emoji5button: new MessageButton().setStyle('PRIMARY').setEmoji(`5️⃣`).setCustomId(`Apply_5`),
+  acceptbutton_d: new MessageButton().setStyle('SUCCESS').setEmoji(`✅`).setCustomId(`Apply_accept`).setLabel(`Accept`).setDisabled(true),
+  declinebutton_d: new MessageButton().setStyle('DANGER').setEmoji(`❌`).setCustomId(`Apply_deny`).setLabel(`Decline`).setDisabled(true),
+  ticketbutton_d: new MessageButton().setStyle('SECONDARY').setEmoji(`🎟️`).setCustomId(`Apply_ticket`).setLabel(`Ask Question`).setDisabled(true),
+  emoji1button_d: new MessageButton().setStyle('PRIMARY').setEmoji(`1️⃣`).setCustomId(`Apply_1`).setDisabled(true),
+  emoji2button_d: new MessageButton().setStyle('PRIMARY').setEmoji(`2️⃣`).setCustomId(`Apply_2`).setDisabled(true),
+  emoji3button_d: new MessageButton().setStyle('PRIMARY').setEmoji(`3️⃣`).setCustomId(`Apply_3`).setDisabled(true),
+  emoji4button_d: new MessageButton().setStyle('PRIMARY').setEmoji(`4️⃣`).setCustomId(`Apply_4`).setDisabled(true),
+  emoji5button_d: new MessageButton().setStyle('PRIMARY').setEmoji(`5️⃣`).setCustomId(`Apply_5`).setDisabled(true),
+}
 //Start the module
-module.exports = client => {
+module.exports = async (client) => {
+
+  const applySystemAmount = 100;
 
 
-for(let i = 1; i<=25; i++) {
+  const axios = require('axios');
+
   //define the apply system variable
-  let applyname = `apply${i}`;
-  let applytickets = `applytickets${i}`; 
-  let ticketsetupapply = `ticket-setup-apply-${i}`; 
-  let apply_db = client[`${applyname}`]
-  let acceptbutton = new MessageButton().setStyle('SUCCESS').setEmoji( "✅").setCustomId("Apply_accept").setLabel("Accept");
-  let dclinebutton = new MessageButton().setStyle('DANGER').setEmoji("❌").setCustomId("Apply_deny").setLabel("Decline");
-  let ticketbutton = new MessageButton().setStyle('SECONDARY').setEmoji("🎟️").setCustomId("Apply_ticket").setLabel("Ask Question");
-  let emoji1button = new MessageButton().setStyle('PRIMARY').setEmoji("1️⃣").setCustomId("Apply_1");
-  let emoji2button = new MessageButton().setStyle('PRIMARY').setEmoji("2️⃣").setCustomId("Apply_2");
-  let emoji3button = new MessageButton().setStyle('PRIMARY').setEmoji("3️⃣").setCustomId("Apply_3");
-  let emoji4button = new MessageButton().setStyle('PRIMARY').setEmoji("4️⃣").setCustomId("Apply_4");
-  let emoji5button = new MessageButton().setStyle('PRIMARY').setEmoji("5️⃣").setCustomId("Apply_5");
-  let buttonRow1 = new MessageActionRow().addComponents([acceptbutton, dclinebutton, ticketbutton]);
-  let buttonRow2 = new MessageActionRow().addComponents([emoji1button, emoji2button, emoji3button, emoji4button, emoji5button]);
-  let allbuttons = [buttonRow1, buttonRow2];
+  async function ApplySystem({ guild, channel, user, message, interaction, es, ls, preindex = false }) {
+    let index = preindex ? preindex : false;
+    const rawData = await client.apply.all();
+    if(!index) {
+      let d = client.apply
+      let rawIds = rawData.map(x => x?.ID ? x.ID : null).filter(Boolean);
+      if(rawIds.includes(guild.id)) {
+        let dData = rawData.find(d => d.ID == guild.id)?.data;
+        for(let i = 1; i<=applySystemAmount; i++) {
+          let pre = `apply${i}`;
+          if(dData && dData[`${pre}`] && message.id === dData[`${pre}`][`message_id`] && channel.id === dData[`${pre}`][`channel_id`]) index = i;
+        }
+      }
+    }
+    if(!index) {
+      if(interaction?.token && !interaction.replied) return interaction?.reply({ephemeral: true, content: `:x: Could not find the Database for your Application!`}).catch(() => {});
+      else return interaction?.editReply({ephemeral: true, content: `:x: Could not find the Database for your Application!`}).catch(() => {});
+    }
+    
+    if(interaction?.token && !interaction.replied) await interaction.reply({ephemeral: true, content: `Found the DB and now creating the APPLICATION ...`}).catch(() => {});
+    else await interaction.editReply({ephemeral: true, content: `Found the DB and now creating the APPLICATION ...`}).catch(() => {});
+    let applyname = `apply${index}`;
+    let applytickets = `applytickets${index}`; 
+    let ticketsetupapply = `ticket-setup-apply-${index}`; 
+    let pre = `apply${index}`;
+    console.log("APPLY DB NUMBER: ".green, index);
+    let apply_db = client.apply
+    let buttonRow1 = new MessageActionRow().addComponents([Buttons.acceptbutton, Buttons.declinebutton, Buttons.ticketbutton]);
+    let buttonRow2 = new MessageActionRow().addComponents([Buttons.emoji1button, Buttons.emoji2button, Buttons.emoji3button, Buttons.emoji4button, Buttons.emoji5button]);
+    let allbuttons = [buttonRow1, buttonRow2];
 
-  async function ApplySystem({ guild, channel, user, message, interaction, es, ls }) {
-
+    //
     try {
       //COOLDOWN SYSTEM
       if (cooldown.has(user.id)) {
-        return interaction?.reply({embeds: [new Discord.MessageEmbed()
+        return interaction?.editReply({embeds: [new Discord.MessageEmbed()
           .setColor(es.wrongcolor)
           .setFooter(client.getFooter(es))
-          .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable1"]))
-          .addField(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variablex_2"]), eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable2"]))]
+          .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable1`]))
+          .addField(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variablex_2`]), eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable2`]))]
          ,ephemeral: true})
       } else {
         cooldown.add(user.id);
@@ -56,46 +83,75 @@ for(let i = 1; i<=25; i++) {
       }
       var originaluser = user;
       var originalchannel = message.channel;
-      //get the guild
+      var applyDbData = rawData.find(d => d.ID == guild.id)?.data?.[pre] || await apply_db.get(`${message.guild.id}.${pre}`);
+
+      var channel_tosend = guild.channels.cache.get(applyDbData.f_channel_id);
+      if (!channel_tosend) return 
       
-
-      //get the channel to send the finished applies
-      var channel_tosend = guild.channels.cache.get(apply_db?.get(message.guild.id, "f_channel_id"));
-
-      //if channel-to-send not found return error
-      if (!channel_tosend) return;
-
-      //if no running-application catcher is active set it too true!
       if (!antimap.has(user.id)) antimap.set(user.id)
+      else {
+        let e = {
+          message: "You are on cooldown"
+        }
+        return interaction?.editReply({
+          content: `${user}`, 
+          embeds: [new Discord.MessageEmbed()
+            .setColor(es.wrongcolor)
+            .setFooter(client.getFooter(es))
+            .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable5`]))
+            .setDescription(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable6`]))
+          ], 
+          ephemeral: true
+        }).catch(() => {});
+      }
 
-      //but if he is having an running application somewhere then return error
-      else return interaction?.reply({content: `${user}`,embeds: [new Discord.MessageEmbed()
-        .setColor(es.wrongcolor)
-        .setFooter(client.getFooter(es))
-        .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable5"]))
-        .setDescription(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable6"]))
-      ], ephemeral: true}).then(msg=>{
-        setTimeout(()=>{
-          try{msg.delete();}catch{}
-        }, 5000)
-      })
-
-      //the array of answers for the current user
       var answers = [];
-
-      //set the counter variable to 0
       var counter = 0;
+      var url = ``;
+      var Questions = applyDbData.QUESTIONS
+      
+      /*
+      // MODAL
+      if(Questions.length <= 5) {
+        await axios({
+          method: 'POST',
+          url: `https://discord.com/api/interactions/${interaction.id}/${interaction.token}/callback`,
+          headers: {
+            Authorization: `Bot ${client.token}`,
+          },
+          data: {
+            type: 9,
+            data: {
+              title: `${message.embeds[0].title}`,
+              custom_id: `application_${user.id}`,
+              components: [
+                {
+                  type: 1,
+                  components: 
+                    Questions.map((question, index) => {
+                      return {
+                        value: `${Object.values(question).join(" ")}`.substring(0, 50),
+                        type: 4,
+                        placeholder: `Answer ...`,
+                        custom_id: `Question_${index}`.substring(0, 25),
+                        label: `${Object.values(question).join(" ")}`.substring(0, 25),
+                        style: 1,
+                        min_length: 2,
+                        max_length: 400,
+                        required : true,
+                      }
+                    })
+                },
+              ],
+            },
+          },
+        })
+      }
+      */
 
-      //define the url, if there would be an attachment ;)
-      var url = "";
+      var current_question = Object.values(Questions[counter]).join(` `)
 
-      //get all Questions from the Database
-      var Questions = apply_db?.get(message.guild.id, "QUESTIONS");
-
-      //get the actual current question from the Questions
-      var current_question = Object.values(Questions[counter]).join(" ")
-
-      interaction?.reply({content: `Starting the Application in your **Direct Messages!**`, ephemeral: true})
+      interaction?.editReply({content: `Starting the Application in your **Direct Messages!**`, ephemeral: true}).catch(() => {});
       //ask the current (first) Question from the Database
       ask_question(current_question);
 
@@ -106,15 +162,15 @@ for(let i = 1; i<=25; i++) {
         if (counter === Questions.length) return send_finished();
         //send the user the first question
         user.send({embeds: [new Discord.MessageEmbed()
-            .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
+            .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes(`http://`) || es.footericon.includes(`https://`)) ? es.footericon : client.user.displayAvatarURL() : null)
             .setDescription(qu)
-            .setAuthor(client.getAuthor(`Question ${counter + 1} / ${Questions.length}`, client.user.displayAvatarURL(), "https://discord.gg/milrato"))
+            .setAuthor(client.getAuthor(`Question ${counter + 1} / ${Questions.length}`, client.user.displayAvatarURL(), `https://discord.gg/MBPsvcphGf`))
             .setFooter(client.getFooter(es))
         ]}).then(msg => {
-            msg.channel.awaitMessages({ filter: m => m, 
+            msg.channel.awaitMessages({ filter: m => m.author.id === user.id, 
               max: 1,
               time: 300e3,
-              errors: ["time"]
+              errors: [`time`]
             }).then(async collected => {
               //push the answer of the user into the answers lmfao
               if (collected.first().attachments.size > 0) {
@@ -132,40 +188,42 @@ for(let i = 1; i<=25; i++) {
               if (counter === Questions.length) return send_finished();
 
               //get the new current question
-              var new_current_question = Object.values(Questions[counter]).join(" ")
+              var new_current_question = Object.values(Questions[counter]).join(` `)
 
               //ask the new current question
               ask_question(new_current_question);
 
             }).catch(error => {
+              console.error(error)
               antimap.delete(user.id)
               return user.send({embeds: [new Discord.MessageEmbed()
-                .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable7"]))
+                .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes(`http://`) || es.footericon.includes(`https://`)) ? es.footericon : client.user.displayAvatarURL() : null)
+                .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable7`]))
                 .setFooter(client.getFooter(es))
               ]}).catch(e => {
                 antimap.delete(user.id)
                 message.reply({embeds: [new Discord.MessageEmbed()
                   .setColor(es.wrongcolor)
                   .setFooter(client.getFooter(es))
-                  .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable8"]))
-                  .setDescription(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable9"]))]
-                }).then(msg=>{
+                  .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable8`]))
+                  .setDescription(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable9`]))]
+                }).then(async msg=>{
                   setTimeout(()=>{
                     try{msg.delete();}catch{}
                   }, 5000)
                 })
               })
             })
-          })
+        })
           .catch(e => {
+            console.error(e)
             antimap.delete(user.id)
             return interaction?.editReply({content: `${user}`, embeds: [new Discord.MessageEmbed()
               .setColor(es.wrongcolor)
               .setFooter(client.getFooter(es))
-              .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable10"]))
-              .setDescription(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable11"]))
-            ]}).then(msg=>{
+              .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable10`]))
+              .setDescription(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable11`]))
+            ]}).then(async msg=>{
               setTimeout(()=>{
                 try{msg.delete();}catch{}
               }, 5000)
@@ -177,15 +235,15 @@ for(let i = 1; i<=25; i++) {
        * This function is for asking ONE SINGLE Question to the USER
        */
       async function send_finished() {
-        if (apply_db?.get(guild.id, "last_verify")) {
+        if (applyDbData.last_verify) {
           user.send({embeds: [new Discord.MessageEmbed()
-            .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-            .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable12"]))
+            .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes(`http://`) || es.footericon.includes(`https://`)) ? es.footericon : client.user.displayAvatarURL() : null)
+            .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable12`]))
             .setFooter(client.getFooter(es))
           ]}).then(async msg => {
 
-            msg.react("✅")
-            msg.react("❌")
+            msg.react(`✅`)
+            msg.react(`❌`)
 
             const filter = (reaction, user) => {
               return user.id === originaluser.id;
@@ -197,12 +255,12 @@ for(let i = 1; i<=25; i++) {
               })
               .then(async collected => {
                 let reaction = collected.first();
-                if (reaction.emoji?.name === "✅") {
+                if (reaction.emoji?.name === `✅`) {
                   antimap.delete(originaluser.id)
                   var embed = new Discord.MessageEmbed().setFooter(client.getFooter(es))
-                    .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                    .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable13"])) //${user.tag} -
-                    .setDescription(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable14"]))
+                    .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes(`http://`) || es.footericon.includes(`https://`)) ? es.footericon : client.user.displayAvatarURL() : null)
+                    .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable13`])) //${user.tag} -
+                    .setDescription(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable14`]))
                     .setFooter(originaluser.id, originaluser.displayAvatarURL({
                       dynamic: true
                     }))
@@ -215,8 +273,8 @@ for(let i = 1; i<=25; i++) {
                   for (var i = 0; i < Questions.length; i++) {
                     try {
                       let qu = Object.values(Questions[i]);
-                      if (qu.length > 100) qu = String(Object.values(Questions[i])).substr(0, 100) + " ..."
-                      embed.addField(("**" + Object.keys(Questions[i]) + ". |** " + qu).substr(0, 256), ">>> " + String(answers[i]).substr(0, 1000))
+                      if (qu.length > 100) qu = String(Object.values(Questions[i])).substr(0, 100) + ` ...`
+                      embed.addField((`**` + Object.keys(Questions[i]) + `. |** ` + qu).substr(0, 256), `>>> ` + String(answers[i]).substr(0, 1000))
                     } catch (e) {
                       console.log(e.stack ? String(e.stack).grey : String(e).grey)
                       /* */
@@ -226,39 +284,39 @@ for(let i = 1; i<=25; i++) {
 
                   //send the embed into the channel
                   
-                  channel_tosend.send({embeds: [embed], components: allbuttons}).then(thmsg => {
+                  channel_tosend.send({embeds: [embed], components: allbuttons}).then(async thmsg => {
                     //set the message to the database
-                      apply_db?.set(thmsg.id, originaluser.id, "temp");
+                      await apply_db.set(thmsg.id+`.${pre}.temp`, originaluser.id);
                     //react with each emoji of all reactions
                   });
-                  // "Producing Code" (May take some time)
+                  // `Producing Code` (May take some time)
                   const finished_embed = new Discord.MessageEmbed()
-                    .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                    .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable15"]))
-                    .addField("\u200b", `**❯** Go Back to the Channel ${originalchannel}`).setFooter(client.getFooter(es))
+                    .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes(`http://`) || es.footericon.includes(`https://`)) ? es.footericon : client.user.displayAvatarURL() : null)
+                    .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable15`]))
+                    .addField(`\u200b`, `**❯** Go Back to the Channel ${originalchannel}`).setFooter(client.getFooter(es))
 
                   //send an informational message
                   originaluser.send({embeds: [finished_embed]})
                   //then try catch
                   try {
                     //find the role from the database
-                    var roleid = apply_db?.get(message.guild.id, "TEMP_ROLE");
+                    var roleid =applyDbData.TEMP_ROLE;
                     if (roleid) {
                       if (roleid.length == 18) {
                         //find the member from the reaction event
                         var member = message.guild.members.cache.get(originaluser.id);
                         //find the role
                         var role = await message.guild.roles.cache.get(roleid);
-                        if (!role) return channel_tosend.send(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable16"]))
-                        if (!member) return channel_tosend.send(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable17"]))
+                        if (!role) return channel_tosend.send(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable16`]))
+                        if (!member) return channel_tosend.send(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable17`]))
                         //add the role
-                        member.roles.add(role.id).catch((e)=>{channel_tosend.send("I am Missing Permissions to grant the Role\n" + e.message)});
+                        member.roles.add(role.id).catch((e)=>{channel_tosend.send(`I am Missing Permissions to grant the Role\n` + e.message)});
                       }
                     }
 
                   } catch (e) {
                     console.log(e.stack ? String(e.stack).grey : String(e).grey)
-                    channel_tosend.send("I am Missing Permissions to grant the TEMPROLE\n" + e.message)
+                    channel_tosend.send(`I am Missing Permissions to grant the TEMPROLE\n` + e.message)
                     /* */
                   }
 
@@ -269,7 +327,7 @@ for(let i = 1; i<=25; i++) {
                   antimap.delete(originaluser.id)
                   originaluser.send({embeds: [new Discord.MessageEmbed()
                     .setColor(es.wrongcolor)
-                    .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable18"]))
+                    .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable18`]))
                     .setFooter(client.getFooter(es))
                   ]})
                 }
@@ -278,7 +336,7 @@ for(let i = 1; i<=25; i++) {
                 antimap.delete(originaluser.id)
                 originaluser.send({embeds: [new Discord.MessageEmbed()
                   .setColor(es.wrongcolor)
-                  .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable19"]))
+                  .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable19`]))
                   .setFooter(client.getFooter(es))
                 ]})
               });
@@ -287,9 +345,9 @@ for(let i = 1; i<=25; i++) {
         } else {
           antimap.delete(user.id)
           var embed = new Discord.MessageEmbed().setFooter(client.getFooter(es))
-            .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-            .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable20"])) //${user.tag} -
-            .setDescription(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable21"]))
+            .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes(`http://`) || es.footericon.includes(`https://`)) ? es.footericon : client.user.displayAvatarURL() : null)
+            .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable20`])) //${user.tag} -
+            .setDescription(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable21`]))
             .setFooter(originaluser.id, originaluser.displayAvatarURL({
               dynamic: true
             }))
@@ -299,8 +357,8 @@ for(let i = 1; i<=25; i++) {
           for (var i = 0; i < Questions.length; i++) {
             try {
               let qu = Object.values(Questions[i]);
-              if (qu.length > 100) qu = String(Object.values(Questions[i])).substr(0, 100) + " ..."
-              embed.addField(("**" + Object.keys(Questions[i]) + ". |** " + qu).substr(0, 256), ">>> " + String(answers[i]).substr(0, 1000))
+              if (qu.length > 100) qu = String(Object.values(Questions[i])).substr(0, 100) + ` ...`
+              embed.addField((`**` + Object.keys(Questions[i]) + `. |** ` + qu).substr(0, 256), `>>> ` + String(answers[i]).substr(0, 1000))
             } catch {
               /* */
             }
@@ -309,36 +367,36 @@ for(let i = 1; i<=25; i++) {
           //send the embed into the channel
           let thhmsg = await channel_tosend.send({ embeds: [embed], components: allbuttons })
           //set the message to the database
-          apply_db?.set(thhmsg.id, originaluser.id, "temp");
+          apply_db.set(thhmsg.id+`.${pre}.temp`, originaluser.id);
           //react with each emoji of all reactions            
 
-          // "Producing Code" (May take some time)
+          // `Producing Code` (May take some time)
           const finished_embed = new Discord.MessageEmbed()
-            .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-            .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable22"]))
-            .addField("\u200b", `**❯** Go Back to the Channel ${originalchannel}`).setFooter(client.getFooter(es))
+            .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes(`http://`) || es.footericon.includes(`https://`)) ? es.footericon : client.user.displayAvatarURL() : null)
+            .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable22`]))
+            .addField(`\u200b`, `**❯** Go Back to the Channel ${originalchannel}`).setFooter(client.getFooter(es))
           originaluser.send({content: `**❯** Go Back to the Channel ${originalchannel}`, embeds: [finished_embed]})
 
           //then try catch
           try {
             //find the role from the database
-            var roleid = apply_db?.get(message.guild.id, "TEMP_ROLE");
+            var roleid = await applyDbData.TEMP_ROLE;
             if (roleid) {
               if (roleid.length == 18) {
                 //find the member from the reaction event
                 var member = message.guild.members.cache.get(originaluser.id);
                 //find the role
                 var role = await message.guild.roles.cache.get(roleid);
-                if (!role) return channel_tosend.send(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable23"]))
-                if (!member) return channel_tosend.send(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable24"]))
+                if (!role) return channel_tosend.send(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable23`]))
+                if (!member) return channel_tosend.send(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable24`]))
                 //add the role
-                member.roles.add(role.id).catch((e)=>{channel_tosend.send("I am Missing Permissions to grant the Role\n" + e.message)});
+                member.roles.add(role.id).catch((e)=>{channel_tosend.send(`I am Missing Permissions to grant the Role\n` + e.message)});
               }
             }
 
           } catch (e) {
             console.log(e.stack ? String(e.stack).grey : String(e).grey)
-            channel_tosend.send(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable25"]))
+            channel_tosend.send(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable25`]))
             /* */
           }
 
@@ -351,19 +409,19 @@ for(let i = 1; i<=25; i++) {
       function attachIsImage(msgAttach) {
         url = msgAttach.url;
         //True if this url is a png image.
-        return url.indexOf("png", url.length - "png".length /*or 3*/ ) !== -1 ||
-          url.indexOf("jpeg", url.length - "jpeg".length /*or 3*/ ) !== -1 ||
-          url.indexOf("gif", url.length - "gif".length /*or 3*/ ) !== -1 ||
-          url.indexOf("jpg", url.length - "jpg".length /*or 3*/ ) !== -1;
+        return url.indexOf(`png`, url.length - `png`.length /*or 3*/ ) !== -1 ||
+          url.indexOf(`jpeg`, url.length - `jpeg`.length /*or 3*/ ) !== -1 ||
+          url.indexOf(`gif`, url.length - `gif`.length /*or 3*/ ) !== -1 ||
+          url.indexOf(`jpg`, url.length - `jpg`.length /*or 3*/ ) !== -1;
       }
     } catch (e) {
       console.log(e.stack ? String(e.stack).grey : String(e).grey)
       message.reply({embeds: [new Discord.MessageEmbed()
         .setColor(es.wrongcolor)
         .setFooter(client.getFooter(es))
-        .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable26"]))
-        .setDescription(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable27"]))
-      ]}).then(msg=>{
+        .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable26`]))
+        .setDescription(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable27`]))
+      ]}).then(async msg=>{
         setTimeout(()=>{
           try{msg.delete();}catch{}
         }, 5000)
@@ -374,90 +432,57 @@ for(let i = 1; i<=25; i++) {
 
 
   //For the application start
-  client.on("interactionCreate", async (interaction) => {
+  client.on(`interactionCreate`, async (interaction) => {
     if (!interaction?.isButton()) return;
     var { guild, channel, user, message } = interaction;
     if(!guild || !channel || !message || !user) return;
-    if (message.author.id != client.user.id) return;
-    let es = client.settings.get(guild.id, "embed");let ls = client.settings.get(guild.id, "language")
-    if (interaction?.customId.startsWith("User_Apply")) {
-      apply_db?.ensure(interaction?.guild.id, {
-        "channel_id": "",
-        "message_id": "",
-        "f_channel_id": "", //changequestions --> which one (lists everyone with index) --> 4. --> Question
-  
-        "QUESTIONS": [{
-          "1": "DEFAULT"
-        }],
-  
-        "TEMP_ROLE": "0",
-  
-        "accept": "You've got accepted!",
-        "accept_role": "0",
-  
-        "deny": "You've got denied!",
-  
-        "ticket": "Hey {user}! We have some Questions!",
-  
-        "one": {
-          "role": "0",
-          "message": "Hey you've got accepted for Team 1",
-          "image": {
-            "enabled": false,
-            "url": ""
-          }
-        },
-        "two": {
-          "role": "0",
-          "message": "Hey you've got accepted for Team 2",
-          "image": {
-            "enabled": false,
-            "url": ""
-          }
-        },
-        "three": {
-          "role": "0",
-          "message": "Hey you've got accepted for Team 3",
-          "image": {
-            "enabled": false,
-            "url": ""
-          }
-        },
-        "four": {
-          "role": "0",
-          "message": "Hey you've got accepted for Team 4",
-          "image": {
-            "enabled": false,
-            "url": ""
-          }
-        },
-        "five": {
-          "role": "0",
-          "message": "Hey you've got accepted for Team 5",
-          "image": {
-            "enabled": false,
-            "url": ""
-          }
-        }
-      })
-      if (message.id === apply_db?.get(guild.id, "message_id") && channel.id === apply_db?.get(guild.id, "channel_id")) {
-        ApplySystem({ guild, channel, user, message, interaction, es, ls })
-      }
+    if (message.author?.id != client.user.id) return;
+    if (interaction?.customId.startsWith(`User_Apply`)) {
+      const guildSettings = await client.settings.get(guild.id);
+      const es = guildSettings.embed;
+      const ls = guildSettings.language
+      ApplySystem({ guild, channel, user, message, interaction, es, ls })
     }
   })
 
   //for the accepting etc.
-  client.on("interactionCreate", async (interaction) => {
+  client.on(`interactionCreate`, async (interaction) => {
     if (!interaction?.isButton()) return;
     var { guild, channel, user, message } = interaction;
     if(!guild || !channel || !message || !user) return;
-    if (message.author.id != client.user.id) return;
-    let es = client.settings.get(guild.id, "embed");let ls = client.settings.get(guild.id, "language")
-    if (interaction?.customId.startsWith("Apply_")) {
-        if(!apply_db?.has(message.id)) return;
-        if(!apply_db?.has(message.guild.id)) return;
-        if(!apply_db?.has(message.guild.id, "f_channel_id")) return;
-        if(apply_db?.get(message.guild.id, "f_channel_id") !== channel.id) return;
+    if (message.author?.id != client.user.id) return;
+    const guildSettings = await client.settings.get(guild.id);
+    const es = guildSettings.embed;
+    const ls = guildSettings.language
+    if (interaction?.customId.startsWith(`Apply_`)) {
+        let index = false;
+        let d = client.apply
+        const rawData = await client.apply.all();
+        let rawIds = rawData.map(x => x?.ID ? x.ID : null).filter(Boolean);
+        if(rawIds.includes(guild.id)) {
+          let dData = rawData.find(d => d.ID == guild.id)?.data
+          for(let i = 1; i<=applySystemAmount; i++) {
+            let pre = `apply${i}`;
+            if(rawIds.includes(message.id) && d.has(message.id, pre) && channel.id === dData[`${pre}`][`f_channel_id`]) index = i;
+          }
+        }
+        if(!index) {
+          return console.log(`NO DB FOUND`)
+        }
+        let applyname = `apply${index}`;
+        let applytickets = `applytickets${index}`; 
+        let ticketsetupapply = `ticket-setup-apply-${index}`; 
+        let pre = `apply${index}`;
+        let apply_db = client.apply
+        if(!rawData.find(d => d.ID == message.id)) return;
+        let applyDbData = rawData.find(d => d.ID == guild.id)?.data;
+        let applyMsgData = rawData.find(d => d.ID == message.id)?.data;
+        if(!applyDbData) return;
+        if(!applyDbData[pre]) return;
+        if(!applyDbData[pre].f_channel_id) return;
+        if(applyDbData[pre].f_channel_id !== channel.id) return;
+        applyDbData = applyDbData?.[pre];
+        applyMsgData = applyMsgData?.[pre];
         try {
           //fetch the message from the data
           const targetMessage = await message.channel.messages.fetch(message.id, false, true).catch(() => {})
@@ -467,7 +492,7 @@ for(let i = 1; i<=25; i++) {
             return interaction?.reply({embeds: [new Discord.MessageEmbed()
               .setFooter(client.getFooter(es))
               .setColor(es.wrongcolor)
-              .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable28"]))
+              .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable28`]))
               .setFooter(client.getFooter(es))], ephemeral: true});
           
           //get the old embed information
@@ -478,25 +503,25 @@ for(let i = 1; i<=25; i++) {
             return interaction?.reply({embeds: [new Discord.MessageEmbed()
               .setFooter(client.getFooter(es))
               .setColor(es.wrongcolor)
-              .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable29"]))
+              .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable29`]))
               .setFooter(client.getFooter(es))]
             , ephemeral: true});
   
             let emoji = {
-              "Apply_accept": "✅",
-              "Apply_deny": "❌",
-              "Apply_ticket": "🎟️",
-              "Apply_1": "1️⃣",
-              "Apply_2": "2️⃣",
-              "Apply_3": "3️⃣",
-              "Apply_4": "4️⃣",
-              "Apply_5": "5️⃣",
+              "Apply_accept": `✅`,
+              "Apply_deny": `❌`,
+              "Apply_ticket": `🎟️`,
+              "Apply_1": `1️⃣`,
+              "Apply_2": `2️⃣`,
+              "Apply_3": `3️⃣`,
+              "Apply_4": `4️⃣`,
+              "Apply_5": `5️⃣`,
             }
           //create a new embed
           const embed = new Discord.MessageEmbed()
             .setFooter(client.getFooter(es))
             .setTitle(oldEmbed.title)
-            .setDescription(`${oldEmbed.description ? `${oldEmbed.description}\n`: ""} Edited by: <@${interaction?.user.id}> | ${emoji[interaction?.customId]}`.substr(0, 2048))
+            .setDescription(`${oldEmbed.description ? `${oldEmbed.description}\n`: ``} Edited by: <@${interaction?.user.id}> | ${emoji[interaction?.customId]}`.substr(0, 2048))
   
           //for each data in it from before hand
           if (oldEmbed.fields[0]) {
@@ -509,72 +534,63 @@ for(let i = 1; i<=25; i++) {
             } catch {}
           }
           
-          let acceptbutton_d = new MessageButton().setStyle('DANGER') .setEmoji( "✅") .setCustomId("Apply_accept").setLabel("Accept").setDisabled(true);
-          let dclinebutton_d = new MessageButton().setStyle('DANGER') .setEmoji("❌") .setCustomId("Apply_deny").setLabel("Decline").setDisabled(true);
-          let ticketbutton_d = new MessageButton().setStyle('SECONDARY') .setEmoji("🎟️") .setCustomId("Apply_ticket").setLabel("Ask Question").setDisabled(true);
-          let emoji1button_d = new MessageButton().setStyle('PRIMARY') .setEmoji("1️⃣") .setCustomId("Apply_1").setDisabled(true);
-          let emoji2button_d = new MessageButton().setStyle('PRIMARY') .setEmoji("2️⃣") .setCustomId("Apply_2").setDisabled(true);
-          let emoji3button_d = new MessageButton().setStyle('PRIMARY') .setEmoji("3️⃣") .setCustomId("Apply_3").setDisabled(true);
-          let emoji4button_d = new MessageButton().setStyle('PRIMARY') .setEmoji("4️⃣") .setCustomId("Apply_4").setDisabled(true);
-          let emoji5button_d = new MessageButton().setStyle('PRIMARY') .setEmoji("5️⃣") .setCustomId("Apply_5").setDisabled(true);
-          let buttonRow1_d = new MessageActionRow().addComponents([acceptbutton_d, dclinebutton_d, ticketbutton_d]);
-          let buttonRow2_d = new MessageActionRow().addComponents([emoji1button_d, emoji2button_d, emoji3button_d, emoji4button_d, emoji5button_d]);
+          let buttonRow1_d = new MessageActionRow().addComponents([Buttons.acceptbutton_d, Buttons.declinebutton_d, Buttons.ticketbutton_d]);
+          let buttonRow2_d = new MessageActionRow().addComponents([Buttons.emoji1button_d, Buttons.emoji2button_d, Buttons.emoji3button_d, Buttons.emoji4button_d, Buttons.emoji5button_d]);
           let allbuttons_d = [buttonRow1_d, buttonRow2_d];
           //if the reaction is for APPROVE
-          if (interaction?.customId == "Apply_accept") {
+          if (interaction?.customId == `Apply_accept`) {
             //SET THE EMBED COLOR TO GREEN
-            embed.setColor("GREEN")
+            embed.setColor(`GREEN`)
             
             //EDIT THE EMBED
-            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch((e)=>{console.log(String(e).grey)}).then(msg=>{
-              apply_db?.set(msg.id, {
+            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch(() => {}).then(async msg=>{
+              apply_db.set(msg.id+`.${pre}.Apply`, {
                 id: msg.id,
                 user: interaction?.user.id,
                 State: interaction?.customId,
-              }, "Apply")
+              })
             })
   
             //CREATE THE APPROVE MESSAGE
             var approve = new Discord.MessageEmbed().setFooter(client.getFooter(es))
-              .setColor("GREEN")
-              .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable30"]))
-              .setFooter(client.getFooter("By: " + interaction?.user.tag, interaction?.user.displayAvatarURL({
+              .setColor(`GREEN`)
+              .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable30`]))
+              .setFooter(client.getFooter(`By: ` + interaction?.user.tag, interaction?.user.displayAvatarURL({
                 dynamic: true
               })))
-              .setDescription(apply_db?.get(message.guild.id, "accept"))
+              .setDescription(applyDbData.accept)
   
             //GET THE USER FROM THE DATABASE
-            var usert = await client.users.fetch(apply_db?.get(message.id, "temp")).catch((e)=>{console.log(String(e).grey)});
-            
-            if(!usert) return interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable31"]),ephemeral:  true});
+            var usert = await client.users.fetch(applyMsgData?.temp).catch(() => {});
+            if(!usert) return interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable31`]), ephemeral: true});
             //try to remove all roles after that continue?
-            await rome_old_roles(message, usert, apply_db);
+            await rome_old_roles(message, usert, applyDbData, pre);
   
             //send the user the approve message
             usert.send({embeds: [approve]}).catch(e => {
-              interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable32"]), ephemeral: true});
+              interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable32`]), ephemeral: true});
               console.log(e.stack ? String(e.stack).grey : String(e).grey);
             }).then(()=>{
               if(interaction.replied) {
-                interaction.editReply({content: "👍", ephemeral: true}).catch(() => {});
+                interaction.editReply({content: `👍`, ephemeral: true}).catch(() => {});
               }
-              interaction?.reply({content: "👍", ephemeral: true}).catch(() => {});
+              interaction?.reply({content: `👍`, ephemeral: true}).catch(() => {});
             })
             //TRY CATCH --- ADDING ROLE
             try {
               //get the roleid from the db
-              let roleid = apply_db?.get(message.guild.id, "accept_role");
+              let roleid = applyDbData.accept_role;
               if (roleid) {
                 //if no roleid added then return error
                 if (roleid.length !== 18) return;
                 //try to add the role
                 var member = message.guild.members.cache.get(usert.id)
-                member.roles.add(roleid).catch((e)=>{channel_tosend.send("I am Missing Permissions to grant the Role\n" + e.message)});
+                member.roles.add(roleid).catch((e)=>{channel_tosend.send(`I am Missing Permissions to grant the Role\n` + e.message)});
               }
             } catch (e) {
               console.log(String(e).grey)
               //if an error happens, show it
-              interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable33"]),ephemeral:  true}).then(msg=>{
+              interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable33`]),ephemeral:  true}).then(async msg=>{
                 setTimeout(()=>{
                   try{msg.delete();}catch{}
                 }, 5000)
@@ -583,65 +599,70 @@ for(let i = 1; i<=25; i++) {
           }
   
           //if the reaction is for deny
-          if (interaction?.customId === "Apply_deny") {
+          if (interaction?.customId === `Apply_deny`) {
             embed.setColor(es.wrongcolor)
-            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch((e)=>{console.log(String(e).grey)}).then(msg=>{
-              apply_db?.set(msg.id, {
+            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch(() => {}).then(async msg=>{
+              apply_db.set(msg.id, {
                 id: msg.id,
                 user: interaction?.user.id,
                 State: interaction?.customId,
-              }, "Apply")
+              }, `${pre}.Apply`)
             })
             var deny = new Discord.MessageEmbed().setFooter(client.getFooter(es))
               .setColor(es.wrongcolor)
-              .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable34"]))
-              .setDescription(apply_db?.get(message.guild.id, "deny"))
-              .setFooter(client.getFooter("By: " + interaction?.user.tag, interaction?.user.displayAvatarURL({
+              .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable34`]))
+              .setDescription(applyDbData.deny)
+              .setFooter(client.getFooter(`By: ` + interaction?.user.tag, interaction?.user.displayAvatarURL({
                 dynamic: true
               })))
               
-            var usert = await client.users.fetch(apply_db?.get(message.id, "temp")).catch((e)=>{console.log(String(e).grey)});
+            var usert = await client.users.fetch(applyMsgData?.temp).catch(() => {});
             
-            if(!usert) return interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable31"]),ephemeral:  true});
+            if(!usert) return interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable31`]),ephemeral:  true});
 
-            usert.send({embeds: [deny]}).catch(e => {
-              interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable35"]),ephemeral:  true});
-              console.log(e.stack ? String(e.stack).grey : String(e).grey);
-            }).then(()=>{
-              interaction?.reply({content: "👍", ephemeral: true})
+            usert.send({embeds: [deny]}).then(()=>{
+              interaction?.reply({content: `👍`, ephemeral: true})
+            }).catch(e => {
+              if(e) {
+                console.log(e.stack ? String(e.stack).grey : String(e).grey);
+                interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable35`]),ephemeral:  true});
+              }
             })
             //try to remove all roles after that continue?
-            await rome_old_roles(message, usert, apply_db);
+            await rome_old_roles(message, usert, applyDbData, pre);
           }
   
   
           //if the reaction is for CREATE A TICKET
-          if (interaction?.customId === "Apply_ticket") {
+          if (interaction?.customId === `Apply_ticket`) {
             //SET THE EMBED COLOR TO GREEN
-            embed.setColor("ORANGE")
+            embed.setColor(`ORANGE`)
   
             //EDIT THE EMBED
-            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch((e)=>{console.log(String(e).grey)}).then(msg=>{
-              apply_db?.set(msg.id, {
+            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch(() => {}).then(async msg=>{
+              apply_db.set(msg.id, {
                 id: msg.id,
                 user: interaction?.user.id,
                 State: interaction?.customId,
-              }, "Apply")
+              }, `${pre}.Apply`)
             })
   
             //GET THE USER FROM THE DATABASE
-            var usert = await client.users.fetch(apply_db?.get(message.id, "temp")).catch((e)=>{console.log(String(e).grey)});
-  
-            if(!usert) return interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable31"]),ephemeral:  true});
+            var usert = await client.users.fetch(applyMsgData?.temp).catch(() => {});
+            if(!usert)  {
+              if(interaction.replied) interaction.channel.send({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable31`]),ephemeral:  true});
+              else interaction.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable31`]),ephemeral:  true});
+              return;
+            }
 
             //try to remove all roles after that continue?
-            await rome_old_roles(message, usert, apply_db);
+            await rome_old_roles(message, usert, applyDbData, pre);
   
             //TRY CATCH --- ADDING ROLE
             try {
               message.guild.channels.create(`Ticket-${usert.username}`.substr(0, 32), {
                   type: 'text',
-                  topic: "Just Delete this channel, if not needed there is no delete/close command!",
+                  topic: `Just Delete this channel, if not needed there is no delete/close command!`,
                   permissionOverwrites: [{
                       id: message.guild.id,
                       deny: ['VIEW_CHANNEL'],
@@ -674,50 +695,50 @@ for(let i = 1; i<=25; i++) {
                     }
                   }, 2000)
                   //TRY CATCH SEND CHANNEL INFORMATION
-                  let button_close = new MessageButton().setStyle('PRIMARY').setCustomId('ticket_close').setLabel('Close').setEmoji("🔒") 
-                  let button_delete = new MessageButton().setStyle('SECONDARY').setCustomId('ticket_delete').setLabel("Delete").setEmoji("🗑️")
-                  let button_transcript = new MessageButton().setStyle('PRIMARY').setCustomId('ticket_transcript').setLabel("Transcript").setEmoji("📑")
-                  let button_user = new MessageButton().setStyle('SUCCESS').setCustomId('ticket_user').setLabel("Managee Users").setEmoji("👤")
-                  let button_role = new MessageButton().setStyle('SUCCESS').setCustomId('ticket_role').setLabel("Managee Roles").setEmoji("📌") 
+                  let button_close = new MessageButton().setStyle('PRIMARY').setCustomId('ticket_close').setLabel('Close').setEmoji(`🔒`) 
+                  let button_delete = new MessageButton().setStyle('SECONDARY').setCustomId('ticket_delete').setLabel(`Delete`).setEmoji(`🗑️`)
+                  let button_transcript = new MessageButton().setStyle('PRIMARY').setCustomId('ticket_transcript').setLabel(`Transcript`).setEmoji(`📑`)
+                  let button_user = new MessageButton().setStyle('SUCCESS').setCustomId('ticket_user').setLabel(`Managee Users`).setEmoji(`👤`)
+                  let button_role = new MessageButton().setStyle('SUCCESS').setCustomId('ticket_role').setLabel(`Managee Roles`).setEmoji(`📌`) 
                   let buttonRow1 = new MessageActionRow()
                   .addComponents([button_close, button_delete, button_transcript])
                   let buttonRow2 = new MessageActionRow()
                   .addComponents([button_user, button_role])
                   const allbuttons = [buttonRow1, buttonRow2]
                   try {
-                    if(client.setups.get("TICKETS", applytickets).includes(usert.id)){
+                    if(client.setups.get(`TICKETS`, applytickets).includes(usert.id)){
                       channel.send({ 
                         content: `<@${usert.id}>\nBecause he already has a TICKET for this Application System, this Channel got created!`,
                         embeds: [new Discord.MessageEmbed()
-                              .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                              .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable36"]))
-                              .setFooter(client.getFooter(`"Just Delete this channel, if not needed there is no delete/close command!`, message.guild.iconURL({
+                              .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes(`http://`) || es.footericon.includes(`https://`)) ? es.footericon : client.user.displayAvatarURL() : null)
+                              .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable36`]))
+                              .setFooter(client.getFooter(`Just Delete this channel, if not needed there is no delete/close command!`, message.guild.iconURL({
                                 dynamic: true
                               })))
-                              .setDescription(apply_db?.get(message.guild.id, "ticket").replace("{user}", `<@${usert.id}>`))]
+                              .setDescription(applyDbData.ticket?.replace(`{user}`, `<@${usert.id}>`))]
                             })
                     }else {
-                      client.setups.push("TICKETS", usert.id, applytickets);
-                      client.setups.push("TICKETS", channel.id, applytickets);
+                      client.setups.push(`TICKETS`, usert.id, applytickets);
+                      client.setups.push(`TICKETS`, channel.id, applytickets);
                       client.setups.set(interaction?.user.id, channel.id, applytickets);
                       client.setups.set(channel.id, {
                         user: usert.id,
                         channel: channel.id,
                         guild: channel.guild.id,
                         type: ticketsetupapply,
-                        state: "open",
+                        state: `open`,
                         date: Date.now(),
-                      }, "ticketdata");
+                      }, `ticketdata`);
                       channel.send({ 
                         content: `<@${usert.id}>`,
                         embeds: [new Discord.MessageEmbed()
-                              .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                              .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable37"]))
+                              .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes(`http://`) || es.footericon.includes(`https://`)) ? es.footericon : client.user.displayAvatarURL() : null)
+                              .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable37`]))
                               .setFooter(client.getFooter(`To close/manage this ticket react with the buttons
-You can also type: ${client.settings.get(channel.guild.id, "prefix")}ticket!`, message.guild.iconURL({
+You can also type: ${client.settings.get(channel.guild.id, `prefix`)}ticket!`, message.guild.iconURL({
                                 dynamic: true
                               })))
-                              .setDescription(apply_db?.get(message.guild.id, "ticket").replace("{user}", `<@${usert.id}>`))],
+                              .setDescription(applyDbData.ticket?.replace(`{user}`, `<@${usert.id}>`))],
                          components: allbuttons})
                       }
                   } catch {
@@ -728,19 +749,19 @@ You can also type: ${client.settings.get(channel.guild.id, "prefix")}ticket!`, m
                   try {
                     //CREATE THE APPROVE MESSAGE
                     var approve = new Discord.MessageEmbed()
-                      .setColor("ORANGE")
-                      .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable38"]))
-                      .setFooter(client.getFooter("By: " + interaction?.user.tag, interaction?.user.displayAvatarURL({
+                      .setColor(`ORANGE`)
+                      .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable38`]))
+                      .setFooter(client.getFooter(`By: ` + interaction?.user.tag, interaction?.user.displayAvatarURL({
                         dynamic: true
                       })))
-                      .setDescription(apply_db?.get(message.guild.id, "ticket").replace("{user}", `<@${usert.id}>`) + `Channel: <#${channel.id}>`)
+                      .setDescription(applyDbData.ticket?.replace(`{user}`, `<@${usert.id}>`) + `Channel: <#${channel.id}>`)
   
                     //send the user the approve message
                     usert.send({embeds: [approve]}).catch(e => {
-                      interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable39"]),ephemeral:  true});
+                      interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable39`]),ephemeral:  true});
                       console.log(e.stack ? String(e.stack).grey : String(e).grey);
                     }).then(()=>{
-                      interaction?.reply({content: "👍", ephemeral: true})
+                      interaction?.reply({content: `👍`, ephemeral: true})
                     })
                   } catch {
                     /* */
@@ -748,7 +769,7 @@ You can also type: ${client.settings.get(channel.guild.id, "prefix")}ticket!`, m
                 });
             } catch (e) {
               //if an error happens, show it
-              interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable40"]),ephemeral:  true}).then(msg=>{
+              interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable40`]),ephemeral:  true}).then(async msg=>{
                 setTimeout(()=>{
                   try{msg.delete();}catch{}
                 }, 5000)
@@ -759,63 +780,63 @@ You can also type: ${client.settings.get(channel.guild.id, "prefix")}ticket!`, m
   
   
           //if the reaction is for FIRST ROLE APPROVE
-          if (interaction?.customId === "Apply_1") {
+          if (interaction?.customId === `Apply_1`) {
             //SET THE EMBED COLOR TO GREEN
-            embed.setColor("#54eeff")
+            embed.setColor(`#54eeff`)
   
             //EDIT THE EMBED
-            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch((e)=>{console.log(String(e).grey)}).then(msg=>{
-              apply_db?.set(msg.id, {
+            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch(() => {}).then(async msg=>{
+              apply_db.set(msg.id+`.${pre}.Apply`, {
                 id: msg.id,
                 user: interaction?.user.id,
                 State: interaction?.customId,
-              }, "Apply")
+              })
             })
   
             //CREATE THE APPROVE MESSAGE
             var approve = new Discord.MessageEmbed().setFooter(client.getFooter(es))
-              .setColor("GREEN")
-              .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable41"]))
-              .setFooter(client.getFooter("By: " + interaction?.user.tag, interaction?.user.displayAvatarURL({
+              .setColor(`GREEN`)
+              .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable41`]))
+              .setFooter(client.getFooter(`By: ` + interaction?.user.tag, interaction?.user.displayAvatarURL({
                 dynamic: true
               })))
-              .setDescription(apply_db?.get(message.guild.id, "one.message"))
+              .setDescription(applyDbData.one.message)
             //if image is enabled then set the image
-            if (apply_db?.get(message.guild.id, "one.image.enabled")) try {
-              approve.setImage(apply_db?.get(message.guild.id, "one.image.url"))
+            if (applyDbData.one.image.enabled) try {
+              approve.setImage(applyDbData.one.image.url)
             } catch {
               /* */
             }
   
             //GET THE USER FROM THE DATABASE
-            var usert = await client.users.fetch(apply_db?.get(message.id, "temp")).catch((e)=>{console.log(String(e).grey)});
+            var usert = await client.users.fetch(applyMsgData?.temp).catch(() => {});
   
-            if(!usert) return interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable31"]),ephemeral:  true});
+            if(!usert) return interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable31`]),ephemeral:  true});
             //try to remove all roles after that continue?
-            await rome_old_roles(message, usert, apply_db);
+            await rome_old_roles(message, usert, applyDbData, pre);
   
             //send the user the approve message
             usert.send({embeds: [approve]}).catch(e => {
-              interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable42"]),ephemeral:  true});
+              interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable42`]),ephemeral:  true});
               console.log(e.stack ? String(e.stack).grey : String(e).grey);
             }).then(()=>{
-              interaction?.reply({content: "👍", ephemeral: true})
+              interaction?.reply({content: `👍`, ephemeral: true})
             })
   
             //TRY CATCH --- ADDING ROLE
             try {
               //get the roleid from the db
-              let roleid = apply_db?.get(message.guild.id, "one.role");
+              let roleid = await applyDbData.one.role;
               if (roleid) {
                 //if no roleid added then return error
                 if (roleid.length !== 18) return;
                 //try to add the role
                 var member = message.guild.members.cache.get(usert.id)
-                member.roles.add(roleid).catch((e)=>{channel_tosend.send("I am Missing Permissions to grant the Role\n" + e.message)});
+                member.roles.add(roleid).catch((e)=>{channel_tosend.send(`I am Missing Permissions to grant the Role\n` + e.message)});
               }
             } catch (e) {
               //if an error happens, show it
-              interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable43"]),ephemeral:  true}).then(msg=>{
+              interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable43`]),ephemeral:  true}).then(async msg=>{
                 setTimeout(()=>{
                   try{msg.delete();}catch{}
                 }, 5000)
@@ -827,63 +848,63 @@ You can also type: ${client.settings.get(channel.guild.id, "prefix")}ticket!`, m
   
   
           //if the reaction is for SECOND ROLE APPROVE
-          if (interaction?.customId === "Apply_2") {
+          if (interaction?.customId === `Apply_2`) {
             //SET THE EMBED COLOR TO GREEN
-            embed.setColor("#54cfff")
+            embed.setColor(`#54cfff`)
   
             //EDIT THE EMBED
-            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch((e)=>{console.log(String(e).grey)}).then(msg=>{
-              apply_db?.set(msg.id, {
+            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch(() => {}).then(async msg=>{
+              apply_db.set(msg.id+`.${pre}.Apply`, {
                 id: msg.id,
                 user: interaction?.user.id,
                 State: interaction?.customId,
-              }, "Apply")
+              })
             })
   
             //CREATE THE APPROVE MESSAGE
             var approve = new Discord.MessageEmbed().setFooter(client.getFooter(es))
-              .setColor("GREEN")
-              .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable44"]))
-              .setFooter(client.getFooter("By: " + interaction?.user.tag, interaction?.user.displayAvatarURL({
+              .setColor(`GREEN`)
+              .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable44`]))
+              .setFooter(client.getFooter(`By: ` + interaction?.user.tag, interaction?.user.displayAvatarURL({
                 dynamic: true
               })))
-              .setDescription(apply_db?.get(message.guild.id, "two.message"))
+              .setDescription(applyDbData.two.message)
             //if image is enabled then set the image
-            if (apply_db?.get(message.guild.id, "two.image.enabled")) try {
-              approve.setImage(apply_db?.get(message.guild.id, "two.image.url"))
+            if (applyDbData.two.image.enabled) try {
+              approve.setImage(applyDbData.two.image.url)
             } catch {
               /* */
             }
   
             //GET THE USER FROM THE DATABASE
-            var usert = await client.users.fetch(apply_db?.get(message.id, "temp")).catch((e)=>{console.log(String(e).grey)});
-            if(!usert) return interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable31"]),ephemeral:  true});
+            var usert = await client.users.fetch(applyMsgData?.temp).catch(() => {});
+            if(!usert) return interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable31`]),ephemeral:  true});
   
             //try to remove all roles after that continue?
-            await rome_old_roles(message, usert, apply_db);
+            await rome_old_roles(message, usert, applyDbData, pre);
   
             //send the user the approve message
             usert.send({embeds: [approve]}).catch(e => {
-              interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable45"]),ephemeral:  true});
+              interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable45`]),ephemeral:  true});
               console.log(e.stack ? String(e.stack).grey : String(e).grey);
             }).then(()=>{
-              interaction?.reply({content: "👍", ephemeral: true})
+              interaction?.reply({content: `👍`, ephemeral: true})
             })
   
             //TRY CATCH --- ADDING ROLE
             try {
               //get the roleid from the db
-              let roleid = apply_db?.get(message.guild.id, "two.role");
+              let roleid = applyDbData.two.role
               if (roleid) {
                 //if no roleid added then return error
                 if (roleid.length !== 18) return;
                 //try to add the role
                 var member = message.guild.members.cache.get(usert.id)
-                member.roles.add(roleid).catch((e)=>{channel_tosend.send("I am Missing Permissions to grant the Role\n" + e.message)});
+                member.roles.add(roleid).catch((e)=>{channel_tosend.send(`I am Missing Permissions to grant the Role\n` + e.message)});
               }
             } catch (e) {
               //if an error happens, show it
-              interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable46"]),ephemeral:  true}).then(msg=>{
+              interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable46`]),ephemeral:  true}).then(async msg=>{
                 setTimeout(()=>{
                   try{msg.delete();}catch{}
                 }, 5000)
@@ -894,63 +915,63 @@ You can also type: ${client.settings.get(channel.guild.id, "prefix")}ticket!`, m
   
   
           //if the reaction is for THIRD ROLE APPROVE
-          if (interaction?.customId === "Apply_3") {
+          if (interaction?.customId === `Apply_3`) {
             //SET THE EMBED COLOR TO GREEN
-            embed.setColor("#549bff")
+            embed.setColor(`#549bff`)
   
             //EDIT THE EMBED
-            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch((e)=>{console.log(String(e).grey)}).then(msg=>{
-              apply_db?.set(msg.id, {
+            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch(() => {}).then(async msg=>{
+              apply_db.set(msg.id+`.${pre}.Apply`, {
                 id: msg.id,
                 user: interaction?.user.id,
                 State: interaction?.customId,
-              }, "Apply")
+              })
             })
   
             //CREATE THE APPROVE MESSAGE
             var approve = new Discord.MessageEmbed().setFooter(client.getFooter(es))
-              .setColor("GREEN")
-              .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable47"]))
-              .setFooter(client.getFooter("By: " + interaction?.user.tag, interaction?.user.displayAvatarURL({
+              .setColor(`GREEN`)
+              .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable47`]))
+              .setFooter(client.getFooter(`By: ` + interaction?.user.tag, interaction?.user.displayAvatarURL({
                 dynamic: true
               })))
-              .setDescription(apply_db?.get(message.guild.id, "three.message"))
+              .setDescription(applyDbData.three.message)
             //if image is enabled then set the image
-            if (apply_db?.get(message.guild.id, "three.image.enabled")) try {
-              approve.setImage(apply_db?.get(message.guild.id, "three.image.url"))
+            if (applyDbData.three.image.enabled) try {
+              approve.setImage(applyDbData.three.image.url)
             } catch {
               /* */
             }
   
             //GET THE USER FROM THE DATABASE
-            var usert = await client.users.fetch(apply_db?.get(message.id, "temp")).catch((e)=>{console.log(String(e).grey)});
-            if(!usert) return interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable31"]),ephemeral:  true});
+            var usert = await client.users.fetch(applyMsgData?.temp).catch(() => {});
+            if(!usert) return interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable31`]),ephemeral:  true});
   
             //try to remove all roles after that continue?
-            await rome_old_roles(message, usert, apply_db);
+            await rome_old_roles(message, usert, applyDbData, pre);
   
             //send the user the approve message
             usert.send({embeds: [approve]}).catch(e => {
-              interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable48"]),ephemeral:  true});
+              interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable48`]),ephemeral:  true});
               console.log(e.stack ? String(e.stack).grey : String(e).grey);
             }).then(()=>{
-              interaction?.reply({content: "👍", ephemeral: true})
+              interaction?.reply({content: `👍`, ephemeral: true})
             })
   
             //TRY CATCH --- ADDING ROLE
             try {
               //get the roleid from the db
-              let roleid = apply_db?.get(message.guild.id, "three.role");
+              let roleid = applyDbData.three.role;
               if (roleid) {
                 //if no roleid added then return error
                 if (roleid.length !== 18) return;
                 //try to add the role
                 var member = message.guild.members.cache.get(usert.id)
-                member.roles.add(roleid).catch((e)=>{channel_tosend.send("I am Missing Permissions to grant the Role\n" + e.message)});
+                member.roles.add(roleid).catch((e)=>{channel_tosend.send(`I am Missing Permissions to grant the Role\n` + e.message)});
               }
             } catch (e) {
               //if an error happens, show it
-              interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable49"]),ephemeral:  true}).then(msg=>{
+              interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable49`]),ephemeral:  true}).then(async msg=>{
                 setTimeout(()=>{
                   try{msg.delete();}catch{}
                 }, 5000)
@@ -960,63 +981,63 @@ You can also type: ${client.settings.get(channel.guild.id, "prefix")}ticket!`, m
   
   
           //if the reaction is for FOURTH ROLE APPROVE
-          if (interaction?.customId === "Apply_4") {
+          if (interaction?.customId === `Apply_4`) {
             //SET THE EMBED COLOR TO GREEN
-            embed.setColor("#6254ff")
+            embed.setColor(`#6254ff`)
   
             //EDIT THE EMBED
-            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch((e)=>{console.log(String(e).grey)}).then(msg=>{
-              apply_db?.set(msg.id, {
+            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch(() => {}).then(async msg=>{
+              apply_db.set(msg.id+`.${pre}.Apply`, {
                 id: msg.id,
                 user: interaction?.user.id,
                 State: interaction?.customId,
-              }, "Apply")
+              })
             })
   
             //CREATE THE APPROVE MESSAGE
             var approve = new Discord.MessageEmbed().setFooter(client.getFooter(es))
-              .setColor("GREEN")
-              .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable50"]))
-              .setFooter(client.getFooter("By: " + interaction?.user.tag, interaction?.user.displayAvatarURL({
+              .setColor(`GREEN`)
+              .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable50`]))
+              .setFooter(client.getFooter(`By: ` + interaction?.user.tag, interaction?.user.displayAvatarURL({
                 dynamic: true
               })))
-              .setDescription(apply_db?.get(message.guild.id, "four.message"))
+              .setDescription(applyDbData.four.message)
             //if image is enabled then set the image
-            if (apply_db?.get(message.guild.id, "four.image.enabled")) try {
-              approve.setImage(apply_db?.get(message.guild.id, "four.image.url"))
+            if (applyDbData.four.image.enabled) try {
+              approve.setImage(applyDbData.four.image.url)
             } catch {
               /* */
             }
   
             //GET THE USER FROM THE DATABASE
-            var usert = await client.users.fetch(apply_db?.get(message.id, "temp")).catch((e)=>{console.log(String(e).grey)});
-            if(!usert) return interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable31"]),ephemeral:  true});
+            var usert = await client.users.fetch(applyMsgData?.temp).catch(() => {});
+            if(!usert) return interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable31`]),ephemeral:  true});
   
             //try to remove all roles after that continue?
-            await rome_old_roles(message, usert, apply_db);
+            await rome_old_roles(message, usert, applyDbData, pre);
             
             //send the user the approve message
             usert.send({embeds: [approve]}).catch(e => {
-              interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable51"]),ephemeral:  true});
+              interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable51`]),ephemeral:  true});
               console.log(e.stack ? String(e.stack).grey : String(e).grey);
             }).then(()=>{
-              interaction?.reply({content: "👍", ephemeral: true})
+              interaction?.reply({content: `👍`, ephemeral: true})
             })
   
             //TRY CATCH --- ADDING ROLE
             try {
               //get the roleid from the db
-              let roleid = apply_db?.get(message.guild.id, "four.role");
+              let roleid = applyDbData.four.role;
               if (roleid) {
                 //if no roleid added then return error
                 if (roleid.length !== 18) return;
                 //try to add the role
                 var member = message.guild.members.cache.get(usert.id)
-                member.roles.add(roleid).catch((e)=>{channel_tosend.send("I am Missing Permissions to grant the Role\n" + e.message)});
+                member.roles.add(roleid).catch((e)=>{channel_tosend.send(`I am Missing Permissions to grant the Role\n` + e.message)});
               }
             } catch (e) {
               //if an error happens, show it
-              interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable52"]),ephemeral:  true}).then(msg=>{
+              interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable52`]),ephemeral:  true}).then(async msg=>{
                 setTimeout(()=>{
                   try{msg.delete();}catch{}
                 }, 5000)
@@ -1026,101 +1047,116 @@ You can also type: ${client.settings.get(channel.guild.id, "prefix")}ticket!`, m
   
   
           //if the reaction is for FITH ROLE APPROVE
-          if (interaction?.customId === "Apply_5") {
+          if (interaction?.customId === `Apply_5`) {
             //SET THE EMBED COLOR TO GREEN
-            embed.setColor("#1705e6")
+            embed.setColor(`#1705e6`)
   
             //EDIT THE EMBED
-            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch((e)=>{console.log(String(e).grey)}).then(msg=>{
-              apply_db?.set(msg.id, {
+            targetMessage.edit({embeds: [embed], components: allbuttons_d}).catch(() => {}).then(async msg=>{
+              apply_db.set(msg.id+`.${pre}.Apply`, {
                 id: msg.id,
                 user: interaction?.user.id,
                 State: interaction?.customId,
-              }, "Apply")
+              })
             })
   
             //CREATE THE APPROVE MESSAGE
             var approve = new Discord.MessageEmbed().setFooter(client.getFooter(es))
-              .setColor("GREEN")
-              .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable53"]))
-              .setFooter(client.getFooter("By: " + interaction?.user.tag, interaction?.user.displayAvatarURL({
+              .setColor(`GREEN`)
+              .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable53`]))
+              .setFooter(client.getFooter(`By: ` + interaction?.user.tag, interaction?.user.displayAvatarURL({
                 dynamic: true
               })))
-              .setDescription(apply_db?.get(message.guild.id, "five.message"))
+              .setDescription(applyDbData.five.message)
             //if image is enabled then set the image
-            if (apply_db?.get(message.guild.id, "five.image.enabled")) try {
-              approve.setImage(apply_db?.get(message.guild.id, "five.image.url"))
+            if (applyDbData.five.image.enabled) try {
+              approve.setImage(applyDbData.five.image.url)
             } catch {
               /* */
             }
   
             //GET THE USER FROM THE DATABASE
-            var usert = await client.users.fetch(apply_db?.get(message.id, "temp")).catch((e)=>{console.log(String(e).grey)});
-            if(!usert) return interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable31"]),ephemeral:  true});
+            var usert = await client.users.fetch(applyMsgData?.temp).catch(() => {});
+            if(!usert) return interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable31`]),ephemeral:  true});
   
             //try to remove all roles after that continue?
-            await rome_old_roles(message, usert, apply_db);
+            await rome_old_roles(message, usert, applyDbData, pre);
   
             //send the user the approve message
             usert.send({embeds: [approve]}).catch(e => {
-              interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable54"]),ephemeral:  true});
+              interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable54`]),ephemeral:  true});
               console.log(e.stack ? String(e.stack).grey : String(e).grey);
             }).then(()=>{
-              interaction?.reply({content: "👍", ephemeral: true})
+              interaction?.reply({content: `👍`, ephemeral: true})
             })
   
             //TRY CATCH --- ADDING ROLE
             try {
               //get the roleid from the db
-              let roleid = apply_db?.get(message.guild.id, "five.role");
+              let roleid = applyDbData.five.role;
               if (roleid) {
                 //if no roleid added then return error
                 if (roleid.length !== 18) return;
                 //try to add the role
                 var member = message.guild.members.cache.get(usert.id)
-                member.roles.add(roleid).catch((e)=>{channel_tosend.send("I am Missing Permissions to grant the Role\n" + e.message)});
+                member.roles.add(roleid).catch((e)=>{channel_tosend.send(`I am Missing Permissions to grant the Role\n` + e.message)});
               }
             } catch (e) {
               //if an error happens, show it
-              interaction?.reply({content: eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable55"]),ephemeral:  true}).then(msg=>{
+              interaction?.reply({content: eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable55`]),ephemeral:  true}).then(async msg=>{
                 setTimeout(()=>{
                   try{msg.delete();}catch{}
                 }, 5000)
               })
             }
           }
-          try{ interaction?.deferUpdate() }catch{ }
+          try{ if(!interaction.replied) interaction?.deferUpdate().catch(() => {}) }catch{ }
         } catch (e) {
           console.log(e.stack ? String(e.stack).grey : String(e).grey)
-          interaction?.reply({embeds: [new Discord.MessageEmbed()
-            .setColor(es.wrongcolor)
-            .setFooter(client.getFooter(es))
-            .setTitle(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable56"]))
-            .setDescription(eval(client.la[ls]["handlers"]["applyjs"]["apply"]["variable57"]))]
-            , ephemeral: true}).then(msg=>{
+          if(interaction.replied) {
+            interaction?.channel.send({embeds: [new Discord.MessageEmbed()
+              .setColor(es.wrongcolor)
+              .setFooter(client.getFooter(es))
+              .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable56`]))
+              .setDescription(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable57`]))]
+              , ephemeral: true}).then(async msg=>{
               setTimeout(()=>{
                 try{msg.delete();}catch{}
               }, 5000)
             })
+          } else {
+            interaction?.reply({embeds: [new Discord.MessageEmbed()
+              .setColor(es.wrongcolor)
+              .setFooter(client.getFooter(es))
+              .setTitle(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable56`]))
+              .setDescription(eval(client.la[ls][`handlers`][`applyjs`][`apply`][`variable57`]))]
+              , ephemeral: true})
+          }
         }
     }
   });
 
-}
 }
 
 /** ////////////////////////////////////////// *
  * FUNCTION FOR REMOVING ALL OLD ROLES
  * ////////////////////////////////////////// *
  */
-function rome_old_roles(message, user, apply_db) {
+
+// Be a good listener, so that you can encourage others to talk about themselve.
+// Soemtimes add some questions / responses, so that they feel like having interest
+
+// Talk about what some1 else is interested in, don't just talk about stuff u like and they don't 
+
+
+function rome_old_roles(message, user, applyDbData) {
   return new Promise(async (resolve, reject) => {
     //get the reactionmember from the reactions
     let reactionmember = message.guild.members.cache.get(user);
 
     //get the temprole, Try to remove the temprole if its valid
-    let temprole = apply_db?.get(message.guild.id, "TEMP_ROLE");
-    if (temprole != "0") {
+    let temprole = applyDbData.TEMP_ROLE;
+    if (temprole != `0`) {
       try {
         if (reactionmember.roles.cache.has(temprole))
         await reactionmember.roles.remove(temprole);
@@ -1130,8 +1166,8 @@ function rome_old_roles(message, user, apply_db) {
     }
 
     //get the one.role, Try to remove the temprole if its valid
-    let onerole = apply_db?.get(message.guild.id, "one.role");
-    if (onerole != "0") {
+    let onerole = await applyDbData.one.role;
+    if (onerole != `0`) {
       try {
         if (reactionmember.roles.cache.has(onerole))
         await reactionmember.roles.remove(onerole);
@@ -1140,8 +1176,8 @@ function rome_old_roles(message, user, apply_db) {
       }
     }
     //get the two.role, Try to remove the temprole if its valid
-    let tworole = apply_db?.get(message.guild.id, "two.role");
-    if (tworole != "0") {
+    let tworole = await applyDbData.two.role;
+    if (tworole != `0`) {
       try {
         if (reactionmember.roles.cache.has(tworole))
         await reactionmember.roles.remove(tworole);
@@ -1151,8 +1187,8 @@ function rome_old_roles(message, user, apply_db) {
     }
 
     //get the three.role, Try to remove the temprole if its valid
-    let threerole = apply_db?.get(message.guild.id, "three.role");
-    if (threerole != "0") {
+    let threerole = await applyDbData.three.role;
+    if (threerole != `0`) {
       try {
         if (reactionmember.roles.cache.has(threerole))
         await reactionmember.roles.remove(threerole);
@@ -1162,8 +1198,8 @@ function rome_old_roles(message, user, apply_db) {
     }
 
     //get the four.role, Try to remove the temprole if its valid
-    let fourrole = apply_db?.get(message.guild.id, "four.role");
-    if (fourrole != "0") {
+    let fourrole = await applyDbData.four.role;
+    if (fourrole != `0`) {
       try {
         if (reactionmember.roles.cache.has(fourrole))
         await reactionmember.roles.remove(fourrole);
@@ -1173,8 +1209,8 @@ function rome_old_roles(message, user, apply_db) {
     }
 
     //get the five.role, Try to remove the temprole if its valid
-    let fiverole = apply_db?.get(message.guild.id, "five.role");
-    if (fiverole != "0") {
+    let fiverole = await applyDbData.five.role;
+    if (fiverole != `0`) {
       try {
         if (reactionmember.roles.cache.has(fiverole))
           await reactionmember.roles.remove(fiverole);
@@ -1182,6 +1218,7 @@ function rome_old_roles(message, user, apply_db) {
         /* */
       }
     }
-    return resolve("FINISHED")
+    return resolve(`FINISHED`)
   })
 }
+

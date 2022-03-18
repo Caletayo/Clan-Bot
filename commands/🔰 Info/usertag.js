@@ -1,9 +1,9 @@
 const Discord = require("discord.js");
 const {MessageEmbed} = require("discord.js");
-const config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-const emoji = require(`${process.cwd()}/botconfig/emojis.json`);
-const { GetUser, GetGlobalUser } = require(`${process.cwd()}/handlers/functions`)
+const config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+const emoji = require(`../../botconfig/emojis.json`);
+const { GetUser, GetGlobalUser } = require(`../../handlers/functions`)
 module.exports = {
   name: "usertag",
   aliases: ["utag"],
@@ -11,8 +11,8 @@ module.exports = {
   description: "Get the TAG of a USER | for mobile copy paste abilities",
   usage: "usertag [@USER] [global/guild]",
   type: "usertag",
-  run: async (client, message, args, cmduser, text, prefix) => {
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
+    
     try {   
       var user;
       if(args[0]){
@@ -44,7 +44,7 @@ module.exports = {
 }
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

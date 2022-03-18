@@ -1,10 +1,10 @@
 const Discord = require("discord.js");
 const {MessageEmbed, Permissions} = require("discord.js");
-const config = require(`${process.cwd()}/botconfig/config.json`)
+const config = require(`../../botconfig/config.json`)
 const ms = require("ms");
 const {
     databasing
-} = require(`${process.cwd()}/handlers/functions`);
+} = require(`../../handlers/functions`);
 const backup = require("discord-backup");
 module.exports = {
     name: "createbackup",
@@ -13,7 +13,7 @@ module.exports = {
     description: "Create a Backup of the Server",
     usage: "createbackup",
     type: "server",
-    run: async (client, message, args, cmduser, text, prefix) => {
+    run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     
         if(!message.guild.me.permissions.has(Discord.Permissions.FLAGS.ADMINISTRATOR)){
             return message.reply("<:no:833101993668771842> **I am missing the ADMINISTRATOR Permission!**")
@@ -24,9 +24,9 @@ module.exports = {
         if(owner.id != cmduser.id) {
             return message.reply(`<:no:833101993668771842> **You need to be the Owner of this Server!**`)
         }
-        let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
-        let adminroles = client.settings.get(message.guild.id, "adminroles")
-        let cmdroles = client.settings.get(message.guild.id, "cmdadminroles.createbackup")
+        
+        let adminroles = GuildSettings?.adminroles || [];
+        let cmdroles = GuildSettings?.cmdadminroles?.createbackup || [];
         var cmdrole = []
         if (cmdroles.length > 0) {
             for (const r of cmdroles) {
@@ -35,13 +35,16 @@ module.exports = {
                 } else if (message.guild.members.cache.get(r)) {
                     cmdrole.push(` | <@${r}>`)
                 } else {
-                    
-                    //console.log(r)
-                    client.settings.remove(message.guild.id, r, `cmdadminroles.createbackup`)
+                    const File = `createbackup`;
+                    let index = GuildSettings && GuildSettings.cmdadminroles && typeof GuildSettings.cmdadminroles == "object" ? GuildSettings.cmdadminroles[File]?.indexOf(r) || -1 : -1;
+                    if(index > -1) {
+                      GuildSettings.cmdadminroles[File].splice(index, 1);
+                      client.settings.set(`${message.guild.id}.cmdadminroles`, GuildSettings.cmdadminroles)
+                    }
                 }
             }
         }
-        if (([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => cmdroles.includes(r.id))) && !cmdroles.includes(message.author.id) && ([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => adminroles.includes(r ? r.id : r))) && !Array(message.guild.ownerId, config.ownerid).includes(message.author.id) && !message.member.permissions.has([Permissions.FLAGS.ADMINISTRATOR]))
+        if (([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => cmdroles.includes(r.id))) && !cmdroles.includes(message.author?.id) && ([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => adminroles.includes(r ? r.id : r))) && !Array(message.guild.ownerId, config.ownerid).includes(message.author?.id) && !message.member?.permissions?.has([Permissions.FLAGS.ADMINISTRATOR]))
             return message.reply({embeds : [new MessageEmbed()
                 .setColor(es.wrongcolor)
                 .setFooter(client.getFooter(es))
@@ -54,10 +57,10 @@ module.exports = {
         message.channel.send({
             content: `⚠️ **THIS WILL SAVE ALL DATA** ⚠️\n> If there are more then 6 Backups, the oldest one will get deleted!\n\n> *Have you tried: \`${prefix}setup-autobackup\`, to enable auto backups?*`,
             components: [new Discord.MessageActionRow().addComponents([new Discord.MessageButton().setStyle("DANGER").setLabel("Continue").setCustomId("verified")])]
-        }).then(msg => {
+        }).then(async (msg) => {
             //Create the collector
             const collector = msg.createMessageComponentCollector({ 
-                filter: i => i?.isButton() && i?.message.author.id == client.user.id && i?.user,
+                filter: i => i?.isButton() && i?.message.author?.id == client.user.id && i?.user,
                 time: 90000
             })
             //Menu Collections
@@ -94,17 +97,17 @@ module.exports = {
             });
         })
 
-        if(client.settings.get(message.guild.id, `adminlog`) != "no"){
+        if(GuildSettings && GuildSettings.adminlog && GuildSettings.adminlog != "no"){
             try{
-              var channel = message.guild.channels.cache.get(client.settings.get(message.guild.id, `adminlog`))
-              if(!channel) return client.settings.set(message.guild.id, "no", `adminlog`);
+              var channel = message.guild.channels.cache.get(GuildSettings.adminlog)
+              if(!channel) return client.settings.set(`${message.guild.id}.adminlog`, "no");
               channel.send({embeds :[new MessageEmbed()
                 .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null).setFooter(client.getFooter(es))
-                .setAuthor(`${require("path").parse(__filename).name} | ${message.author.tag}`, message.author.displayAvatarURL({dynamic: true}))
+                .setAuthor(client.getAuthor(`${require("path").parse(__filename).name} | ${message.author.tag}`, message.author.displayAvatarURL({dynamic: true})))
                 .setDescription(eval(client.la[ls]["cmds"]["administration"]["giveaway"]["variable49"]))
                 .addField(eval(client.la[ls]["cmds"]["administration"]["ban"]["variablex_15"]), eval(client.la[ls]["cmds"]["administration"]["ban"]["variable15"]))
                .addField(eval(client.la[ls]["cmds"]["administration"]["ban"]["variablex_16"]), eval(client.la[ls]["cmds"]["administration"]["ban"]["variable16"]))
-                .setTimestamp().setFooter(client.getFooter("ID: " + message.author.id, message.author.displayAvatarURL({dynamic: true})))
+                .setTimestamp().setFooter(client.getFooter("ID: " + message.author?.id, message.author.displayAvatarURL({dynamic: true})))
               ]})
             }catch (e){
               console.log(e.stack ? String(e.stack).grey : String(e).grey)

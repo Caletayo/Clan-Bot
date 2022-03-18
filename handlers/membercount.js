@@ -1,53 +1,32 @@
 var CronJob = require('cron').CronJob;
-const { delay } = require(`${process.cwd()}/handlers/functions`)
+const { delay, dbKeys, dbEnsure } = require(`./functions`)
 module.exports = function (client, options) {
 
 
   //Loop through every setupped guild every 1 Hour and call membercount
   client.Jobmembercount = new CronJob('0 0 * * * *', async function() {
     //get all guilds which are setupped
-    var guilds = client.setups.filter(v => {
-      if(v.membercount){
+    var guilds = await dbKeys(client.setups, v => {
+      if(v.data && v.data.membercount){
         let returnvalue = false;
         for(let i = 1; i <= 25; i++){
-          if(v.membercount[`channel${i}`] && v.membercount[`channel${i}`].length > 5)
-            returnvalue = true;
+          if(v.data.membercount[`channel${i}`] && v.data.membercount[`channel${i}`].length > 5) returnvalue = true;
         }
         return returnvalue;
       } else {
         return false;
       }
-    }).keyArray();
+    }) || [];
     var logguilds = guilds;
     console.log(JSON.stringify(logguilds.map(guild => `${guild}`)).italic.yellow + " MEMBERCOUNTER ALL GUILDS")
     //Loop through all guilds and send a random auto-generated-nsfw setup
-    for(const guildid of guilds){
+    for(const guildid of guilds.filter(g => client.guilds.cache.has(g))){
         memberCount(guildid)
         await delay(1000);
     }
   }, null, true, 'America/Los_Angeles');
 
   client.on("ready", async () => {
-    //get all guilds which are setupped
-    var guilds = client.setups.filter(v => {
-      if(v.membercount){
-        let returnvalue = false;
-        for(let i = 1; i <= 25; i++){
-          if(v.membercount[`channel${i}`] && v.membercount[`channel${i}`].length > 5)
-            returnvalue = true;
-        }
-        return returnvalue;
-      } else {
-        return false;
-      }
-    }).keyArray();
-    var logguilds = guilds;
-    console.log(JSON.stringify(logguilds.map(guild => `${guild}`)).italic.yellow + " MEMBERCOUNTER ALL GUILDS")
-    //Loop through all guilds and send a random auto-generated-nsfw setup
-    for(const guildid of guilds){
-        memberCount(guildid)
-        await delay(1000);
-    }
     client.Jobmembercount.start();
   })
 
@@ -59,7 +38,7 @@ module.exports = function (client, options) {
       ensureobject[`channel${i}`] = "no";
       ensureobject[`message${i}`] = "🗣 Members: {member}";
     }
-    client.setups.ensure(guildid, ensureobject, "membercount");
+    await dbEnsure(client.setups, guildid+".membercount", ensureobject);
     //get the Guild
     var guild = client.guilds.cache.get(guildid)
     //if no guild, return
@@ -67,7 +46,7 @@ module.exports = function (client, options) {
     //get all guilds
     await guild.members.fetch().catch(() => {});
     //get the settings 
-    let set = client.setups.get(guild.id, "membercount");
+    let set = await client.setups.get(guild.id+".membercount");
     //If no settings found, or defined on "no" return
     if(!set) return
     for(let i = 1; i <= 25; i++){

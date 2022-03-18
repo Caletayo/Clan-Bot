@@ -11,7 +11,7 @@ var {
 
 //function for playling song + skipping
 async function skiptrack(client, message, args, type, slashCommand) {
-  let ls = client.settings.get(message.guild.id, "language")
+  let ls = await client.settings.get(message.guild.id+".language")
   var search = args.join(" ");
   try {
     var res;
@@ -33,7 +33,7 @@ async function skiptrack(client, message, args, type, slashCommand) {
       //set the variables
       player.set("message", message);
       player.set("messageid", message.id);
-      player.set("playerauthor", message.author.id);
+      player.set("playerauthor", message.author?.id);
       player.connect();
       try{message.react("863876115584385074").catch(() => {});}catch(e){console.log(String(e).grey)}
       player.stop();
@@ -77,12 +77,12 @@ async function skiptrack(client, message, args, type, slashCommand) {
       if(slashCommand)
         return slashCommand.reply({ephemeral: true, embeds: [new MessageEmbed()
           .setColor(ee.wrongcolor)
-          .setTitle(String("❌ Error | Found nothing for: **`" + search).substr(0, 256 - 3) + "`**")
+          .setTitle(String("❌ Error | Found nothing for: **`" + search).substring(0, 256 - 3) + "`**")
           .setDescription(eval(client.la[ls]["handlers"]["playermanagers"]["skiptrack"]["variable3"]))
         ]})
       return message.reply({embeds: [new MessageEmbed()
         .setColor(ee.wrongcolor)
-        .setTitle(String("❌ Error | Found nothing for: **`" + search).substr(0, 256 - 3) + "`**")
+        .setTitle(String("❌ Error | Found nothing for: **`" + search).substring(0, 256 - 3) + "`**")
         .setDescription(eval(client.la[ls]["handlers"]["playermanagers"]["skiptrack"]["variable3"]))
       ]}).then(msg => {
         setTimeout(()=>{
@@ -94,7 +94,7 @@ async function skiptrack(client, message, args, type, slashCommand) {
     if (state !== "CONNECTED") {
       //set the variables
       player.set("message", message);
-      player.set("playerauthor", message.author.id);
+      player.set("playerauthor", message.author?.id);
       player.connect();
       try{message.react("863876115584385074").catch(() => {});}catch(e){console.log(String(e).grey)}
       //add track
@@ -121,11 +121,12 @@ async function skiptrack(client, message, args, type, slashCommand) {
       //skip the track
       player.stop();
     }
-    if(client.musicsettings.get(player.guild, "channel") && client.musicsettings.get(player.guild, "channel").length > 5){
-      let messageId = client.musicsettings.get(player.guild, "message");
+    var musicsettings = await client.musicsettings.get(player.guild+".channel")
+    if(musicsettings && musicsettings.length > 5){
+      let messageId = musicsettings.message;
       let guild = client.guilds.cache.get(player.guild);
       if(!guild) return 
-      let channel = guild.channels.cache.get(client.musicsettings.get(player.guild, "channel"));
+      let channel = guild.channels.cache.get(musicsettings);
       if(!channel) return 
       let message = channel.messages.cache.get(messageId);
       if(!message) message = await channel.messages.fetch(messageId).catch(()=>{});
@@ -133,7 +134,7 @@ async function skiptrack(client, message, args, type, slashCommand) {
       //edit the message so that it's right!
       var data = require("../erela_events/musicsystem").generateQueueEmbed(client, player.guild)
       message.edit(data).catch(() => {})
-      if(client.musicsettings.get(player.guild, "channel") == player.textChannel){
+      if(musicsettings == player.textChannel){
         return;
       }
     }
@@ -142,11 +143,11 @@ async function skiptrack(client, message, args, type, slashCommand) {
     if(slashCommand)
       return slashCommand.reply({ephemeral: true, embeds: [new MessageEmbed()
         .setColor(ee.wrongcolor)
-        .setTitle(String("❌ Error | Found nothing for: **`" + search).substr(0, 256 - 3) + "`**")
+        .setTitle(String("❌ Error | Found nothing for: **`" + search).substring(0, 256 - 3) + "`**")
       ]})
     return message.reply({embeds: [new MessageEmbed()
       .setColor(ee.wrongcolor)
-      .setTitle(String("❌ Error | Found nothing for: **`" + search).substr(0, 256 - 3) + "`**")
+      .setTitle(String("❌ Error | Found nothing for: **`" + search).substring(0, 256 - 3) + "`**")
     ]}).then(msg => {
       setTimeout(()=>{
         msg.delete().catch(() => {})

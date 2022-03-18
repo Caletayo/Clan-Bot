@@ -2,12 +2,12 @@ var {
   MessageEmbed
 } = require(`discord.js`);
 var Discord = require(`discord.js`);
-var config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-var emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+var config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+var emoji = require(`../../botconfig/emojis.json`);
 var {
-  databasing
-} = require(`${process.cwd()}/handlers/functions`);
+  dbEnsure
+} = require(`../../handlers/functions`);
 const {
   MessageButton,
   MessageActionRow,
@@ -22,10 +22,9 @@ module.exports = {
   description: "Manage up to 25 different Auto-Support Messages in a DISCORD-MENU",
   memberpermissions: ["ADMINISTRATOR"],
   type: "system",
-  run: async (client, message, args, cmduser, text, prefix) => {
-
-    let es = client.settings.get(message.guild.id, "embed");
-    let ls = client.settings.get(message.guild.id, "language")
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
+    return message.reply(`<a:Milrato_Animated:900394164829708388> **Since the last update, this got not fixxed yet, will be fixxed as soon as possible** :cry:!
+> Join https://discord.gg/dcdev for updates!`);
     try {
       let theDB = client.autosupport;
       let pre;
@@ -115,7 +114,7 @@ module.exports = {
         //define the embed
         let MenuEmbed = new Discord.MessageEmbed()
           .setColor(es.color)
-          .setAuthor(client.getAuthor('Auto Support Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/apple/285/envelope_2709-fe0f.png', 'https://discord.gg/milrato'))
+          .setAuthor(client.getAuthor('Auto Support Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/apple/285/envelope_2709-fe0f.png', 'https://discord.gg/dcdev'))
           .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
           
         //send the menu msg
@@ -125,11 +124,11 @@ module.exports = {
         })
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({
-          filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+          filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
           time: 90000, errors: ["time"]
         })
         //Menu Collections
-        collector.on('collect', menu => {
+        collector.on('collect', async menu => {
           if (menu?.user.id === cmduser.id) {
             collector.stop();
             let menuoptiondata = menuoptions.find(v => v.value == menu?.values[0])
@@ -210,7 +209,7 @@ module.exports = {
         //define the embed
         let MenuEmbed = new Discord.MessageEmbed()
           .setColor(es.color)
-          .setAuthor('Auto Support Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/google/298/question-mark_2753.png', 'https://discord.gg/milrato')
+          .setAuthor('Auto Support Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/google/298/question-mark_2753.png', 'https://discord.gg/dcdev')
           .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
         //send the menu msg
         let menumsg = await message.reply({
@@ -219,11 +218,11 @@ module.exports = {
         })
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({
-          filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+          filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
           time: 90000, errors: ["time"]
         })
         //Menu Collections
-        collector.on('collect', menu => {
+        collector.on('collect', async menu => {
           if (menu?.user.id === cmduser.id) {
             collector.stop();
             let menuoptiondata = menuoptions.find(v => v.value == menu?.values[0])
@@ -329,12 +328,12 @@ module.exports = {
                     channel.send({
                       embeds: [embed],
                       components: [new MessageActionRow().addComponents([Selection])]
-                    }).catch(() => {}).then(msg => {
+                    }).catch(() => {}).then(async (msg) => {
                       theDB.set(message.guild.id, msg.id, pre+".messageId");
                       theDB.set(message.guild.id, channel.id, pre+".channelId");
                       message.reply(`Successfully Setupped the Auto-Support-System in <#${channel.id}>`)
                     });
-                }).then(msg => {
+                }).then(async (msg) => {
                   theDB.set(message.guild.id, msg.id, pre+".messageId");
                   theDB.set(message.guild.id, channel.id, pre+".channelId");
                   message.reply(`Successfully Setupped the Auto-Support-System in <#${channel.id}>`)
@@ -389,7 +388,7 @@ module.exports = {
               });
               //Create the collector
             const collector = tempmsg.createMessageComponentCollector({
-              filter: i => i?.isButton() && i?.message.author.id == client.user.id && i?.user,
+              filter: i => i?.isButton() && i?.message.author?.id == client.user.id && i?.user,
               time: 90000, errors: ["time"]
             })
             //button Collections
@@ -554,7 +553,7 @@ module.exports = {
             })
             //Create the collector
             const collector = menumsg.createMessageComponentCollector({
-              filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+              filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
               time: 90000, errors: ["time"]
             })
             //Menu Collections
@@ -600,7 +599,7 @@ module.exports = {
                   });
                   //Create the collector
                 const collector = tempmsg.createMessageComponentCollector({
-                  filter: i => i?.isButton() && i?.message.author.id == client.user.id && i?.user,
+                  filter: i => i?.isButton() && i?.message.author?.id == client.user.id && i?.user,
                   time: 90000, errors: ["time"]
                 })
                 //button Collections
@@ -772,7 +771,7 @@ module.exports = {
             })
           //Create the collector
           const collector = menumsg.createMessageComponentCollector({
-            filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+            filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
             time: 90000, errors: ["time"]
           })
           //Menu Collections
@@ -858,7 +857,7 @@ module.exports = {
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

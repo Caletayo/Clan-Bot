@@ -12,69 +12,78 @@ var ee = require(`${process.cwd()}/botconfig/embed.json`);
 const moment = require("moment")
 const fs = require('fs')
 const {
+    dbEnsure,
     databasing,
     delay,
     create_transcript,
     GetUser,
     GetRole,
     create_transcript_buffer
-} = require(`${process.cwd()}/handlers/functions`);
+} = require(`./functions`);
 
-module.exports = client => {
+module.exports = async (client) => {
+    
     
     //Event
     client.on("interactionCreate", async (interaction) => {
-        if (!interaction?.isButton()) return;
+        if (!interaction?.isButton()) return 
         var {
             guild,
             channel,
             user,
             message
         } = interaction;
-        if (!guild || !channel || !message || !user) return;
-        if (!interaction?.customId.includes("ticket_")) return;
-        if (interaction?.customId.includes("create_a_ticket")) return;
-        let temptype = interaction?.customId.replace("ticket_", "")
-        let buttonuser = user;
-        await guild.members.fetch().catch(() => {});
-        let member = guild.members.cache.get(user.id);
-        if (!client.settings.has(guild.id, "language")) client.settings.ensure(guild.id, {
-            language: "en"
-        });
-        let ls = client.settings.get(guild.id, "language");
-        if (!member) member = await guild.members.fetch(user.id).catch((e) => {
-            return interaction?.reply(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable1"]))
-        });
+        if (!guild || !channel || !message || !user) return 
+        if (!interaction?.customId.includes("ticket_")) return
+        if (interaction?.customId.includes("create_a_ticket")) return
+        const temptype = interaction?.customId.replace("ticket_", "")
+        const buttonuser = user;
+        
+        const member = guild.members.cache.get(user.id) || await guild.members.fetch(user.id).catch(() => {});
+        
+        const ls = await client.settings.get(guild.id+".language") || "en";
+        const es = await client.settings.get(guild.id+".embed") || ee;
+
         if (!member) return interaction?.reply(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable2"]))
 
-        let prefix = client.settings.get(interaction?.guild.id, "prefix")
-        let adminroles = client.settings.get(guild.id, "adminroles")
-        let cmdroles = client.settings.get(guild.id, "cmdadminroles.ticket")
-        let cmdroles2 = client.settings.get(guild.id, "cmdadminroles.close")
-        let es = client.settings.get(guild.id, "embed");
+        const prefix = await client.settings.get(interaction?.guild.id+".prefix") || config.prefix
+        const adminroles = await client.settings.get(guild.id+".adminroles")
+        const cmdroles = await client.settings.get(guild.id+".cmdadminroles.ticket")
+        const cmdroles2 = await client.settings.get(guild.id+".cmdadminroles.close")
         try {
             for (const r of cmdroles2) cmdrole.push(r)
         } catch {}
 
-        if(!client.setups.has(channel.id)){
+        if(!await client.setups.has(channel.id)){
             if(interaction.customId != "ticket_verify"){
                 interaction?.reply({content: ":x: This channel is not a Ticket", ephemeral: true})
             }
-            return;
+            return 
         }
         interaction?.deferUpdate();
-        let Ticketdata = client.setups.get(channel.id, "ticketdata");
+        const Ticketdata = await client.setups.get(channel.id+".ticketdata");
         let ticketSystemNumber = String(Ticketdata.type).split("-");
         ticketSystemNumber = ticketSystemNumber[ticketSystemNumber.length - 1];
-
-        let ticket = client.setups.get(guild.id, `${String(Ticketdata.type).includes("menu") ? "menu": ""}ticketsystem${ticketSystemNumber}`)
-        let theadminroles = ticket.adminroles;
+        const ticket = await client.setups.get(guild.id+`.${String(Ticketdata.type).includes("menu") ? "menu": ""}ticketsystem${ticketSystemNumber}`)
+        let theadminroles = ticket?.adminroles;
+        let closedParent = ticket?.closedParent;
         if(String(Ticketdata.type).includes("menu") && Ticketdata.menutickettype && Ticketdata.menutickettype > 0) {
-            let adminRoles = client[`menuticket${Ticketdata.menutickettype}`].get(guild.id, "access");
+            
+            const theDB = client.menuticket
+            const settings = theDB.get(guild.id, `menuticket${Ticketdata.menutickettype}`);
+            let adminRoles = settings.access;
+            if(Ticketdata.menuticketIndex !== undefined) {
+                const data = settings.data[Ticketdata.menuticketIndex];
+                if(data.access) {
+                    console.log("BEFORE:", adminRoles)
+                    adminRoles = [...adminRoles, ...data.access];
+                    console.log("AFTER:", adminRoles)
+                }
+            }
+            closedParent = settings.closedParent
             theadminroles = adminRoles;
         }
-
-        var cmdrole = []
+        const cmdrole = []
         if (cmdroles.length > 0) {
             for (const r of cmdroles) {
                 if (guild.roles.cache.get(r)) {
@@ -83,17 +92,18 @@ module.exports = client => {
                     cmdrole.push(` | <@${r}>`)
                 } else {
                     try {
-                        client.settings.remove(guild.id, r, `cmdadminroles.ticket`)
+                        await dbRemove(client.settings+`.cmdadminroles.ticket`, guild.id, r)
                     } catch {}
                     try {
-                        client.settings.remove(guild.id, r, `cmdadminroles.close`)
+                        await dbRemove(client.settings+`.cmdadminroles.close`, guild.id, r)
                     } catch {}
                 }
             }
         }
         let edited = false;
+
         if (temptype == "close") {
-            let data = client.setups.get(channel.id, "ticketdata");
+            let data = await client.setups.get(channel.id+".ticketdata");
             if (data.state === "closed") {
                 return channel.send({
                     content: `<@${buttonuser.id}>`,
@@ -135,18 +145,33 @@ module.exports = client => {
     
                         let index = String(data.type).slice(-1);
                         if (data.type.includes("apply")) {
-                            client.setups.remove("TICKETS", data.user, `applytickets${index}`);
-                            client.setups.remove("TICKETS", data.channel, `applytickets${index}`);
+                            await dbRemove(client.setups, "TICKETS"+`.applytickets${index}`, data.user);
+                            await dbRemove(client.setups, "TICKETS"+`.applytickets${index}`, data.channel);
                         } else if (data.type.includes("menu")) {
-                            client.setups.remove("TICKETS", data.user, `menutickets${index}`);
-                            client.setups.remove("TICKETS", data.channel, `menutickets${index}`);
+                            await dbRemove(client.setups, "TICKETS"+`.menutickets${index}`, data.user);
+                            await dbRemove(client.setups, "TICKETS"+`.menutickets${index}`, data.channel);
                         }  else {
-                            client.setups.remove("TICKETS", data.user, `tickets${index}`);
-                            client.setups.remove("TICKETS", data.channel, `tickets${index}`);
+                            await dbRemove(client.setups, "TICKETS"+`.tickets${index}`, data.user);
+                            await dbRemove(client.setups,"TICKETS"+`.tickets${index}`, data.channel);
                         }
-                        client.setups.set(msg.channel.id, "closed", "ticketdata.state");
-                        data = client.setups.get(msg.channel.id, "ticketdata");
-                        
+                        await client.setups.set(msg.channel.id, "closed", "ticketdata.state");
+                        data = await client.setups.get(msg.channel.id, "ticketdata");
+
+                        if(closedParent) {
+                            let ticketCh = msg.guild.channels.cache.get(closedParent);
+                            if(ticketCh && ticketCh.type == "GUILD_CATEGORY") {
+                                if(ticketCh.children.size < 50) {
+                                    await msg.channel.setParent(ticketCh.id, { lockPermissions: false }).catch(async(e) => {
+                                        await msg.channel.send(`Can't move to: ${ticketCh.name} (\`${ticketCh.id}\`) because an Error occurred:\n> \`\`\`${String(e.message ? e.message : e).substring(0, 100)}\`\`\``).catch(() => {});
+                                    })
+                                } else {
+                                    await msg.channel.send(`Ticket Category ${ticketCh.name} (\`${ticketCh.id}\`) is full, can't move!`).catch(() => {});
+                                }
+                            } else {
+                                await msg.channel.send(`Could not find ${closedParent} as a parent`).catch(() => {});
+                            }
+                        }
+
                         if(msg.channel.permissionsFor(msg.channel.guild.me).has(Permissions.FLAGS.MANAGE_CHANNELS)){
                             await msg.channel.permissionOverwrites.edit(data.user, {
                                 SEND_MESSAGES: false,
@@ -158,19 +183,21 @@ module.exports = client => {
                             embeds: [new Discord.MessageEmbed()
                                 .setTitle(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable7"]))
                                 .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                                .setDescription(`Closed the Ticket of <@${data.user}> and removed him from the Channel!`.substr(0, 2000))
+                                .setDescription(`Closed the Ticket of <@${data.user}> and removed him from the Channel!`.substring(0, 2000))
                                 .addField("User: ", `<@${data.user}>`)
                                 .addField(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variablex_8"]), eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable8"]))
                                 .addField("State: ", `${data.state}`)
                                 .setFooter(client.getFooter(es))
                             ]
                         })
-                        try { msg.channel.setName(String(msg.channel.name).replace("ticket", "closed").substr(0, 32)).catch((e)=>{console.log(e)}); } catch (e) { console.log(e) }
-                        if (client.settings.get(guild.id, `adminlog`) != "no") {
+                        try { msg.channel.setName(String(msg.channel.name).replace("ticket", "closed").substring(0, 32)).catch((e)=>{console.log(e)}); } catch (e) { console.log(e) }
+                       
+                        let adminlog = await client.settings.get(guild.id+`.adminlog`);
+                        if (adminlog != "no") {
                             let message = msg; //NEEDED FOR THE EVALUATION!
                             try {
-                                var adminchannel = guild.channels.cache.get(client.settings.get(guild.id, `adminlog`))
-                                if (!adminchannel) return client.settings.set(guild.id, "no", `adminlog`);
+                                var adminchannel = guild.channels.cache.get(adminlog)
+                                if (!adminchannel) return client.settings.set(guild.id+`.adminlog`, "no");
                                 adminchannel.send({
                                     embeds: [new MessageEmbed()
                                         .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null).setFooter(client.getFooter(es))
@@ -238,7 +265,7 @@ module.exports = client => {
                         .setFooter(client.getFooter(es))
                         .setTitle("<:no:833101993668771842> You are not allowed to delete this Ticket")
                         .setDescription(`${adminroles.length > 0 ? "You need one of those Roles: " + adminroles.map(role => `<@&${role}>`).join(" | ") + cmdrole.join(" | ") + theadminroles.join(" | ")  : `No Admin Roles Setupped yet! Do it with: \`${prefix}setup-admin\` You can also add Ticket only Roles with \`${prefix}setup-ticket\``}`)
-                        .addField("Ticket Specific Role(s)/User(s):", `${ticketspecific.join(", ")}`.substr(0, 1024))
+                        .addField("Ticket Specific Role(s)/User(s):", `${ticketspecific.join(", ")}`.substring(0, 1024))
                     ]
                 });
             }
@@ -258,11 +285,10 @@ module.exports = client => {
                 if (b?.user.id !== user.id)
                     return b?.reply(`<:no:833101993668771842> **Only the one who typed ${prefix}help is allowed to react!**`, true)
 
-
                 //page forward
                 if (b?.customId == "ticket_verify") {
                     edited = true;
-                    msg.edit({
+                    b.update({
                         content: `<@${buttonuser.id}>`,
                         embeds: [new Discord.MessageEmbed()
                             .setTitle("Verified!")
@@ -272,27 +298,27 @@ module.exports = client => {
                     }).catch((e) => {
                         console.log(String(e).grey)
                     });
-                    let data = client.setups.get(msg.channel.id, "ticketdata");
+                    let data = await client.setups.get(msg.channel.id+".ticketdata");
 
                     let index = String(data.type).slice(-1);
                     if (data.type.includes("apply")) {
-                        client.setups.remove("TICKETS", data.user, `applytickets${index != "-" ? index : ""}`);
-                        client.setups.remove("TICKETS", data.channel, `applytickets${index != "-" ? index : ""}`);
+                        await dbRemove(client.setups, "TICKETS"+`.applytickets${index != "-" ? index : ""}`, data.user);
+                        await dbRemove(client.setups, "TICKETS"+`.applytickets${index != "-" ? index : ""}`, data.channel);
                     } else if (data.type.includes("menu")) {
-                        client.setups.remove("TICKETS", data.user, `menutickets${index != "-" ? index : ""}`);
-                        client.setups.remove("TICKETS", data.channel, `menutickets${index != "-" ? index : ""}`);
+                        await dbRemove(client.setups, "TICKETS"+`.menutickets${index != "-" ? index : ""}`, data.user);
+                        await dbRemove(client.setups, "TICKETS"+`.menutickets${index != "-" ? index : ""}`, data.channel);
                     } else {
-                        client.setups.remove("TICKETS", data.user, `tickets${index != "-" ? index : ""}`);
-                        client.setups.remove("TICKETS", data.channel, `tickets${index != "-" ? index : ""}`);
+                        await dbRemove(client.setups, "TICKETS"+`.tickets${index != "-" ? index : ""}`, data.user);
+                        await dbRemove(client.setups, "TICKETS"+`.tickets${index != "-" ? index : ""}`, data.channel);
                     }
                     try {
-                        client.setups.delete(msg.channel.id);
+                        await client.setups.delete(msg.channel.id);
                     } catch {
 
                     }
-                    if(ticket.ticketlogid && ticket.ticketlogid.length > 5){
+                    if(ticket?.ticketlogid && ticket?.ticketlogid.length > 5){
                         try {
-                            let logChannel = guild.channels.cache.get(ticket.ticketlogid);
+                            let logChannel = guild.channels.cache.get(ticket?.ticketlogid);
                             if(logChannel){
                                 msglimit = 1000;
                                 //The text content collection
@@ -360,7 +386,7 @@ module.exports = client => {
                         embeds: [new Discord.MessageEmbed()
                             .setTitle(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable14"]))
                             .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                            .setDescription(`Deleting Ticket in less then **\`3 Seconds\`** ....\n\n*If not you can do it manually*`.substr(0, 2000))
+                            .setDescription(`Deleting Ticket in less then **\`3 Seconds\`** ....\n\n*If not you can do it manually*`.substring(0, 2000))
                             .setFooter(client.getFooter(es))
                         ]
                     })
@@ -370,11 +396,12 @@ module.exports = client => {
                         });
                     }, 3500)
 
-                    if (client.settings.get(guild.id, `adminlog`) != "no") {
+                    let adminlog = await client.settings.get(guild.id+`.adminlog`);
+                    if (adminlog != "no") {
                         let message = msg; //NEEDED FOR THE EVALUATION!
                         try {
-                            var adminchannel = guild.channels.cache.get(client.settings.get(guild.id, `adminlog`))
-                            if (!adminchannel) return client.settings.set(guild.id, "no", `adminlog`);
+                            var adminchannel = guild.channels.cache.get(adminlog)
+                            if (!adminchannel) return client.settings.set(guild.id+`.adminlog`, "no");
                             adminchannel.send({
                                 embeds: [new MessageEmbed()
                                     .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null).setFooter(client.getFooter(es))
@@ -393,7 +420,7 @@ module.exports = client => {
                     }
                 } else {
                     edited = true;
-                    msg.edit({
+                    b.update({
                         content: `<@${buttonuser.id}>`,
                         embeds: [new Discord.MessageEmbed()
                             .setTitle("Cancelled!")
@@ -422,7 +449,7 @@ module.exports = client => {
             });
         } else if (temptype == "log" || temptype == "transcript") {
             msglimit = 1000;
-            let data = client.setups.get(channel.id, "ticketdata");
+            let data = await client.setups.get(channel.id+".ticketdata");
             //The text content collection
             let messageCollection = new Collection(); //make a new collection
             let channelMessages = await channel.messages.fetch({ //fetch the last 100 messages
@@ -472,16 +499,17 @@ module.exports = client => {
                     })
                     //await tmmpmsg.delete().catch(e=>console.log(e.stack ? String(e.stack).grey : String(e).grey))
                     await fs.unlinkSync(path)
-                    if (client.settings.get(guild.id, `adminlog`) != "no") {
+                    let adminlog = await client.settings.get(guild.id+`.adminlog`);
+                    if (adminlog != "no") {
                         try {
-                            var adminchannel = guild.channels.cache.get(client.settings.get(guild.id, `adminlog`))
-                            if (!adminchannel) return client.settings.set(guild.id, "no", `adminlog`);
+                            var adminchannel = guild.channels.cache.get(adminlog)
+                            if (!adminchannel) return client.settings.set(guild.id+`.adminlog`, "no");
                             adminchannel.send({
                                 embeds: [new MessageEmbed()
                                     .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null).setFooter(client.getFooter(es))
-                                    .setAuthor(`ticket --> LOG | ${user.tag}`, user.displayAvatarURL({
+                                    .setAuthor(client.getAuthor(`ticket --> LOG | ${user.tag}`, user.displayAvatarURL({
                                         dynamic: true
-                                    }))
+                                    })))
                                     .setDescription(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable22"]))
                                     .addField(eval(client.la[ls]["cmds"]["administration"]["ban"]["variablex_15"]), eval(client.la[ls]["cmds"]["administration"]["ban"]["variable15"]))
                                     .addField(eval(client.la[ls]["cmds"]["administration"]["ban"]["variablex_16"]), eval(client.la[ls]["cmds"]["administration"]["ban"]["variable16"]))
@@ -521,7 +549,7 @@ module.exports = client => {
                 embeds: [new Discord.MessageEmbed()
                     .setTitle(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable32"]))
                     .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                    .setDescription(`Either with <@USERID> or with the USERNAME, or with the USERID`.substr(0, 2000))
+                    .setDescription(`Either with <@USERID> or with the USERNAME, or with the USERID`.substring(0, 2000))
                     .setFooter(client.getFooter(es))
                 ]
             }).then(async msg => {
@@ -568,7 +596,7 @@ module.exports = client => {
                                     channel.permissionOverwrites.edit(user.id, {
                                             SEND_MESSAGES: true,
                                             VIEW_CHANNEL: true,
-                                        }).then(channel => {
+                                        }).then(async channel => {
                                             channel.send({
                                                 content: `<@${buttonuser.id}>`,
                                                 embeds: [new MessageEmbed().setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
@@ -576,10 +604,11 @@ module.exports = client => {
                                                     .setTitle(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable35"]))
                                                 ]
                                             })
-                                            if (client.settings.get(guild.id, `adminlog`) != "no") {
+                                            let adminlog = await client.settings.get(guild.id+`.adminlog`);
+                                            if (adminlog != "no") {
                                                 try {
-                                                    var adminchannel = guild.channels.cache.get(client.settings.get(guild.id, `adminlog`))
-                                                    if (!adminchannel) return client.settings.set(guild.id, "no", `adminlog`);
+                                                    var adminchannel = guild.channels.cache.get(adminlog)
+                                                    if (!adminchannel) return client.settings.set(guild.id+`.adminlog`, "no");
                                                     adminchannel.send({
                                                         embeds: [new MessageEmbed()
                                                             .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null).setFooter(client.getFooter(es))
@@ -614,7 +643,7 @@ module.exports = client => {
                                     channel.permissionOverwrites.edit(user.id, {
                                             SEND_MESSAGES: false,
                                             VIEW_CHANNEL: false,
-                                        }).then(channel => {
+                                        }).then(async channel => {
                                             return channel.send({
                                                 content: `<@${buttonuser.id}>`,
                                                 embeds: [new MessageEmbed().setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
@@ -643,7 +672,7 @@ module.exports = client => {
                         channel.permissionOverwrites.edit(user.id, {
                             SEND_MESSAGES: true,
                             VIEW_CHANNEL: true,
-                        }).then(channel => {
+                        }).then(async channel => {
                             channel.send({
                                 content: `<@${buttonuser.id}>`,
                                 embeds: [new MessageEmbed().setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
@@ -651,10 +680,11 @@ module.exports = client => {
                                     .setTitle(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable44"]))
                                 ]
                             })
-                            if (client.settings.get(guild.id, `adminlog`) != "no") {
+                            let adminlog = await client.settings.get(guild.id+`.adminlog`);
+                            if (adminlog != "no") {
                                 try {
-                                    var adminchannel = guild.channels.cache.get(client.settings.get(guild.id, `adminlog`))
-                                    if (!adminchannel) return client.settings.set(guild.id, "no", `adminlog`);
+                                    var adminchannel = guild.channels.cache.get(adminlog)
+                                    if (!adminchannel) return client.settings.set(guild.id+`.adminlog`, "no");
                                     adminchannel.send({
                                         embeds: [new MessageEmbed()
                                             .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null).setFooter(client.getFooter(es))
@@ -687,7 +717,7 @@ module.exports = client => {
                                 embeds: [new Discord.MessageEmbed()
                                     .setTitle(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable50"]))
                                     .setColor(es.wrongcolor)
-                                    .setDescription(`"Cancelled"`.substr(0, 2000))
+                                    .setDescription(`"Cancelled"`.substring(0, 2000))
                                     .setFooter(client.getFooter(es))
                                 ]
                             });
@@ -714,7 +744,7 @@ module.exports = client => {
                 embeds: [new Discord.MessageEmbed()
                     .setTitle(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable51"]))
                     .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                    .setDescription(`Either with <@&ROLEID> or with the ROLEID or with the ROLENAME`.substr(0, 2000))
+                    .setDescription(`Either with <@&ROLEID> or with the ROLEID or with the ROLENAME`.substring(0, 2000))
                     .setFooter(client.getFooter(es))
                 ]
             }).then(async msg => {
@@ -761,17 +791,18 @@ module.exports = client => {
                                     channel.permissionOverwrites.edit(user.id, {
                                             SEND_MESSAGES: true,
                                             VIEW_CHANNEL: true,
-                                        }).then(channel => {
+                                        }).then(async channel => {
                                             channel.send({
                                                 embeds: [new MessageEmbed().setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
                                                     .setFooter(client.getFooter(es))
                                                     .setTitle(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable54"]))
                                                 ]
                                             })
-                                            if (client.settings.get(guild.id, `adminlog`) != "no") {
+                                            let adminlog = await client.settings.get(guild.id+`.adminlog`);
+                                            if (adminlog != "no") {
                                                 try {
-                                                    var adminchannel = guild.channels.cache.get(client.settings.get(guild.id, `adminlog`))
-                                                    if (!adminchannel) return client.settings.set(guild.id, "no", `adminlog`);
+                                                    var adminchannel = guild.channels.cache.get(adminlog)
+                                                    if (!adminchannel) return client.settings.set(guild.id+`.adminlog`, "no");
                                                     adminchannel.send({
                                                         embeds: [new MessageEmbed()
                                                             .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null).setFooter(client.getFooter(es))
@@ -806,7 +837,7 @@ module.exports = client => {
                                     channel.permissionOverwrites.edit(user.id, {
                                             SEND_MESSAGES: false,
                                             VIEW_CHANNEL: false,
-                                        }).then(channel => {
+                                        }).then(async channel => {
                                             return channel.send({
                                                 embeds: [new MessageEmbed().setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
                                                     .setFooter(client.getFooter(es))
@@ -834,17 +865,18 @@ module.exports = client => {
                         channel.permissionOverwrites.edit(user.id, {
                                 SEND_MESSAGES: true,
                                 VIEW_CHANNEL: true,
-                            }).then(channel => {
+                            }).then(async channel => {
                                 channel.send({
                                     embeds: [new MessageEmbed().setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
                                         .setFooter(client.getFooter(es))
                                         .setTitle(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable63"]))
                                     ]
                                 })
-                                if (client.settings.get(guild.id, `adminlog`) != "no") {
+                                let adminlog = await client.settings.get(guild.id+`.adminlog`);
+                                if (adminlog != "no") {
                                     try {
-                                        var adminchannel = guild.channels.cache.get(client.settings.get(guild.id, `adminlog`))
-                                        if (!adminchannel) return client.settings.set(guild.id, "no", `adminlog`);
+                                        var adminchannel = guild.channels.cache.get(adminlog)
+                                        if (!adminchannel) return client.settings.set(guild.id+`.adminlog`, "no");
                                         adminchannel.send({
                                             embeds: [new MessageEmbed()
                                                 .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null).setFooter(client.getFooter(es))
@@ -880,7 +912,7 @@ module.exports = client => {
                         embeds: [new Discord.MessageEmbed()
                             .setTitle(eval(client.la[ls]["handlers"]["ticketeventjs"]["ticketevent"]["variable69"]))
                             .setColor(es.wrongcolor)
-                            .setDescription(`"Cancelled"`.substr(0, 2000))
+                            .setDescription(`"Cancelled"`.substring(0, 2000))
                             .setFooter(client.getFooter(es))
                         ]
                     });
@@ -898,7 +930,7 @@ module.exports = client => {
                     ]
                 });
             }
-            let data = client.setups.get(channel.id, "ticketdata");
+            let data = await client.setups.get(channel.id+".ticketdata");
             if(!channel.permissionsFor(member).has(Discord.Permissions.FLAGS.SEND_MESSAGES)){
                 if(!channel.permissionsFor(channel.guild.me).has(Permissions.FLAGS.MANAGE_CHANNELS)){
                     return channel.send(`:x: **I am missing the Permissions MANAGE_CHANNELS for: \`${channel.name}\`**`);
@@ -914,7 +946,7 @@ module.exports = client => {
             if(String(Ticketdata.type).includes("menu")) {
                 messageClaim = client[`menuticket${Ticketdata.menutickettype}`].get(guild.id, "claim.messageClaim")
             } else {
-                messageClaim = ticket.claim.messageClaim;
+                messageClaim = ticket?.claim.messageClaim;
             }
             channel.send({
                 embeds: [
@@ -930,521 +962,28 @@ module.exports = client => {
 
 
     //menu Ticket
-    client.on("interactionCreate", interaction => {
-        if(interaction?.guildId && interaction?.isSelectMenu() && interaction?.message && interaction?.message.author.id == client.user.id){
+    client.on("interactionCreate", async interaction => {
+        if(interaction?.guildId && interaction?.isSelectMenu() && interaction?.message && interaction?.message.author?.id == client.user.id){
             let { user, message, channelId, values, guild } = interaction;
-            client.menuticket1.ensure(message.guild.id, {
-                messageId: "",
-                channelId: "",
-                claim: {
-                  enabled: false,
-                  messageOpen: "Dear {user}!\n> *Please wait until a Staff Member, claimed your Ticket!*",
-                  messageClaim: "{claimer} **has claimed the Ticket!**\n> He will now give {user} support!"
-                },
-                access: [],
-                data: [
-                  /*
-                    {
-                      value: "",
-                      description: "",
-                      category: null,
-                      replyMsg: "{user} Welcome to the Support!",
-                    }
-                  */
-                ]
-              });
-            let settings = client.menuticket1.get(guild.id);
-            if(message.id == settings.messageId && (channelId == settings.channelId || message.channelId == settings.channelId)){
-               let index = settings.data.findIndex(v => v.value == values[0]);
-                if(index < 0) {
-                    return interaction?.reply({ephemeral: true, content: ":x: **Could not find the Ticket-Settings for this Option**"});
-                }
-                let data = settings.data[index];
-                let replyMsg = data.replyMsg;
-
-                let systempath = `menuticketsystem${index > 0 ? index : ""}`; 
-                let ticketspath = `menutickets${index > 0 ? index : ""}`; 
-                let idpath = `menuticketid${index > 0 ? index : ""}`; 
-                let tickettypepath = `menu-ticket-setup-${index > 0 ? index : ""}`; 
-  
-                client.setups.ensure(guild.id, {
-                    enabled: false,
-                    guildid: guild.id,
-                    messageid: "",
-                    channelid: "",
-                    parentid: "",
-                    message: "Hey {user}, thanks for opening an ticket! Someone will help you soon!",
-                    adminroles: []
-                }, systempath);
-                if (client.setups.get("TICKETS", ticketspath).includes(user.id)) {
-                    try {
-                      var ticketchannel = guild.channels.cache.get(client.setups.get(user.id, idpath))
-                      if (!ticketchannel || ticketchannel == null || !ticketchannel.id || ticketchannel.id == null) throw {
-                        message: "NO TICKET CHANNEL FOUND AKA NO ANTISPAM"
-                      }
-                      if(client.setups.has(ticketchannel.id) && client.setups.has(ticketchannel.id, "ticketdata"))
-                      {
-                        let data = client.setups.get(ticketchannel.id, "ticketdata");
-                        if(data.state != "closed" && data.menutickettype == 1){
-                          return interaction?.reply({content: `<:no:833101993668771842> **You already have an Ticket!** <#${ticketchannel.id}>`, ephemeral: true});
-                        }
-                      }
-                    } catch {
-                      client.setups.remove("TICKETS", user.id, ticketspath)
-                    }
-                }
-              
-                client.stats.ensure(guild.id, {
-                    ticketamount: 0
-                });
-                client.stats.inc(guild.id, "ticketamount");
-                let ticketamount = client.stats.get(guild.id, "ticketamount");
-                
-                if(!data.defaultname) data.defaultname = "🎫・{count}・{member}";
-
-                let channelname = data.defaultname.replace("{member}", user.username).replace("{count}", ticketamount).replace(/\s/igu, "-").substr(0, 31);
-                let optionsData = {
-                topic: `📨 Ticket for: ${user.tag} (${user.id}) | ${values[0]} | ✅ Created at: ${moment().format("LLLL")}`,
-                    type: "GUILD_TEXT",
-                    reason: `Menu Ticket System for: ${user.tag}`,
-                }
-                guild.channels.create(channelname.substr(0, 31), optionsData).then(async ch => {
-                await interaction?.reply({content: `<a:Loading:833101350623117342> **Creating your Ticket...** (Usually takes 0-2 Seconds)`, ephemeral: true});
-                try {
-                    var cat = guild.channels.cache.get(settings.data[index].category)
-                    if(cat){
-                        if(cat.type == "GUILD_CATEGORY"){
-                        if(cat.children.size < 50){
-                            await ch.setParent(String(cat.id)).catch(() => {});
-                        }
-                        }
-                    } else {
-                        if(ch.parent){
-                        if(ch.parent.children.size < 50){
-                            await ch.setParent(String(ch.parent.id), {lockPermissions: false}).catch(() => {});
-                        }
-                        }
-                    }
-                } catch (e){
-                    if(ch.parent){
-                        if(ch.parent.children.size < 50){
-                        await ch.setParent(String(ch.parent.id), {lockPermissions: false}).catch(() => {});
-                        }
-                    }
-                }
-                
-                if(!settings.data[index].category || settings.data[index].category.length < 5){
-                    await ch.permissionOverwrites.create(guild.id, {
-                        SEND_MESSAGES: false,
-                        VIEW_CHANNEL: false,
-                        EMBED_LINKS: false,
-                        ADD_REACTIONS: false,
-                        ATTACH_FILES: false
-                    }).catch(() => {});
-                } else {
-                    var cat = guild.channels.cache.get(settings.data[index].category)
-                    if(!cat) {
-                        await ch.permissionOverwrites.create(guild.id, {
-                            SEND_MESSAGES: false,
-                            VIEW_CHANNEL: false,
-                            EMBED_LINKS: false,
-                            ADD_REACTIONS: false,
-                            ATTACH_FILES: false
-                        }).catch(() => {});
-                    }
-                }
-
-                await ch.permissionOverwrites.create(user, {
-                    SEND_MESSAGES: true,
-                    VIEW_CHANNEL: true,
-                    EMBED_LINKS: true,
-                    ADD_REACTIONS: true,
-                    ATTACH_FILES: true
-                }).catch(() => {});
-                
-
-                await message.guild.members.fetch().catch(() => {});
-                let realaccess = [];
-                for(const a of settings.access) {
-                    if(message.guild.roles.cache.has(a)) {
-                        realaccess.push(a);
-                    } else if(message.guild.members.cache.has(a)){
-                        realaccess.push(a);
-                    }
-                }
-                for(const a of realaccess) {
-                    if(a == ch.guild.id) continue;
-                    await ch.permissionOverwrites.create(a, {
-                        SEND_MESSAGES: true,
-                        VIEW_CHANNEL: true,
-                        EMBED_LINKS: true,
-                        ADD_REACTIONS: true,
-                        ATTACH_FILES: true
-                    }).catch(() => {});
-                }
-                if(settings.claim.enabled){
-                    let ids = ch.permissionOverwrites.cache.filter(p => p.type == "role" && !p.deny.toArray().includes("SEND_MESSAGES")).map(d => d.id);
-                    for(const id of ids){
-                        if(id == ch.guild.id) continue;
-                        await ch.permissionOverwrites.edit(id, {
-                            SEND_MESSAGES: false,
-                            VIEW_CHANNEL: true,
-                            EMBED_LINKS: true,
-                            ADD_REACTIONS: true,
-                            ATTACH_FILES: true
-                        }).catch(console.warn);
-                        await delay(client.ws.ping)
-                    }
-                }
-                
-                let es = client.settings.get(guild.id, "embed")
-                client.setups.push("TICKETS", user.id, ticketspath);
-                client.setups.push("TICKETS", ch.id, ticketspath);
-                client.setups.set(user.id, ch.id, idpath);
-                client.setups.set(ch.id, {
-                    user: user.id,
-                    channel: ch.id,
-                    guild: guild.id,
-                    menutickettype: 1,
-                    type: tickettypepath,
-                    state: "open",
-                    date: Date.now(),
-                }, "ticketdata");
-            
-                let extrastring = "";
-                for(const a of realaccess){
-                    if(message.guild.roles.cache.has(a)) {
-                        extrastring += ` | <@&${a}>`
-                    } else if(message.guild.members.cache.has(a)){
-                        extrastring += ` | <@${a}>`
-                    }
-                }   
-                
-                var ticketembed = new MessageEmbed()
-                    .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                    .setFooter(client.getFooter(`To close/manage this ticket react with the buttons\nYou can also type: ${client.settings.get(guild.id, "prefix")}ticket`, es.footericon))
-                    .setAuthor(client.getAuthor(`Ticket for: ${user.tag}`, user.displayAvatarURL({
-                    dynamic: true
-                    }), "https://discord.gg/milrato"))
-                    .setDescription(replyMsg.replace(/\{user\}/igu, `${user}`).substr(0, 2000))
-                var ticketembeds = [ticketembed]
-                if(settings.claim.enabled){
-                    var claimEmbed = new MessageEmbed()
-                    .setColor("ORANGE").setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                    .setFooter(client.getFooter(es))
-                    .setAuthor(client.getAuthor(`A Staff Member will claim the Ticket soon!`, "https://cdn.discordapp.com/emojis/833101350623117342.gif?size=44", "https://discord.gg/milrato"))
-                    .setDescription(settings.claim.messageOpen.replace(/\{user\}/igu, `${user}`).substr(0, 2000))
-                    ticketembeds.push(claimEmbed)
-                }
-                const {
-                    MessageButton
-                } = require('discord.js')
-                let button_close = new MessageButton().setStyle('PRIMARY').setCustomId('ticket_close').setLabel('Close').setEmoji("🔒")
-                let button_delete = new MessageButton().setStyle('SECONDARY').setCustomId('ticket_delete').setLabel("Delete").setEmoji("🗑️")
-                let button_transcript = new MessageButton().setStyle('PRIMARY').setCustomId('ticket_transcript').setLabel("Transcript").setEmoji("📑")
-                let button_user = new MessageButton().setStyle('SUCCESS').setCustomId('ticket_user').setLabel("Users").setEmoji("👤")
-                let button_role = new MessageButton().setStyle('SUCCESS').setCustomId('ticket_role').setLabel("Roles").setEmoji("📌")
-                const allbuttons = [new MessageActionRow().addComponents([button_close, button_delete, button_transcript, button_user, button_role])]
-                if(settings.claim.enabled){
-                    allbuttons.push(new MessageActionRow().addComponents([new MessageButton().setStyle('SECONDARY').setCustomId('ticket_claim').setLabel("Claim the Ticket").setEmoji("✅")]))
-                }
-                if(ch.permissionsFor(ch.guild.me).has(Permissions.FLAGS.SEND_MESSAGES)){
-                    if(ch.permissionsFor(ch.guild.me).has(Permissions.FLAGS.EMBED_LINKS)){
-                        await ch.send({
-                            content: `<@${user.id}>${extrastring}`,
-                            embeds: ticketembeds,
-                            components: allbuttons
-                        }).catch((O) => {
-                            console.log(String(O).grey)
-                        }).then(msg => {
-                            if(msg.channel.permissionsFor(msg.guild.me).has(Permissions.FLAGS.MANAGE_MESSAGES)){
-                                msg.pin().catch((O) => {
-                                    console.log(String(O).grey)
-                                })
-                            }
-                        })
-                    } else {
-                        await ch.send({
-                            content: `<@${user.id}>${extrastring}\n${ticketembeds[0].description}`.substr(0, 2000),
-                            components: allbuttons
-                        }).catch((O) => {
-                            console.log(String(O).grey)
-                        }).then(msg => {
-                            if(msg.channel.permissionsFor(msg.guild.me).has(Permissions.FLAGS.MANAGE_MESSAGES)){
-                                msg.pin().catch((O) => {
-                                    console.log(String(O).grey)
-                                })
-                            }
-                        })
-                    }
-                }
-                await interaction?.editReply({content: `<a:yes:833101995723194437> **Your Ticket is created!** <#${ch.id}>`, ephemeral: true});
-                })
+            let DBindex = false;
+            let d = client.menuticket
+            let rawData = await d.all();
+            let guildData = rawData.find(d => d.ID == guild.id)?.data;
+            if(!guildData) return;
+            for(let i = 1; i<=100; i++) {
+                let pre = `menuticket${i}`;
+                if(guildData?.[pre]?.messageId === message.id && (channelId === guildData?.[pre]?.channelId || message.channelId === guildData?.[pre]?.channelId)) DBindex = i;
             }
-        }
-    })
-
-    //menu Ticket
-    client.on("interactionCreate", interaction => {
-        if(interaction?.guildId && interaction?.isSelectMenu() && interaction?.message && interaction?.message.author.id == client.user.id){
-            let { user, message, channelId, values, guild } = interaction;
-            client.menuticket2.ensure(message.guild.id, {
-                messageId: "",
-                channelId: "",
-                claim: {
-                  enabled: false,
-                  messageOpen: "Dear {user}!\n> *Please wait until a Staff Member, claimed your Ticket!*",
-                  messageClaim: "{claimer} **has claimed the Ticket!**\n> He will now give {user} support!"
-                },
-                access: [],
-                data: [
-                  /*
-                    {
-                      value: "",
-                      description: "",
-                      category: null,
-                      replyMsg: "{user} Welcome to the Support!",
-                    }
-                  */
-                ]
-              });
-            let settings = client.menuticket2.get(guild.id);
-            if(message.id == settings.messageId && (channelId == settings.channelId || message.channelId == settings.channelId)){
-               let index = settings.data.findIndex(v => v.value == values[0]);
-                if(index < 0) {
-                    return interaction?.reply({ephemeral: true, content: ":x: **Could not find the Ticket-Settings for this Option**"});
+            if(!DBindex) {
+                if(interaction.placeholder) {
+                    if(!interaction.placeholder.includes("Menu-Apply System!")) return
                 }
-                let data = settings.data[index];
-                let replyMsg = data.replyMsg;
-
-                let systempath = `menuticketsystem${index > 0 ? index : ""}`; 
-                let ticketspath = `menutickets${index > 0 ? index : ""}`; 
-                let idpath = `menuticketid${index > 0 ? index : ""}`; 
-                let tickettypepath = `menu-ticket-setup-${index > 0 ? index : ""}`; 
-  
-                client.setups.ensure(guild.id, {
-                    enabled: false,
-                    guildid: guild.id,
-                    messageid: "",
-                    channelid: "",
-                    parentid: "",
-                    message: "Hey {user}, thanks for opening an ticket! Someone will help you soon!",
-                    adminroles: []
-                }, systempath);
-                if (client.setups.get("TICKETS", ticketspath).includes(user.id)) {
-                    try {
-                      var ticketchannel = guild.channels.cache.get(client.setups.get(user.id, idpath))
-                      if (!ticketchannel || ticketchannel == null || !ticketchannel.id || ticketchannel.id == null) throw {
-                        message: "NO TICKET CHANNEL FOUND AKA NO ANTISPAM"
-                      }
-                      if(client.setups.has(ticketchannel.id) && client.setups.has(ticketchannel.id, "ticketdata"))
-                      {
-                        let data = client.setups.get(ticketchannel.id, "ticketdata");
-                        if(data.state != "closed" && data.menutickettype == 2){
-                          return interaction?.reply({content: `<:no:833101993668771842> **You already have an Ticket!** <#${ticketchannel.id}>`, ephemeral: true});
-                        }
-                      }
-                    } catch {
-                      client.setups.remove("TICKETS", user.id, ticketspath)
-                    }
-                }
-              
-                client.stats.ensure(guild.id, {
-                    ticketamount: 0
-                });
-                client.stats.inc(guild.id, "ticketamount");
-                let ticketamount = client.stats.get(guild.id, "ticketamount");
-                
-                if(!data.defaultname) data.defaultname = "🎫・{count}・{member}";
-
-                let channelname = data.defaultname.replace("{member}", user.username).replace("{count}", ticketamount).replace(/\s/igu, "-").substr(0, 31);
-                let optionsData = {
-                topic: `📨 Ticket for: ${user.tag} (${user.id}) | ${values[0]} | ✅ Created at: ${moment().format("LLLL")}`,
-                    type: "GUILD_TEXT",
-                    reason: `Menu Ticket System for: ${user.tag}`,
-                }
-                guild.channels.create(channelname.substr(0, 31), optionsData).then(async ch => {
-                await interaction?.reply({content: `<a:Loading:833101350623117342> **Creating your Ticket...** (Usually takes 0-2 Seconds)`, ephemeral: true});
-                try {
-                    var cat = guild.channels.cache.get(settings.data[index].category)
-                    if(cat){
-                        if(cat.type == "GUILD_CATEGORY"){
-                        if(cat.children.size < 50){
-                            await ch.setParent(String(cat.id)).catch(() => {});
-                        }
-                        }
-                    } else {
-                        if(ch.parent){
-                        if(ch.parent.children.size < 50){
-                            await ch.setParent(String(ch.parent.id), {lockPermissions: false}).catch(() => {});
-                        }
-                        }
-                    }
-                } catch (e){
-                    if(ch.parent){
-                        if(ch.parent.children.size < 50){
-                        await ch.setParent(String(ch.parent.id), {lockPermissions: false}).catch(() => {});
-                        }
-                    }
-                }
-                
-                if(!settings.data[index].category || settings.data[index].category.length < 5){
-                    await ch.permissionOverwrites.create(guild.id, {
-                        SEND_MESSAGES: false,
-                        VIEW_CHANNEL: false,
-                        EMBED_LINKS: false,
-                        ADD_REACTIONS: false,
-                        ATTACH_FILES: false
-                    }).catch(() => {});
-                } else {
-                    var cat = guild.channels.cache.get(settings.data[index].category)
-                    if(!cat) {
-                        await ch.permissionOverwrites.create(guild.id, {
-                            SEND_MESSAGES: false,
-                            VIEW_CHANNEL: false,
-                            EMBED_LINKS: false,
-                            ADD_REACTIONS: false,
-                            ATTACH_FILES: false
-                        }).catch(() => {});
-                    }
-                }
-
-                await ch.permissionOverwrites.create(user, {
-                    SEND_MESSAGES: true,
-                    VIEW_CHANNEL: true,
-                    EMBED_LINKS: true,
-                    ADD_REACTIONS: true,
-                    ATTACH_FILES: true
-                }).catch(() => {});
-
-                
-
-                await message.guild.members.fetch().catch(() => {});
-                let realaccess = [];
-                for(const a of settings.access) {
-                    if(message.guild.roles.cache.has(a)) {
-                        realaccess.push(a);
-                    } else if(message.guild.members.cache.has(a)){
-                        realaccess.push(a);
-                    }
-                }
-                for(const a of realaccess) {
-                    if(a == ch.guild.id) continue;
-                    await ch.permissionOverwrites.create(a, {
-                        SEND_MESSAGES: true,
-                        VIEW_CHANNEL: true,
-                        EMBED_LINKS: true,
-                        ADD_REACTIONS: true,
-                        ATTACH_FILES: true
-                    }).catch(() => {});
-                }
-                if(settings.claim.enabled){
-                    let ids = ch.permissionOverwrites.cache.filter(p => p.type == "role" && !p.deny.toArray().includes("SEND_MESSAGES")).map(d => d.id);
-                    for(const id of ids){
-                        if(id == ch.guild.id) continue;
-                        await ch.permissionOverwrites.edit(id, {
-                            SEND_MESSAGES: false,
-                            VIEW_CHANNEL: true,
-                            EMBED_LINKS: true,
-                            ADD_REACTIONS: true,
-                            ATTACH_FILES: true
-                        }).catch(console.warn);
-                        await delay(client.ws.ping)
-                    }
-                }
-                
-                let es = client.settings.get(guild.id, "embed")
-                client.setups.push("TICKETS", user.id, ticketspath);
-                client.setups.push("TICKETS", ch.id, ticketspath);
-                client.setups.set(user.id, ch.id, idpath);
-                client.setups.set(ch.id, {
-                    user: user.id,
-                    channel: ch.id,
-                    guild: guild.id,
-                    menutickettype: 2,
-                    type: tickettypepath,
-                    state: "open",
-                    date: Date.now(),
-                }, "ticketdata");
-            
-                let extrastring = "";
-                for(const a of realaccess){
-                    if(message.guild.roles.cache.has(a)) {
-                        extrastring += ` | <@&${a}>`
-                    } else if(message.guild.members.cache.has(a)){
-                        extrastring += ` | <@${a}>`
-                    }
-                }
-                
-                var ticketembed = new MessageEmbed()
-                    .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                    .setFooter(client.getFooter(`To close/manage this ticket react with the buttons\nYou can also type: ${client.settings.get(guild.id, "prefix")}ticket`, es.footericon))
-                    .setAuthor(client.getAuthor(`Ticket for: ${user.tag}`, user.displayAvatarURL({
-                    dynamic: true
-                    }), "https://discord.gg/milrato"))
-                    .setDescription(replyMsg.replace(/\{user\}/igu, `${user}`).substr(0, 2000))
-                var ticketembeds = [ticketembed]
-                if(settings.claim.enabled){
-                    var claimEmbed = new MessageEmbed()
-                    .setColor("ORANGE").setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                    .setFooter(client.getFooter(es))
-                    .setAuthor(client.getAuthor(`A Staff Member will claim the Ticket soon!`, "https://cdn.discordapp.com/emojis/833101350623117342.gif?size=44", "https://discord.gg/milrato"))
-                    .setDescription(settings.claim.messageOpen.replace(/\{user\}/igu, `${user}`).substr(0, 2000))
-                    ticketembeds.push(claimEmbed)
-                }
-                const {
-                    MessageButton
-                } = require('discord.js')
-                let button_close = new MessageButton().setStyle('PRIMARY').setCustomId('ticket_close').setLabel('Close').setEmoji("🔒")
-                let button_delete = new MessageButton().setStyle('SECONDARY').setCustomId('ticket_delete').setLabel("Delete").setEmoji("🗑️")
-                let button_transcript = new MessageButton().setStyle('PRIMARY').setCustomId('ticket_transcript').setLabel("Transcript").setEmoji("📑")
-                let button_user = new MessageButton().setStyle('SUCCESS').setCustomId('ticket_user').setLabel("Users").setEmoji("👤")
-                let button_role = new MessageButton().setStyle('SUCCESS').setCustomId('ticket_role').setLabel("Roles").setEmoji("📌")
-                const allbuttons = [new MessageActionRow().addComponents([button_close, button_delete, button_transcript, button_user, button_role])]
-                if(settings.claim.enabled){
-                    allbuttons.push(new MessageActionRow().addComponents([new MessageButton().setStyle('SECONDARY').setCustomId('ticket_claim').setLabel("Claim the Ticket").setEmoji("✅")]))
-                }
-                if(ch.permissionsFor(ch.guild.me).has(Permissions.FLAGS.SEND_MESSAGES)){
-                    if(ch.permissionsFor(ch.guild.me).has(Permissions.FLAGS.EMBED_LINKS)){
-                        await ch.send({
-                            content: `<@${user.id}>${extrastring}`,
-                            embeds: ticketembeds,
-                            components: allbuttons
-                        }).catch((O) => {
-                            console.log(String(O).grey)
-                        }).then(msg => {
-                            if(msg.channel.permissionsFor(msg.guild.me).has(Permissions.FLAGS.MANAGE_MESSAGES)){
-                                msg.pin().catch((O) => {
-                                    console.log(String(O).grey)
-                                })
-                            }
-                        })
-                    } else {
-                        await ch.send({
-                            content: `<@${user.id}>${extrastring}\n${ticketembeds[0].description}`.substr(0, 2000),
-                            components: allbuttons
-                        }).catch((O) => {
-                            console.log(String(O).grey)
-                        }).then(msg => {
-                            if(msg.channel.permissionsFor(msg.guild.me).has(Permissions.FLAGS.MANAGE_MESSAGES)){
-                                msg.pin().catch((O) => {
-                                    console.log(String(O).grey)
-                                })
-                            }
-                        })
-                    }
-                }
-                await interaction?.editReply({content: `<a:yes:833101995723194437> **Your Ticket is created!** <#${ch.id}>`, ephemeral: true});
-                })
+                if(interaction.replied) return interaction?.editReply(":x: Could not find the Database for your Application!");
+                else return
             }
-        }
-    })
-
-    //menu Ticket
-    client.on("interactionCreate", interaction => {
-        if(interaction?.guildId && interaction?.isSelectMenu() && interaction?.message && interaction?.message.author.id == client.user.id){
-            let { user, message, channelId, values, guild } = interaction;
-            client.menuticket3.ensure(message.guild.id, {
+            let pre = `menuticket${DBindex}`;
+            let theDB = client.menuticket
+            await dbEnsure(theDB+"."+pre, message.guild.id, {
                 messageId: "",
                 channelId: "",
                 claim: {
@@ -1463,8 +1002,8 @@ module.exports = client => {
                     }
                   */
                 ]
-              });
-            let settings = client.menuticket3.get(guild.id);
+            });
+            let settings = await theDB.get(guild.id+"."+pre);
             if(message.id == settings.messageId && (channelId == settings.channelId || message.channelId == settings.channelId)){
                let index = settings.data.findIndex(v => v.value == values[0]);
                 if(index < 0) {
@@ -1473,12 +1012,12 @@ module.exports = client => {
                 let data = settings.data[index];
                 let replyMsg = data.replyMsg;
 
-                let systempath = `menuticketsystem${index > 0 ? index : ""}`; 
-                let ticketspath = `menutickets${index > 0 ? index : ""}`; 
-                let idpath = `menuticketid${index > 0 ? index : ""}`; 
-                let tickettypepath = `menu-ticket-setup-${index > 0 ? index : ""}`; 
+                let systempath = `menuticketsystem${index}`; 
+                let ticketspath = `menutickets${index}`; 
+                let idpath = `menuticketid${index}`; 
+                let tickettypepath = `menu-ticket-setup-${index}`; 
   
-                client.setups.ensure(guild.id, {
+                await dbEnsure(client.setups+"."+systempath, guild.id, {
                     enabled: false,
                     guildid: guild.id,
                     messageid: "",
@@ -1486,41 +1025,43 @@ module.exports = client => {
                     parentid: "",
                     message: "Hey {user}, thanks for opening an ticket! Someone will help you soon!",
                     adminroles: []
-                }, systempath);
-                if (client.setups.get("TICKETS", ticketspath).includes(user.id)) {
+                });
+                let tickets = await client.setups.get("TICKETS."+ticketspath);
+                if (tickets && tickets.includes(user.id)) {
                     try {
-                      var ticketchannel = guild.channels.cache.get(client.setups.get(user.id, idpath))
+                      var ticketchannel = guild.channels.cache.get(await client.setups.get(user.id+"."+idpath))
                       if (!ticketchannel || ticketchannel == null || !ticketchannel.id || ticketchannel.id == null) throw {
                         message: "NO TICKET CHANNEL FOUND AKA NO ANTISPAM"
                       }
-                      if(client.setups.has(ticketchannel.id) && client.setups.has(ticketchannel.id, "ticketdata"))
+                      let data = await client.setups.get(ticketchannel.id+".ticketdata");
+                      if(data)
                       {
-                        let data = client.setups.get(ticketchannel.id, "ticketdata");
                         if(data.state != "closed" && data.menutickettype == 3){
                           return interaction?.reply({content: `<:no:833101993668771842> **You already have an Ticket!** <#${ticketchannel.id}>`, ephemeral: true});
                         }
                       }
-                    } catch {
-                      client.setups.remove("TICKETS", user.id, ticketspath)
+                    } catch (e){
+                        console.error(e)
+                        await dbRemove(client.setups, "TICKETS."+ticketspath, user.id)
                     }
                 }
               
-                client.stats.ensure(guild.id, {
+                await dbEnsure(client.stats, guild.id, {
                     ticketamount: 0
                 });
-                client.stats.inc(guild.id, "ticketamount");
-                let ticketamount = client.stats.get(guild.id, "ticketamount");
+                await client.stats.add(guild.id+".ticketamount", 1);
+                let ticketamount = await client.stats.get(guild.id+".ticketamount");
                 
                 if(!data.defaultname) data.defaultname = "🎫・{count}・{member}";
 
-                let channelname = data.defaultname.replace("{member}", user.username).replace("{count}", ticketamount).replace(/\s/igu, "-").substr(0, 31);
+                let channelname = data.defaultname.replace("{member}", user.username).replace("{count}", ticketamount).replace(/\s/igu, "-").substring(0, 31);
                 let optionsData = {
                 topic: `📨 Ticket for: ${user.tag} (${user.id}) | ${values[0]} | ✅ Created at: ${moment().format("LLLL")}`,
                     type: "GUILD_TEXT",
                     reason: `Menu Ticket System for: ${user.tag}`,
                 }
-                guild.channels.create(channelname.substr(0, 31), optionsData).then(async ch => {
-                await interaction?.reply({content: `<a:Loading:833101350623117342> **Creating your Ticket...** (Usually takes 0-2 Seconds)`, ephemeral: true});
+                guild.channels.create(channelname.substring(0, 31), optionsData).then(async ch => {
+                await interaction?.reply({content: `<a:Loading:833101350623117342> **Creating your ticket?...** (Usually takes 0-2 Seconds)`, ephemeral: true});
                 try {
                     var cat = guild.channels.cache.get(settings.data[index].category)
                     if(cat){
@@ -1607,19 +1148,20 @@ module.exports = client => {
                         await delay(client.ws.ping)
                     }
                 }
-                let es = client.settings.get(guild.id, "embed")
-                client.setups.push("TICKETS", user.id, ticketspath);
-                client.setups.push("TICKETS", ch.id, ticketspath);
-                client.setups.set(user.id, ch.id, idpath);
-                client.setups.set(ch.id, {
+                let es = await client.settings.get(guild.id+".embed") || ee
+                await client.setups.push("TICKETS."+ticketspath, user.id);
+                await client.setups.push("TICKETS."+ticketspath, ch.id);
+                await client.setups.set(user.id+"."+idpath, ch.id);
+                await client.setups.set(ch.id+".ticketdata", {
                     user: user.id,
                     channel: ch.id,
                     guild: guild.id,
-                    menutickettype: 3,
+                    menutickettype: DBindex,
+                    menuticketIndex: index,
                     type: tickettypepath,
                     state: "open",
                     date: Date.now(),
-                }, "ticketdata");
+                });
             
                 let extrastring = "";
                 for(const a of realaccess){
@@ -1632,18 +1174,18 @@ module.exports = client => {
                 
                 var ticketembed = new MessageEmbed()
                     .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                    .setFooter(client.getFooter(`To close/manage this ticket react with the buttons\nYou can also type: ${client.settings.get(guild.id, "prefix")}ticket`, es.footericon))
+                    .setFooter(client.getFooter(`To close/manage this ticket react with the buttons\nYou can also type: ${await client.settings.get(guild.id+".prefix") || config.prefix}ticket`, es.footericon))
                     .setAuthor(client.getAuthor(`Ticket for: ${user.tag}`, user.displayAvatarURL({
                     dynamic: true
-                    }), "https://discord.gg/milrato"))
-                    .setDescription(replyMsg.replace(/\{user\}/igu, `${user}`).substr(0, 2000))
+                    }), "https://discord.gg/dcdev"))
+                    .setDescription(replyMsg.replace(/\{user\}/igu, `${user}`).substring(0, 2000))
                 var ticketembeds = [ticketembed]
                 if(settings.claim.enabled){
                     var claimEmbed = new MessageEmbed()
                     .setColor("ORANGE").setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
                     .setFooter(client.getFooter(es))
-                    .setAuthor(client.getAuthor(`A Staff Member will claim the Ticket soon!`, "https://cdn.discordapp.com/emojis/833101350623117342.gif?size=44", "https://discord.gg/milrato"))
-                    .setDescription(settings.claim.messageOpen.replace(/\{user\}/igu, `${user}`).substr(0, 2000))
+                    .setAuthor(client.getAuthor(`A Staff Member will claim the Ticket soon!`, "https://cdn.discordapp.com/emojis/833101350623117342.gif?size=44", "https://discord.gg/dcdev"))
+                    .setDescription(settings.claim.messageOpen.replace(/\{user\}/igu, `${user}`).substring(0, 2000))
                     ticketembeds.push(claimEmbed)
                 }
                 const {
@@ -1675,7 +1217,7 @@ module.exports = client => {
                         })
                     } else {
                         await ch.send({
-                            content: `<@${user.id}>${extrastring}\n${ticketembeds[0].description}`.substr(0, 2000),
+                            content: `<@${user.id}>${extrastring}\n${ticketembeds[0].description}`.substring(0, 2000),
                             components: allbuttons
                         }).catch((O) => {
                             console.log(String(O).grey)
@@ -1694,94 +1236,30 @@ module.exports = client => {
         }
     })
     
-    
+
     //auto support System
-    client.on("interactionCreate", interaction => {
-        if(interaction?.guildId && interaction?.isSelectMenu() && interaction?.message && interaction?.message.author.id == client.user.id){
+    client.on("interactionCreate", async interaction => {
+        if(interaction?.guildId && interaction?.isSelectMenu() && interaction?.message && interaction?.message.author?.id == client.user.id){
             let { user, message, channelId, values, guild } = interaction;
-            client.autosupport1.ensure(guild.id, {
-                messageId: "",
-                channelId: "",
-                data: [ //all menus in there
-                    /*
-                        {
-                            value: "",
-                            description: "",
-                            sendEmbed: true,
-                            replyMsg: "Welcome to the Support!"
-                        }
-                    */
-                ],
-            });
-            let settings = client.autosupport1.get(guild.id);
-            let es = client.settings.get(guild.id, "embed")
-            if(message.id == settings.messageId && (channelId == settings.channelId || message.channelId == settings.channelId)){
-                let index = settings.data.findIndex(v => v.value == values[0]);
-                if(index < 0) {
-                    return interaction?.reply({ephemeral: true, content: ":x: **Could not find the Auto-Support-Data-Settings for this Option**"});
-                }
-                let data = settings.data[index];
-                let {sendEmbed, replyMsg} = data;
-                if(sendEmbed){
-                    interaction?.reply({ephemeral: true, embeds: [
-                        new MessageEmbed()
-                        .setColor(es.color)
-                        .setFooter(client.getFooter(es))
-                        .setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                        .setDescription(String(replyMsg).replace(/\{user\}/igu, `<@${user.id}>`).substr(0, 2000))
-                    ]});
-                }else {
-                    interaction?.reply({ephemeral: true, content: String(replyMsg).replace(/\{user\}/igu, `<@${user.id}>`).substr(0, 2000)});
-                }
+            let DBindex = false;
+            let d = client.autosupport
+            let rawData = await d.all();
+            let guildData = rawData.find(d => d.ID == guild.id)?.data;
+            if(!guildData) return;
+            for(let i = 1; i<=100; i++) {
+                let pre = `autosupport${i}`;
+                if(guildData?.[pre]?.messageId === message.id && (channelId === guildData?.[pre]?.channelId || message.channelId === guildData?.[pre]?.channelId)) DBindex = i;
             }
-        }
-    })
-    //auto support System
-    client.on("interactionCreate", interaction => {
-        if(interaction?.guildId && interaction?.isSelectMenu() && interaction?.message && interaction?.message.author.id == client.user.id){
-            let { user, message, channelId, values, guild } = interaction;
-            client.autosupport2.ensure(guild.id, {
-                messageId: "",
-                channelId: "",
-                data: [ //all menus in there
-                    /*
-                        {
-                            value: "",
-                            description: "",
-                            sendEmbed: true,
-                            replyMsg: "Welcome to the Support!"
-                        }
-                    */
-                ],
-            });
-            let settings = client.autosupport2.get(guild.id);
-            let es = client.settings.get(guild.id, "embed")
-            if(message.id == settings.messageId && (channelId == settings.channelId || message.channelId == settings.channelId)){
-                let index = settings.data.findIndex(v => v.value == values[0]);
-                if(index < 0) {
-                    return interaction?.reply({ephemeral: true, content: ":x: **Could not find the Auto-Support-Data-Settings for this Option**"});
+            if(!DBindex) {
+                if(interaction.placeholder) {
+                    if(!interaction.placeholder.includes("Menu-Apply System!")) return
                 }
-                let data = settings.data[index];
-                let {sendEmbed, replyMsg} = data;
-                if(sendEmbed){
-                    interaction?.reply({ephemeral: true, embeds: [
-                        new MessageEmbed()
-                        .setColor(es.color)
-                        .setFooter(client.getFooter(es))
-                        .setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                        .setDescription(String(replyMsg).replace(/\{user\}/igu, `<@${user.id}>`).substr(0, 2000))
-                    ]});
-                }else {
-                    interaction?.reply({ephemeral: true, content: String(replyMsg).replace(/\{user\}/igu, `<@${user.id}>`).substr(0, 2000)});
-                }
+                if(interaction.replied) return interaction?.editReply(":x: Could not find the Database for your Application!");
+                else return
             }
-        }
-    })
-    //auto support System
-    client.on("interactionCreate", interaction => {
-        if(interaction?.guildId && interaction?.isSelectMenu() && interaction?.message && interaction?.message.author.id == client.user.id){
-            let { user, message, channelId, values, guild } = interaction;
-            client.autosupport3.ensure(guild.id, {
+            let theDB = client.autosupport
+            let pre = `autosupport${DBindex}`;
+            await dbEnsure(theDB+"."+pre, guild.id, {
                 messageId: "",
                 channelId: "",
                 data: [ //all menus in there
@@ -1795,25 +1273,25 @@ module.exports = client => {
                     */
                 ],
             });
-            let settings = client.autosupport3.get(guild.id);
-            let es = client.settings.get(guild.id, "embed")
+            let settings =await  theDB.get(guild.id+"."+pre);
+            let es = await client.settings.get(guild.id+".embed") || ee
             if(message.id == settings.messageId && (channelId == settings.channelId || message.channelId == settings.channelId)){
                 let index = settings.data.findIndex(v => v.value == values[0]);
                 if(index < 0) {
                     return interaction?.reply({ephemeral: true, content: ":x: **Could not find the Auto-Support-Data-Settings for this Option**"});
                 }
                 let data = settings.data[index];
-                let {sendEmbed, replyMsg} = data;
+                let { sendEmbed, replyMsg } = data;
                 if(sendEmbed){
                     interaction?.reply({ephemeral: true, embeds: [
                         new MessageEmbed()
                         .setColor(es.color)
                         .setFooter(client.getFooter(es))
                         .setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
-                        .setDescription(String(replyMsg).replace(/\{user\}/igu, `<@${user.id}>`).substr(0, 2000))
+                        .setDescription(String(replyMsg).replace(/\{user\}/igu, `<@${user.id}>`).substring(0, 2000))
                     ]});
                 }else {
-                    interaction?.reply({ephemeral: true, content: String(replyMsg).replace(/\{user\}/igu, `<@${user.id}>`).substr(0, 2000)});
+                    interaction?.reply({ephemeral: true, content: String(replyMsg).replace(/\{user\}/igu, `<@${user.id}>`).substring(0, 2000)});
                 }
             }
         }
@@ -1821,10 +1299,28 @@ module.exports = client => {
 
     
     //menu apply
-    client.on("interactionCreate", interaction => {
-        if(interaction?.guildId && interaction?.isSelectMenu() && interaction?.message && interaction?.message.author.id == client.user.id){
+    client.on("interactionCreate", async interaction => {
+        if(interaction?.guildId && interaction?.isSelectMenu() && interaction?.message && interaction?.message.author?.id == client.user.id){
             let { user, message, channelId, values, guild } = interaction;
-            client.menuapply1.ensure(guild.id, {
+            let DBindex = false;
+            let d = client.menuapply
+            let rawData = await d.all();
+            let guildData = rawData.find(d => d.ID == guild.id)?.data;
+            if(!guildData) return;
+            for(let i = 1; i<=100; i++) {
+                let pre = `menuapply${i}`;
+                if(guildData?.[pre]?.messageId === message.id && (channelId === guildData?.[pre]?.channelId || message.channelId === guildData?.[pre]?.channelId)) DBindex = i;
+            }
+            if(!DBindex) {
+                if(interaction.placeholder) {
+                    if(!interaction.placeholder.includes("Menu-Apply System!")) return
+                }
+                if(interaction.replied) return interaction?.editReply(":x: Could not find the Database for your Application!");
+                else return
+            }
+            let pre = `menuapply${DBindex}`;
+            let theDB = client.menuapply
+            await dbEnsure(theDB+"."+pre, guild.id, {
                 messageId: "",
                 channelId: "",
                 data: [ //all menus in there
@@ -1837,83 +1333,17 @@ module.exports = client => {
                     */
                 ],
             });
-            let es = client.settings.get(guild.id, "embed")
-            let ls = client.settings.get(guild.id, "language")
-            let settings = client.menuapply1.get(guild.id);
-            if(message.id == settings.messageId && (channelId == settings.channelId || message.channelId == settings.channelId)){
-                let index = settings.data.findIndex(v => v.value == values[0]);
-                if(index < 0) {
-                    return interaction?.reply({ephemeral: true, content: ":x: **Could not find the Ticket-Settings for this Option**"});
-                }
-                let data = settings.data[index];
-                if(!data) return interaction?.reply({ephemeral: true, content: ":x: **Could not find the Data for this System**"});
-                var { applySystemExecution } = data;
-                require(`../handlers${applySystemExecution > 5 ? "/applies" : ""}/apply${applySystemExecution == 1 ? "" : applySystemExecution}`).ApplySystem({ guild: guild, channel: message.channel, user: user, message: message, interaction: interaction, es: es, ls: ls })
+            const es = await client.settings.get(guild.id+".embed") || ee
+            const ls = await client.settings.get(guild.id+".language") || "en";
+            const settings = await theDB.get(guild.id+"."+pre);
+            const index = settings.data.findIndex(v => v.value == values[0]);
+            if(index < 0) {
+                return interaction?.reply({ephemeral: true, content: ":x: **Could not find the Ticket-Settings for this Option**"});
             }
+            const data = settings.data[index];
+            if(!data) return interaction?.reply({ephemeral: true, content: ":x: **Could not find the Data for this System**"});
+            require(`./apply.js`).ApplySystem({ guild: guild, channel: message.channel, user: user, message: message, interaction, es: es, ls: ls, preindex: Number(data.applySystemExecution) })
         }
     })
-    //menu apply
-    client.on("interactionCreate", interaction => {
-        if(interaction?.guildId && interaction?.isSelectMenu() && interaction?.message && interaction?.message.author.id == client.user.id){
-            let { user, message, channelId, values, guild } = interaction;
-            client.menuapply2.ensure(guild.id, {
-                messageId: "",
-                channelId: "",
-                data: [ //all menus in there
-                    /*
-                        {
-                            value: "",
-                            description: "",
-                            applySystemExecution: "",
-                        }
-                    */
-                ],
-            });
-            let es = client.settings.get(guild.id, "embed")
-            let ls = client.settings.get(guild.id, "language")
-            let settings = client.menuapply2.get(guild.id);
-            if(message.id == settings.messageId && (channelId == settings.channelId || message.channelId == settings.channelId)){
-                let index = settings.data.findIndex(v => v.value == values[0]);
-                if(index < 0) {
-                    return interaction?.reply({ephemeral: true, content: ":x: **Could not find the Ticket-Settings for this Option**"});
-                }
-                let data = settings.data[index];
-                if(!data) return interaction?.reply({ephemeral: true, content: ":x: **Could not find the Data for this System**"});
-                var { applySystemExecution } = data;
-                require(`../handlers${applySystemExecution > 5 ? "/applies" : ""}/apply${applySystemExecution == 1 ? "" : applySystemExecution}`).ApplySystem({ guild: guild, channel: message.channel, user: user, message: message, interaction: interaction, es: es, ls: ls })
-            }
-        }
-    })
-    //menu apply
-    client.on("interactionCreate", interaction => {
-        if(interaction?.guildId && interaction?.isSelectMenu() && interaction?.message && interaction?.message.author.id == client.user.id){
-            let { user, message, channelId, values, guild } = interaction;
-            client.menuapply3.ensure(guild.id, {
-                messageId: "",
-                channelId: "",
-                data: [ //all menus in there
-                    /*
-                        {
-                            value: "",
-                            description: "",
-                            applySystemExecution: "",
-                        }
-                    */
-                ],
-            });
-            let es = client.settings.get(guild.id, "embed")
-            let ls = client.settings.get(guild.id, "language")
-            let settings = client.menuapply3.get(guild.id);
-            if(message.id == settings.messageId && (channelId == settings.channelId || message.channelId == settings.channelId)){
-                let index = settings.data.findIndex(v => v.value == values[0]);
-                if(index < 0) {
-                    return interaction?.reply({ephemeral: true, content: ":x: **Could not find the Ticket-Settings for this Option**"});
-                }
-                let data = settings.data[index];
-                if(!data) return interaction?.reply({ephemeral: true, content: ":x: **Could not find the Data for this System**"});
-                var { applySystemExecution } = data;
-                require(`../handlers${applySystemExecution > 5 ? "/applies" : ""}/apply${applySystemExecution == 1 ? "" : applySystemExecution}`).ApplySystem({ guild: guild, channel: message.channel, user: user, message: message, interaction: interaction, es: es, ls: ls })
-            }
-        }
-    })
+    
 }

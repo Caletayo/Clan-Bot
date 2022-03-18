@@ -1,7 +1,9 @@
 const fs = require("fs");
 const allevents = [];
-module.exports = async (client) => {
+module.exports = (client) => {
   try {
+    let dateNow = Date.now();
+    console.log(`${String("[x] :: ".magenta)}Now loading the Events ...`.brightGreen)
     const load_dir = (dir) => {
       const event_files = fs.readdirSync(`./events/${dir}`).filter((file) => file.endsWith(".js"));
       for (const file of event_files) {
@@ -16,20 +18,9 @@ module.exports = async (client) => {
         }
       }
     }
-    await ["client", "guild"].forEach(e => load_dir(e));
-    try {
-      const stringlength = 69;
-      console.log("\n")
-      console.log(`     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓`.bold.brightGreen)
-      console.log(`     ┃ `.bold.brightGreen + " ".repeat(-1 + stringlength - ` ┃ `.length) + "┃".bold.brightGreen)
-      console.log(`     ┃ `.bold.brightGreen + `Welcome to SERVICE HANDLER!`.bold.brightGreen + " ".repeat(-1 + stringlength - ` ┃ `.length - `Welcome to SERVICE HANDLER!`.length) + "┃".bold.brightGreen)
-      console.log(`     ┃ `.bold.brightGreen + `  /-/ By https://milrato.eu /-/`.bold.brightGreen + " ".repeat(-1 + stringlength - ` ┃ `.length - `  /-/ By https://milrato.eu /-/`.length) + "┃".bold.brightGreen)
-      console.log(`     ┃ `.bold.brightGreen + " ".repeat(-1 + stringlength - ` ┃ `.length) + "┃".bold.brightGreen)
-      console.log(`     ┃ `.bold.brightGreen + `  /-/ Discord: Tomato#6966 /-/`.bold.brightGreen + " ".repeat(-1 + stringlength - ` ┃ `.length - `  /-/ By Discord: Tomato#6966 /-/`.length) + "   ┃".bold.brightGreen)
-      console.log(`     ┃ `.bold.brightGreen + " ".repeat(-1 + stringlength - ` ┃ `.length) + "┃".bold.brightGreen)
-      console.log(`     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`.bold.brightGreen)
-    } catch {
-      /* */ }
+    ["client", "guild"].forEach(e => load_dir(e));
+    
+    console.log(`[x] :: `.magenta + `LOADED THE ${allevents.length} EVENTS after: `.brightGreen + `${Date.now() - dateNow}ms`.green)
     try {
       const stringlength2 = 69;
       console.log("\n")
@@ -40,13 +31,13 @@ module.exports = async (client) => {
       console.log(`     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`.bold.yellow)
     } catch {
       /* */ }
-  } catch (e) {
+    } catch (e) {
     console.log(String(e.stack).grey.bgRed)
   }
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

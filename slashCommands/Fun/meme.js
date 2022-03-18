@@ -25,7 +25,7 @@ module.exports = {
   description: "*Image cmd in the style:* " + path.parse(__filename).name,
   run: async (client, interaction, cmduser, es, ls, prefix, player, message) => {
 
-    if (!client.settings.get(message.guild.id, "FUN")) {
+    if (GuildSettings.FUN === false) {
       return interaction?.reply({
         embeds: [new MessageEmbed()
           .setColor(es.wrongcolor)
@@ -49,7 +49,7 @@ module.exports = {
 }
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

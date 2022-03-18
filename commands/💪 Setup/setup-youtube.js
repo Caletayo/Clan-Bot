@@ -2,12 +2,12 @@ var {
   MessageEmbed
 } = require(`discord.js`);
 var Discord = require(`discord.js`);
-var config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-var emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+var config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+var emoji = require(`../../botconfig/emojis.json`);
 var {
-  databasing
-} = require(`${process.cwd()}/handlers/functions`);
+  dbEnsure, dbRemove
+} = require(`../../handlers/functions`);
 const { MessageButton, MessageActionRow, MessageSelectMenu } = require('discord.js')
 module.exports = {
   name: "setup-youtube",
@@ -18,9 +18,7 @@ module.exports = {
   description: "Manage the youtube logger, addstreamer, editstreamer, removestreamer, etc.",
   memberpermissions: ["ADMINISTRATOR"],
   type: "fun",
-  run: async (client, message, args, cmduser, text, prefix) => {
-    
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     try {
       
       let TextEmojis = getNumberEmojis();
@@ -79,17 +77,17 @@ module.exports = {
         //define the embed
         let MenuEmbed = new MessageEmbed()
           .setColor(es.color)
-          .setAuthor('Youtube-Poster', 'https://cdn.discordapp.com/emojis/840260133686870036.png?size=128', 'https://discord.gg/milrato')
+          .setAuthor(client.getAuthor('Youtube-Poster', 'https://cdn.discordapp.com/emojis/840260133686870036.png?size=128', 'https://discord.gg/dcdev'))
           .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
         //send the menu msg
         let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({ 
-          filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+          filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
           time: 90000
         })
         //Menu Collections
-        collector.on('collect', menu => {
+        collector.on('collect', async menu => {
           if (menu?.user.id === cmduser.id) {
             collector.stop();
             let menuoptiondata = menuoptions.find(v=>v.value == menu?.values[0])
@@ -102,7 +100,7 @@ module.exports = {
         });
         //Once the Collections ended edit the menu message
         collector.on('end', collected => {
-          menumsg.edit({embeds: [menumsg.embeds[0].setDescription(`~~${menumsg.embeds[0].description}~~`)], components: [], content: `${collected && collected.first() && collected.first().values ? `<a:yes:833101995723194437> **Selected: \`${collected ? collected.first().values[0] : "Nothing"}\`**` : "❌ **NOTHING SELECTED - CANCELLED**" }`})
+          menumsg.edit({embeds: [menumsg.embeds[0].setDescription(`~~${menumsg.embeds[0].description}~~`)], components: [], content: `${collected && collected.first() && collected.first().values ? `<a:yes:833101995723194437> **Selected: \`${collected && collected.first() ? collected.first().values[0] : "Nothing"}\`**` : "❌ **NOTHING SELECTED - CANCELLED**" }`})
         });
       }
 
@@ -116,7 +114,7 @@ module.exports = {
               .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-youtube"]["variable5"]))
               .setFooter(client.getFooter(es))]
             })
-            await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+            await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
                 max: 1,
                 time: 90000,
                 errors: ["time"]
@@ -124,7 +122,7 @@ module.exports = {
               .then(async collected => {
                 var msg = collected.first();
                 if(msg && msg.mentions.channels.filter(ch=>ch.guild.id==msg.guild.id).first()){
-                  client.social_log.set(message.guild.id, msg.mentions.channels.filter(ch=>ch.guild.id==msg.guild.id).first().id, "youtube.dc_channel")
+                  await client.social_log.set(message.guild.id+".youtube.dc_channel", msg.mentions.channels.filter(ch=>ch.guild.id==msg.guild.id).first().id)
                   return message.reply({embeds: [new Discord.MessageEmbed()
                     .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-youtube"]["variable6"]))
                     .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-youtube"]["variable7"]))
@@ -147,7 +145,7 @@ module.exports = {
               })
           } break;
           case "Add Youtube Channel":{
-            if(client.social_log.get(message.guild.id, "youtube.channels").length >= 5) 
+            if(await client.social_log.get(message.guild.id+".youtube.channels").length >= 5) 
             return message.reply({embeds: [new Discord.MessageEmbed()
               .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-youtube"]["variable9"]))
               .setColor(es.wrongcolor)
@@ -160,7 +158,7 @@ module.exports = {
             .setDescription(`Example:\nhttps://www.youtube.com/channel/UC1AgotpFHNhzolUtAjPgZqQ`)
             .setFooter(client.getFooter(es))]
           })
-          await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+          await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
               max: 1,
               time: 90000,
               errors: ["time"]
@@ -170,13 +168,14 @@ module.exports = {
               if(msg && msg.content ){
                 if((msg.content.length > 0 && msg.content.length < 50) &&!msg.content.toLowerCase().includes("youtube") && (!msg.content.toLowerCase().includes("channel") || !msg.content.toLowerCase().includes("c")))
                   return message.reply("YOU DID NOT SEND A VALID YOUTUBE CHANNEL\nNote, such links doesn't work: `https://youtube.com/Tomato6966` / `https://youtube.com/c/Tomato6966`\nIt must be something like this: `https://www.youtube.com/channel/UC1AgotpFHNhzolUtAjPgZqQ`")
-                if(client.social_log.get(message.guild.id, "youtube.channels").includes(msg.content))
+                let dddata = await client.social_log.get(message.guild.id+".youtube.channels")
+                if(dddata.includes(msg.content))
                   return message.reply({embeds: [new Discord.MessageEmbed()
                     .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-youtube"]["variable11"]))
                     .setColor(es.wrongcolor)
                     .setFooter(client.getFooter(es))
                   ]});
-                client.social_log.push(message.guild.id, msg.content, "youtube.channels")
+                await client.social_log.push(message.guild.id+".youtube.channels", msg.content)
                 return message.reply({embeds: [new Discord.MessageEmbed()
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-youtube"]["variable12"]))
                   .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-youtube"]["variable13"]))
@@ -199,14 +198,15 @@ module.exports = {
             })
           } break;
           case "Remove Youtube Channel":{
-            if(client.social_log.get(message.guild.id, "youtube.channels").length <= 0) 
+            let dd = await client.social_log.get(message.guild.id+".youtube.channels");
+            if(dd.length <= 0) 
               return message.reply({embeds: [new Discord.MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-youtube"]["variable15"]))
                 .setColor(es.wrongcolor)
                 .setDescription(`Add some others first...`.substring(0, 2000))
                 .setFooter(client.getFooter(es))
               ]});
-            let channels = client.social_log.get(message.guild.id, "youtube.channels");
+            let channels = await client.social_log.get(message.guild.id+".youtube.channels");
             let menuoptions = channels.map((data, index) => {
               let Obj = {}
               Obj.emoji = NumberEmojiIds[index + 1];
@@ -234,22 +234,22 @@ module.exports = {
             //define the embed
             let MenuEmbed = new MessageEmbed()
               .setColor(es.color)
-              .setAuthor('Youtube-Poster', 'https://cdn.discordapp.com/emojis/840260133686870036.png?size=128', 'https://discord.gg/milrato')
+              .setAuthor(client.getAuthor('Youtube-Poster', 'https://cdn.discordapp.com/emojis/840260133686870036.png?size=128', 'https://discord.gg/dcdev'))
               .setDescription("Select all Youtube Channels you want to remove!")
             //send the menu msg
             let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
             //Create the collector
             const collector = menumsg.createMessageComponentCollector({ 
-              filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+              filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
               time: 90000
             })
             //Menu Collections
-            collector.on('collect', menu => {
+            collector.on('collect', async menu => {
               if (menu?.user.id === cmduser.id) {
                 collector.stop();
                 for(const value of menu?.values) {
                   let menuoptiondataIndex = menuoptions.findIndex(v=>v.value == value)
-                  client.social_log.remove(message.guild.id, channels[menuoptiondataIndex], "youtube.channels")
+                  await dbRemove(client.social_log, message.guild.id+".youtube.channels", channels[menuoptiondataIndex])
                 }
                 menu?.reply(`✅ **Successfully removed ${menu?.values.length} Youtube Accounts!**`)
               }
@@ -261,14 +261,15 @@ module.exports = {
             });
           } break;
           case "Edit Youtube Channel":{
-            if(client.social_log.get(message.guild.id, "youtube.channels").length <= 0) 
+            let dd = await client.social_log.get(message.guild.id+".youtube.channels");
+            if(dd.length <= 0) 
               return message.reply({embeds: [new Discord.MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-youtube"]["variable19"]))
                 .setColor(es.wrongcolor)
                 .setDescription(`Add some others first...`.substring(0, 2000))
                 .setFooter(client.getFooter(es))
               ]});
-            let channels = client.social_log.get(message.guild.id, "youtube.channels");
+            let channels = await client.social_log.get(message.guild.id+".youtube.channels");
             let menuoptions = channels.map((data, index) => {
               let Obj = {}
               Obj.emoji = NumberEmojiIds[index + 1];
@@ -296,13 +297,13 @@ module.exports = {
             //define the embed
             let MenuEmbed = new MessageEmbed()
               .setColor(es.color)
-              .setAuthor('Youtube-Poster', 'https://cdn.discordapp.com/emojis/840260133686870036.png?size=128', 'https://discord.gg/milrato')
+              .setAuthor('Youtube-Poster', 'https://cdn.discordapp.com/emojis/840260133686870036.png?size=128', 'https://discord.gg/dcdev')
               .setDescription("Select the Youtube Channel you want to edit!")
             //send the menu msg
             let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
             //Create the collector
             const collector = menumsg.createMessageComponentCollector({ 
-              filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+              filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
               time: 90000
             })
             //Menu Collections
@@ -324,7 +325,7 @@ module.exports = {
                   .addField("**VARIABLES**",`> \`{url}\` ... will be replaced with the video **LINK**\n> \`{author}\` ... will be replaced with the video's **Author**\n> \`{title}\` ... will be replaced with the video's **title**\n> \`{date}\` ... will be replaced with the video's **date**`)
                   .setFooter(client.getFooter(es))
                 ]})
-                await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+                await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
                   max: 1,
                   time: 90000,
                   errors: ["time"]
@@ -364,12 +365,12 @@ module.exports = {
             });
           } break;
           case "Show Settings":{
-            let channels = client.social_log.get(message.guild.id, "youtube.channels");
+            let channels = await client.social_log.get(message.guild.id+".youtube.channels");
             message.reply({embeds: [
               new Discord.MessageEmbed()
                 .setTitle(`Settings of the Youtube Poster`)
                 .setColor(es.wrongcolor)
-                .setDescription(`**Discord Poster Channel:** <#${client.social_log.get(message.guild.id, "youtube.dc_channel")}>\n**[${channels.length}] Channels:**${channels.length == 0 ? "\n> \`NONE\`" : channels.map(d => `\n> [${d.split("/")[d.split("/").length - 1]}](${d})`).join("\n")}`.substring(0, 2000))
+                .setDescription(`**Discord Poster Channel:** <#${await client.social_log.get(message.guild.id+".youtube.dc_channel")}>\n**[${channels.length}] Channels:**${channels.length == 0 ? "\n> \`NONE\`" : channels.map(d => `\n> [${d.split("/")[d.split("/").length - 1]}](${d})`).join("\n")}`.substring(0, 2000))
                 .setFooter(client.getFooter(es))
             ]})
           } break;
@@ -390,7 +391,7 @@ module.exports = {
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

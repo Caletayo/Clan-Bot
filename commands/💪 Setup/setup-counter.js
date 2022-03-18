@@ -2,12 +2,12 @@ var {
   MessageEmbed
 } = require(`discord.js`);
 var Discord = require(`discord.js`);
-var config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-var emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+var config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+var emoji = require(`../../botconfig/emojis.json`);
 var {
-  databasing
-} = require(`${process.cwd()}/handlers/functions`);
+  dbEnsure
+} = require(`../../handlers/functions`);
 const { MessageButton, MessageActionRow, MessageSelectMenu } = require('discord.js')
 module.exports = {
   name: "setup-counter",
@@ -18,9 +18,11 @@ module.exports = {
   description: "This Setup allows you to send logs into a specific Channel, when someone enters a the Command: report",
   memberpermissions: ["ADMINISTRATOR"],
   type: "fun",
-  run: async (client, message, args, cmduser, text, prefix) => {
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
+    
+    return message.reply(`<a:Milrato_Animated:900394164829708388> **Since the last update, this got not fixxed yet, will be fixxed as soon as possible** :cry:!
+> Join https://discord.gg/dcdev for updates!`);
     try {
 
 
@@ -67,7 +69,7 @@ module.exports = {
         //define the embed
         let MenuEmbed = new Discord.MessageEmbed()
         .setColor(es.color)
-        .setAuthor('Number Counter Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/emojidex/112/input-symbol-for-numbers_1f522.png', 'https://discord.gg/milrato')
+        .setAuthor('Number Counter Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/emojidex/112/input-symbol-for-numbers_1f522.png', 'https://discord.gg/dcdev')
         .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
         let used1 = false;
         //send the menu msg
@@ -75,11 +77,11 @@ module.exports = {
 
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({ 
-          filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+          filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
           time: 90000
         })
         //Menu Collections
-        collector.on('collect', menu => {
+        collector.on('collect', async menu => {
           if (menu?.user.id === cmduser.id) {
             collector.stop();
             let menuoptiondata = menuoptions.find(v=>v.value == menu?.values[0])
@@ -104,7 +106,7 @@ module.exports = {
               .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-counter"]["variable6"])).setFooter(client.getFooter(es))]
             })
             var thecmd;
-            await tempmsg.channel.awaitMessages({filter: m => m.author.id == message.author.id, 
+            await tempmsg.channel.awaitMessages({filter: m => m.author.id == message.author?.id, 
                 max: 1,
                 time: 90000,
                 errors: ["time"]
@@ -178,7 +180,7 @@ module.exports = {
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

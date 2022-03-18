@@ -20,8 +20,8 @@ const { handlemsg } = require(`${process.cwd()}/handlers/functions`);
 	],
   run: async (client, interaction, cmduser, es, ls, prefix, player, message) => {
     
-    //let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
-    if (!client.settings.get(message.guild.id, "MUSIC")) {
+    //
+    if(GuildSettings.MUSIC === false) {
       return interaction?.reply({ephemeral: true, embed : [new MessageEmbed()
         .setColor(es.wrongcolor)
         .setFooter(client.getFooter(es))

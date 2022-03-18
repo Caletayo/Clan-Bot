@@ -2,12 +2,12 @@ var {
   MessageEmbed
 } = require(`discord.js`);
 var Discord = require(`discord.js`);
-var config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-var emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+var config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+var emoji = require(`../../botconfig/emojis.json`);
 var {
-  databasing
-} = require(`${process.cwd()}/handlers/functions`);
+  dbEnsure
+} = require(`../../handlers/functions`);
 const {
   MessageButton,
   MessageActionRow,
@@ -22,13 +22,22 @@ module.exports = {
   description: "Manage the Suggestions System, messages, emojis and Enable/Disable",
   memberpermissions: ["ADMINISTRATOR"],
   type: "system",
-  run: async (client, message, args, cmduser, text, prefix) => {
-
-    let es = client.settings.get(message.guild.id, "embed");
-    let ls = client.settings.get(message.guild.id, "language")
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     try {
-
-
+      await dbEnsure(client.settings, message.guild.id, {
+        suggest: {
+          channel: "",
+          approvemsg: `<a:yes:833101995723194437> Accepted Idea! Expect this soon.`,
+          denymsg: `<:no:833101993668771842> Thank you for the feedback, but we are not interested in this idea at this time.`,
+          maybemsg: `💡 We are thinking about this idea!`,
+          duplicatemsg: `💢 This is a duplicated Suggestion`,
+          soonmsg: `👌 Expect this Feature Soon!`,
+          statustext: `<a:Loading:833101350623117342> Waiting for Community Feedback, please vote!`,
+          footertext: `Want to suggest / Feedback something? Simply type in this channel!`,
+          approveemoji: `833101995723194437`,
+          denyemoji: `833101993668771842`,
+        }
+      });
       first_layer()
       async function first_layer() {
         let menuoptions = [{
@@ -101,7 +110,7 @@ module.exports = {
             }))
 
         //define the embed
-        let MenuEmbed = new MessageEmbed().setColor(es.color).setAuthor('Suggestion System', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/282/light-bulb_1f4a1.png', 'https://discord.gg/milrato').setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
+        let MenuEmbed = new MessageEmbed().setColor(es.color).setAuthor('Suggestion System', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/282/light-bulb_1f4a1.png', 'https://discord.gg/dcdev').setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
         //send the menu msg
         let menumsg = await message.reply({
           embeds: [MenuEmbed],
@@ -109,11 +118,11 @@ module.exports = {
         })
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({
-          filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+          filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
           time: 90000
         })
         //Menu Collections
-        collector.on('collect', menu => {
+        collector.on('collect', async menu => {
           if (menu?.user.id === cmduser.id) {
             collector.stop();
             let menuoptiondata = menuoptions.find(v => v.value == menu?.values[0])
@@ -135,22 +144,6 @@ module.exports = {
           })
         });
       }
-      /*
-      client.settings.ensure(message.guild.id, {
-        suggest: {
-          channel: "",
-          approvemsg: `<a:yes:833101995723194437> Accepted Idea! Expect this soon.`,
-          denymsg: `<:no:833101993668771842> Thank you for the feedback, but we are not interested in this idea at this time.`,
-          maybemsg: `💡 We are thinking about this idea!`,
-          duplicatemsg: `💢 This is a duplicated Suggestion`,
-          soonmsg: `👌 Expect this Feature Soon!`,
-          statustext: `<a:Loading:833101350623117342> Waiting for Community Feedback, please vote!`,
-          footertext: `Want to suggest / Feedback something? Simply type in this channel!`,
-          approveemoji: `833101995723194437`,
-          denyemoji: `833101993668771842`,
-        }
-    });
-      */
       async function handle_the_picks(optionhandletype, SetupNumber, menuoptiondata) {
         switch (optionhandletype) {
           case "Enable Suggestion System": {
@@ -164,17 +157,17 @@ module.exports = {
               ]
             })
             await tempmsg.channel.awaitMessages({
-                filter: m => m.author.id === message.author.id,
+                filter: m => m.author.id === message.author?.id,
                 max: 1,
                 time: 90000,
                 errors: ["time"]
               })
-              .then(collected => {
+              .then(async collected => {
                 var message = collected.first();
                 var channel = message.mentions.channels.filter(ch => ch.guild.id == message.guild.id).first() || message.guild.channels.cache.get(message.content.trim().split(" ")[0]);
                 if (channel) {
                   try {
-                    client.settings.set(message.guild.id, channel.id, `suggest.channel`);
+                    await client.settings.set(message.guild.id+`.suggest.channel`, channel.id);
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-suggestion"]["variable6"]))
@@ -212,7 +205,7 @@ module.exports = {
           }
           break;
         case "Disable Suggestion System": {
-          client.settings.set(message.guild.id, "", `suggest.channel`);
+          await client.settings.set(message.guild.id+`.suggest.channel`, "");
           return message.reply({
             embeds: [new Discord.MessageEmbed()
               .setTitle("Successfully disabled the Suggestion System")
@@ -233,16 +226,16 @@ module.exports = {
             ]
           })
           await tempmsg.channel.awaitMessages({
-              filter: m => m.author.id === message.author.id,
+              filter: m => m.author.id === message.author?.id,
               max: 1,
               time: 90000,
               errors: ["time"]
             })
-            .then(collected => {
+            .then(async collected => {
               var message = collected.first();
               if (message) {
                 try {
-                  client.settings.set(message.guild.id, message.content, "suggest.approvemsg");
+                  await client.settings.set(message.guild.id+".suggest.approvemsg", message.content);
                   return message.reply({
                     embeds: [new Discord.MessageEmbed()
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-suggestion"]["variable12"]))
@@ -290,16 +283,16 @@ module.exports = {
             ]
           })
           await tempmsg.channel.awaitMessages({
-              filter: m => m.author.id === message.author.id,
+              filter: m => m.author.id === message.author?.id,
               max: 1,
               time: 90000,
               errors: ["time"]
             })
-            .then(collected => {
+            .then(async collected => {
               var message = collected.first();
               if (message) {
                 try {
-                  client.settings.set(message.guild.id, message.content, "suggest.denymsg");
+                  await client.settings.set(message.guild.id+".suggest.denymsg", message.content);
                   return message.reply({
                     embeds: [new Discord.MessageEmbed()
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-suggestion"]["variable18"]))
@@ -346,16 +339,16 @@ module.exports = {
             ]
           })
           await tempmsg.channel.awaitMessages({
-              filter: m => m.author.id === message.author.id,
+              filter: m => m.author.id === message.author?.id,
               max: 1,
               time: 90000,
               errors: ["time"]
             })
-            .then(collected => {
+            .then(async collected => {
               var message = collected.first();
               if (message) {
                 try {
-                  client.settings.set(message.guild.id, message.content, "suggest.maybemsg");
+                  await client.settings.set(message.guild.id+".suggest.maybemsg", message.content);
                   return message.reply({
                     embeds: [new Discord.MessageEmbed()
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-suggestion"]["variable24"]))
@@ -403,16 +396,16 @@ module.exports = {
             ]
           })
           await tempmsg.channel.awaitMessages({
-              filter: m => m.author.id === message.author.id,
+              filter: m => m.author.id === message.author?.id,
               max: 1,
               time: 90000,
               errors: ["time"]
             })
-            .then(collected => {
+            .then(async collected => {
               var message = collected.first();
               if (message) {
                 try {
-                  client.settings.set(message.guild.id, message.content, "suggest.statustext");
+                  await client.settings.set(message.guild.id+".suggest.statustext", message.content);
                   return message.reply({
                     embeds: [new Discord.MessageEmbed()
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-suggestion"]["variable30"]))
@@ -459,16 +452,16 @@ module.exports = {
             ]
           })
           await tempmsg.channel.awaitMessages({
-              filter: m => m.author.id === message.author.id,
+              filter: m => m.author.id === message.author?.id,
               max: 1,
               time: 90000,
               errors: ["time"]
             })
-            .then(collected => {
+            .then(async collected => {
               var message = collected.first();
               if (message) {
                 try {
-                  client.settings.set(message.guild.id, message.content, "suggest.soonmsg");
+                  await client.settings.set(message.guild.id+".suggest.soonmsg", message.content);
                   return message.reply({
                     embeds: [new Discord.MessageEmbed()
                       .setTitle("Successfully set the new SOON MESSAGE to:")
@@ -516,16 +509,16 @@ module.exports = {
             ]
           })
           await tempmsg.channel.awaitMessages({
-              filter: m => m.author.id === message.author.id,
+              filter: m => m.author.id === message.author?.id,
               max: 1,
               time: 90000,
               errors: ["time"]
             })
-            .then(collected => {
+            .then(async collected => {
               var message = collected.first();
               if (message) {
                 try {
-                  client.settings.set(message.guild.id, message.content, "suggest.footertext");
+                  await client.settings.set(message.guild.id+".suggest.footertext", message.content);
                   return message.reply({
                     embeds: [new Discord.MessageEmbed()
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-suggestion"]["variable36"]))
@@ -572,17 +565,17 @@ module.exports = {
             ]
           })
           await tempmsg.awaitReactions({
-              filter: (reaction, user) => user.id == message.author.id,
+              filter: (reaction, user) => user.id == message.author?.id,
               max: 1,
               time: 90000,
               errors: ["time"]
             })
-            .then(collected => {
+            .then(async collected => {
               var reaction = collected.first()
               if (reaction) {
                 try {
                   if (collected.first().emoji?.id && collected.first().emoji?.id.length > 2) {
-                    client.settings.set(message.guild.id, collected.first().emoji?.id, "suggest.approveemoji");
+                    await client.settings.set(message.guild.id+".suggest.approveemoji", collected.first().emoji?.id);
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-suggestion"]["variable42"]))
@@ -591,7 +584,7 @@ module.exports = {
                       ]
                     });
                   } else if (collected.first().emoji?.name) {
-                    client.settings.set(message.guild.id, collected.first().emoji?.name, "suggest.approveemoji");
+                    await client.settings.set(message.guild.id+".suggest.approveemoji", collected.first().emoji?.name);
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-suggestion"]["variable44"]))
@@ -646,17 +639,17 @@ module.exports = {
             ]
           })
           await tempmsg.awaitReactions({
-              filter: (reaction, user) => user.id == message.author.id,
+              filter: (reaction, user) => user.id == message.author?.id,
               max: 1,
               time: 90000,
               errors: ["time"]
             })
-            .then(collected => {
+            .then(async collected => {
               var reaction = collected.first()
               if (reaction) {
                 try {
                   if (collected.first().emoji?.id && collected.first().emoji?.id.length > 2) {
-                    client.settings.set(message.guild.id, collected.first().emoji?.id, "suggest.denyemoji");
+                    await client.settings.set(message.guild.id+".suggest.denyemoji", collected.first().emoji?.id);
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-suggestion"]["variable53"]))
@@ -665,7 +658,7 @@ module.exports = {
                       ]
                     });
                   } else if (collected.first().emoji?.name) {
-                    client.settings.set(message.guild.id, collected.first().emoji?.name, "suggest.denyemoji");
+                    await client.settings.set(message.guild.id+".suggest.denyemoji", collected.first().emoji?.name);
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-suggestion"]["variable55"]))
@@ -727,7 +720,7 @@ module.exports = {
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

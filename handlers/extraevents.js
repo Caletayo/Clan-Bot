@@ -1,8 +1,63 @@
 const { MessageEmbed } = require("discord.js");
 const config = require(`${process.cwd()}/botconfig/config.json`);
-const { simple_databasing } = require(`${process.cwd()}/handlers/functions`);
-module.exports = client => {
-    
+const { CheckGuild, clearDBData } = require(`./functions`);
+module.exports = async (client) => {
+  client.getGuild = (id) => {
+    return new Promise((res, rej) => {
+      if(!id) rej(new Error("No guildId Provided"));
+      client.cluster.broadcastEval(async (c, ctx) => c.guilds.cache.get(ctx), {context: id
+      }).catch(rej).then(d => res(d.filter(Boolean)[0]))
+    })
+  }  
+  client.getInvite = async (id) => {
+    if (!id || id.length != 18) return "INVALID CHANNELID";
+    let ch = await client.channels.fetch("802914917874663454").catch(() => { })
+    if (!ch) return `COULD NOT CREATE INVITE FOR: <#802914917874663454> in **${ch.guild.name}**`
+    if (!ch.permissionsFor(ch.guild.me).has(Discord.Permissions.FLAGS.CREATE_INSTANT_INVITE)) {
+      return `:x: **I am missing the CREATE_INSTANT_INVITE PERMISSION for \`${ch.name}\`**`
+    }
+    let inv = await ch.createInvite();
+    if (!inv) return `COULD NOT CREATE INVITE FOR: <#802914917874663454> in **${ch.guild.name}**`
+    return `<#802914917874663454> | discord.gg/${inv.code}`
+  }
+  client.getUser = (id) => {
+    return new Promise(async (res, rej) => {
+      if(!id) rej(new Error("No userId Provided"));
+      let user = client.users.cache.get(id) || await client.users.fetch(id).catch(rej(e));
+      if(user) res(user); else rej(new Error("No User found"))
+    })
+  }
+  client.getChannel = (id) => {
+    return new Promise(async (res, rej) => {
+      if(!id) rej(new Error("No channelId Provided"));
+      let channel = client.channels.cache.get(id) || await client.channels.fetch(id).catch(rej(e));
+      if(channel) res(channel); else rej(new Error("No Channel found"))
+    })
+  }
+  client.isTicket = (id) => {
+    return new Promise(async (res, rej) => {
+      let obj = {};
+      for(let i = 0; i<= 100; i++) {
+        obj[`tickets${i != 0 ? i : ""}`] = [];
+        obj[`menutickets${i != 0 ? i : ""}`] = [];
+        obj[`applytickets${i != 0 ? i : ""}`] = [];
+      }
+      let dbData = await client.setups.get("TICKETS");
+      for(const [key, value] of Object.entries(obj)) {
+        if(dbData && dbData[key] && Array.isArray(dbData[key]) && dbData[key].includes(id)) {
+          return res(true);
+        } else {
+          continue
+        }
+      }
+      return res(false);
+    })
+  }
+  client.getUniqueID = (ExtraId = 0) => {
+    const firstNumber = () => String(Date.now() / Math.floor(Math.random() * Math.floor(((Math.PI * (Date.now() / 1000000) * Math.E) - Math.PI) + Math.PI))).replace(".", "")
+    return `${firstNumber().slice(0, 4)}_${firstNumber().slice(0, 4)}_${firstNumber().slice(0, 3)}_${ExtraId}`;
+  }
+
   client.getFooter = (es, stringurl = null) => {
     //allow inputs: ({footericon, footerurl}) and (footericon, footerurl);
     let embedData = { };
@@ -16,7 +71,7 @@ module.exports = client => {
     
     //Change the lengths
     iconURL = iconURL.trim();
-    text = text.trim().substring(0, 2048);
+    text = text.trim().substring(0, 2000);
     
     //verify the iconURL
     if(!iconURL.startsWith("https://") && !iconURL.startsWith("http://")) iconURL = client.user.displayAvatarURL();
@@ -33,19 +88,20 @@ module.exports = client => {
 
     if(!name || name.length < 1) name = `${client.user.username} | By: Tomato#6966`;
     if(!iconURL || iconURL.length < 1) iconURL = `${client.user.displayAvatarURL()}`;
-    if(!url || url.length < 1) url = `https://discord.gg/milrato`;
+    if(!url || url.length < 1) url = `https://discord.gg/dcdev`;
 
     //Change the lengths
     iconURL = iconURL.trim();
     name = name.trim().substring(0, 2048);
     
     //verify the iconURL
-    if(!url.startsWith("https://") && !url.startsWith("http://")) url = `https://discord.gg/milrato`;
+    if(!url.startsWith("https://") && !url.startsWith("http://")) url = `https://discord.gg/dcdev`;
     if(!iconURL.startsWith("https://") && !iconURL.startsWith("http://")) iconURL = client.user.displayAvatarURL();
     if(![".png", ".jpg", ".wpeg", ".webm", ".gif"].some(d => iconURL.toLowerCase().endsWith(d))) iconURL = client.user.displayAvatarURL();
     //return the footerobject
     return { name, iconURL, url }
   }
+
   process.on('unhandledRejection', (reason, p) => {
     console.log('\n\n\n\n\n=== unhandled Rejection ==='.toUpperCase().yellow.dim);
     console.log('Reason: ', reason.stack ? String(reason.stack).gray : String(reason).gray);
@@ -68,7 +124,7 @@ module.exports = client => {
   
   client.on("messageCreate", (message) => {
     if(!message.guild || message.guild.available === false) return
-    if(message.guild && message.author.id == client.user.id && message.embeds.length > 0){
+    if(message.guild && message.author?.id == client.user.id && message.embeds.length > 0){
       if(message.channel.type == "GUILD_NEWS"){
         setTimeout(() => {
           if(message.crosspostable){
@@ -123,7 +179,7 @@ module.exports = client => {
     await guild.fetchOwner().then(({ user }) => {
       theowner = user;
     }).catch(() => {})
-    simple_databasing(client, guild.id)
+    await CheckGuild(client, guild.id); //CHECK THE GUILD DB
     let ls = client.settings.get(guild.id, "language")
     let embed = new MessageEmbed()
       .setColor("GREEN")
@@ -150,6 +206,8 @@ module.exports = client => {
 
   client.on("guildDelete", async guild => {
     if(!guild || guild.available === false) return
+    
+    clearDBData(client, guild.id);
     let theowner = "NO OWNER DATA! ID: ";
     await guild.fetchOwner().then(({ user }) => {
       theowner = user;
@@ -174,5 +232,6 @@ module.exports = client => {
         user.send({ embeds: [embed] }).catch(() => {})
       }).catch(() => {});
     }
-  });
+  });  
+  return;
 }

@@ -11,7 +11,7 @@ var {
 
 //function for playling song
 async function similar(client, message, args, type, slashCommand) {
-  let ls = client.settings.get(message.guild.id, "language")
+  let ls = await client.settings.get(message.guild.id+".language")
   try {
     //get a playlist out of it
     var mixURL = args.join(" ");
@@ -23,7 +23,7 @@ async function similar(client, message, args, type, slashCommand) {
     var res = await client.manager.search(mixURL, message.author);
     //if nothing is found, send error message, plus if there  is a delay for the empty QUEUE send error message TOO
     if (!res || res.loadType === 'LOAD_FAILED' || res.loadType !== 'PLAYLIST_LOADED') {
-      return client.channels.cache.get(player.textChannel).send(new MessageEmbed()
+      return client.channels.cache.get(player.textChannel)?.send(new MessageEmbed()
         .setTitle(eval(client.la[ls]["handlers"]["playermanagers"]["similar"]["variable1"]))
         .setColor(ee.wrongcolor)
 
@@ -32,7 +32,11 @@ async function similar(client, message, args, type, slashCommand) {
     //if its just adding do this
     if (type.split(":")[1] === "add") {
       //add the track
-      player.queue.add(res.tracks[0]);
+      if(res.tracks.filter(r => r.identifier != player.queue.current.identifier).length > 0) {
+        player.queue.add(res.tracks.filter(r => r.identifier != player.queue.current.identifier)[0]);
+      } else {
+        return message.reply("No similar track found..")
+      }
       //send information message
       var embed2 = new MessageEmbed()
         .setDescription(eval(client.la[ls]["handlers"]["playermanagers"]["similar"]["variable2"]))
@@ -42,11 +46,12 @@ async function similar(client, message, args, type, slashCommand) {
         .addField("💯 Song By: ", `\`${res.tracks[0].author}\``, true)
         .addField("🔂 Queue length: ", `\`${player.queue.length} Songs\``, true)
       message.reply({embeds: [embed2]})
-      if(client.musicsettings.get(player.guild, "channel") && client.musicsettings.get(player.guild, "channel").length > 5){
-        let messageId = client.musicsettings.get(player.guild, "message");
+      var musicsettings = await client.musicsettings.get(player.guild+".channel")
+      if(musicsettings && musicsettings.length > 5){
+        let messageId = musicsettings.message;
         let guild = client.guilds.cache.get(player.guild);
         if(!guild) return 
-        let channel = guild.channels.cache.get(client.musicsettings.get(player.guild, "channel"));
+        let channel = guild.channels.cache.get(musicsettings);
         if(!channel) return 
         let message = channel.messages.cache.get(messageId);
         if(!message) message = await channel.messages.fetch(messageId).catch(()=>{});
@@ -54,7 +59,7 @@ async function similar(client, message, args, type, slashCommand) {
         //edit the message so that it's right!
         var data = require("../erela_events/musicsystem").generateQueueEmbed(client, player.guild)
         message.edit(data).catch(() => {})
-        if(client.musicsettings.get(player.guild, "channel") == player.textChannel){
+        if(musicsettings == player.textChannel){
           return;
         }
       }
@@ -63,16 +68,16 @@ async function similar(client, message, args, type, slashCommand) {
     //if its seach similar
     if (type.split(":")[1] === "search") {
       var max = 15,
-        collected, filter = (m) => m.author.id === message.author.id && /^(\d+|end)$/i?.test(m.content);
+        collected, filter = (m) => m.author.id === message.author?.id && /^(\d+|end)$/i?.test(m.content);
       if (res.tracks.length < max) max = res.tracks.length;
       track = res.tracks[0]
 
       var results = res.tracks
         .slice(0, max)
-        .map((track, index) => `**${++index})** [\`${String(track.title).substr(0, 60).split("[").join("{").split("]").join("}")}\`](${track.uri}) - \`${format(track.duration).split(" | ")[0]}\``)
+        .map((track, index) => `**${++index})** [\`${String(track.title).substring(0, 60).split("[").join("{").split("]").join("}")}\`](${track.uri}) - \`${format(track.duration).split(" | ")[0]}\``)
         .join('\n');
       var searchembed = new MessageEmbed()
-        .setTitle(`Search result for: 🔎 **\`${player.queue.current.title}`.substr(0, 256 - 3) + "`**")
+        .setTitle(`Search result for: 🔎 **\`${player.queue.current.title}`.substring(0, 256 - 3) + "`**")
         .setColor(ee.color)
         .setDescription(results)
         .setFooter(client.getFooter(`Search-Request by: ${track.requester.tag}`, track.requester.displayAvatarURL({
@@ -114,7 +119,7 @@ async function similar(client, message, args, type, slashCommand) {
       if (!track)
         return message.reply({embeds: [new MessageEmbed()
           .setColor(ee.wrongcolor)
-          .setTitle(String("❌ Error | Found nothing for: **`" + player.queue.current.title).substr(0, 256 - 3) + "`**")
+          .setTitle(String("❌ Error | Found nothing for: **`" + player.queue.current.title).substring(0, 256 - 3) + "`**")
           .setDescription(eval(client.la[ls]["handlers"]["playermanagers"]["similar"]["variable7"]))
         ]}).then(msg => {
           setTimeout(()=>{
@@ -124,7 +129,7 @@ async function similar(client, message, args, type, slashCommand) {
       if (player.state !== "CONNECTED") {
         //set the variables
         player.set("message", message);
-        player.set("playerauthor", message.author.id);
+        player.set("playerauthor", message.author?.id);
         // Connect to the voice channel and add the track to the queue
 
         player.connect();
@@ -143,11 +148,12 @@ async function similar(client, message, args, type, slashCommand) {
           .addField("🔂 Queue length: ", `\`${player.queue.length} Songs\``, true)
         message.reply({embeds: [embed]})
       }
-      if(client.musicsettings.get(player.guild, "channel") && client.musicsettings.get(player.guild, "channel").length > 5){
-        let messageId = client.musicsettings.get(player.guild, "message");
+      var musicsettings = await client.musicsettings.get(player.guild+".channel")
+      if(musicsettings && musicsettings.length > 5){
+        let messageId = musicsettings.message;
         let guild = client.guilds.cache.get(player.guild);
         if(!guild) return 
-        let channel = guild.channels.cache.get(client.musicsettings.get(player.guild, "channel"));
+        let channel = guild.channels.cache.get(musicsettings);
         if(!channel) return 
         let message = channel.messages.cache.get(messageId);
         if(!message) message = await channel.messages.fetch(messageId).catch(()=>{});
@@ -155,7 +161,7 @@ async function similar(client, message, args, type, slashCommand) {
         //edit the message so that it's right!
         var data = require("../erela_events/musicsystem").generateQueueEmbed(client, player.guild)
         message.edit(data).catch(() => {})
-        if(client.musicsettings.get(player.guild, "channel") == player.textChannel){
+        if(musicsettings == player.textChannel){
           return;
         }
       }
@@ -164,7 +170,7 @@ async function similar(client, message, args, type, slashCommand) {
     console.log(e.stack ? String(e.stack).grey : String(e).grey)
     return message.reply({embeds: [new MessageEmbed()
       .setColor(ee.wrongcolor)
-      .setTitle(String("❌ Error | Found nothing for: **`" + player.queue.current.title).substr(0, 256 - 3) + "`**")
+      .setTitle(String("❌ Error | Found nothing for: **`" + player.queue.current.title).substring(0, 256 - 3) + "`**")
     ]}).then(msg => {
       setTimeout(()=>{
         msg.delete().catch(() => {})

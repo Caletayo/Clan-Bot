@@ -2,12 +2,12 @@ var {
   MessageEmbed
 } = require("discord.js");
 var Discord = require("discord.js");
-var config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
+var config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
 var emojis = require("../../botconfig/emojis.json");
 var {
-  databasing
-} = require(`${process.cwd()}/handlers/functions`);
+  dbEnsure
+} = require(`../../handlers/functions`);
 const {
   MessageButton,
   MessageActionRow,
@@ -22,13 +22,11 @@ module.exports = {
   description: "Manage 25 different Application Systems",
   memberpermissions: ["ADMINISTRATOR"],
   type: "system",
-  run: async (client, message, args, cmduser, text, prefix) => {
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     let theemoji = "📜";
     let MilratoGuild = client.guilds.cache.get("773668217163218944");
     if (MilratoGuild) theemoji = "877653386747605032";
     let allbuttons = [new MessageActionRow().addComponents([new MessageButton().setStyle('SUCCESS').setEmoji(theemoji).setCustomId("User_Apply").setLabel("Apply")])]
-    let es = client.settings.get(message.guild.id, "embed");
-    let ls = client.settings.get(message.guild.id, "language")
     let apply_for_here = client.apply;
     let pre;
     let temptype = 0;
@@ -128,7 +126,7 @@ module.exports = {
         //define the embed
         let MenuEmbed = new Discord.MessageEmbed()
           .setColor(es.color)
-          .setAuthor(client.getAuthor('Application Setup', 'https://cdn.discordapp.com/emojis/877653386747605032.png?size=96', 'https://discord.gg/milrato'))
+          .setAuthor(client.getAuthor('Application Setup', 'https://cdn.discordapp.com/emojis/877653386747605032.png?size=96', 'https://discord.gg/dcdev'))
           .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
         let used1 = false;
         //send the menu msg
@@ -140,11 +138,11 @@ module.exports = {
         ]})
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({ 
-          filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+          filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
           time: 90000
         })
         //Menu Collections
-        collector.on('collect', menu => {
+        collector.on('collect', async menu => {
           if (menu?.user.id === cmduser.id) {
             collector.stop();
             let menuoptiondata = menuoptions.find(v => v.value == menu?.values[0])
@@ -152,7 +150,6 @@ module.exports = {
             menu?.deferUpdate();
             let SetupNumber = menu?.values[0].split(" ")[0]
             if (Number(SetupNumber) >= 1) {
-              apply_for_here = client.apply;
               pre = `apply${SetupNumber}` 
             }
             used1 = true;
@@ -179,65 +176,8 @@ module.exports = {
     async function second_layer(SetupNumber, menuoptiondata) {
       try {
         //ensure the database
-        apply_for_here.ensure(guildid, {
-          "channel_id": "",
-          "message_id": "",
-          "f_channel_id": "", //changequestions --> which one (lists everyone with index) --> 4. --> Question
+        await dbEnsure(apply_for_here, message.guild.id, getApplyEnsureData())
 
-          "QUESTIONS": [{
-            "1": "DEFAULT"
-          }],
-
-          "TEMP_ROLE": "0",
-
-          "accept": "You've got accepted!",
-          "accept_role": "0",
-
-          "deny": "You've got denied!",
-
-          "ticket": "Hey {user}! We have some Questions!",
-
-          "one": {
-            "role": "0",
-            "message": "Hey you've got accepted for Team 1",
-            "image": {
-              "enabled": false,
-              "url": ""
-            }
-          },
-          "two": {
-            "role": "0",
-            "message": "Hey you've got accepted for Team 2",
-            "image": {
-              "enabled": false,
-              "url": ""
-            }
-          },
-          "three": {
-            "role": "0",
-            "message": "Hey you've got accepted for Team 3",
-            "image": {
-              "enabled": false,
-              "url": ""
-            }
-          },
-          "four": {
-            "role": "0",
-            "message": "Hey you've got accepted for Team 4",
-            "image": {
-              "enabled": false,
-              "url": ""
-            }
-          },
-          "five": {
-            "role": "0",
-            "message": "Hey you've got accepted for Team 5",
-            "image": {
-              "enabled": false,
-              "url": ""
-            }
-          }
-        }, pre);
         console.log("APPLY DB NUMBER: ".green, pre);
         let menuoptions = [{
             value: "Create Apply-System",
@@ -321,8 +261,8 @@ module.exports = {
             emoji: "🔵"
           },
           {
-            value: apply_for_here.get(message.guild.id, `${pre}.last_verify`) ? "Enable Last Verify" : "Disable Last Verify",
-            description: apply_for_here.get(message.guild.id, `${pre}.last_verify`) ? "Enabled Last Verification Message for the User" : "Disabled Last Verification Message for the User",
+            value: await apply_for_here.get(message.guild.id+ `.${pre}.last_verify`) ? "Enable Last Verify" : "Disable Last Verify",
+            description: await apply_for_here.get(message.guild.id+ `.${pre}.last_verify`) ? "Enabled Last Verification Message for the User" : "Disabled Last Verification Message for the User",
             emoji: "✋"
           },
           {
@@ -351,17 +291,17 @@ module.exports = {
         //define the embed
         let MenuEmbed = new Discord.MessageEmbed()
           .setColor(es.color)
-          .setAuthor(SetupNumber + " Apply Setup", "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/282/incoming-envelope_1f4e8.png", "https://discord.gg/milrato")
+          .setAuthor(SetupNumber + " Apply Setup", "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/twitter/282/incoming-envelope_1f4e8.png", "https://discord.gg/dcdev")
           .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable4"]))
         //send the menu msg
         let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({ 
-          filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+          filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
           time: 90000
         })
         //Menu Collections
-        collector.on('collect', menu => {
+        collector.on('collect', async menu => {
           if (menu?.user.id === cmduser.id) {
             collector.stop();
             let menuoptiondata = menuoptions.find(v => v.value == menu?.values[0])
@@ -429,7 +369,7 @@ module.exports = {
                 .setFooter(client.getFooter(es))
               ]
             })
-            var collector = pickmsg.createMessageComponentCollector({filter: (interaction) => interaction?.isButton() && interaction?.message.author.id == client.user.id && interaction?.user.id == cmduser.id,
+            var collector = pickmsg.createMessageComponentCollector({filter: (interaction) => interaction?.isButton() && interaction?.message.author?.id == client.user.id && interaction?.user.id == cmduser.id,
                 max: 1,
                 time: 180000,
                 erros: ["time"]
@@ -450,7 +390,7 @@ module.exports = {
               })
               message.guild.channels.create("📋 | Applications", {
                 type: "GUILD_CATEGORY",
-              }).then(ch => {
+              }).then(async (ch) => {
                 ch.guild.channels.create("✔️|finished-applies", {
                   type: "GUILD_TEXT",
                   topic: "React to the Embed, to start the application process",
@@ -459,9 +399,9 @@ module.exports = {
                     id: ch.guild.id,
                     deny: ["VIEW_CHANNEL"]
                   }]
-                }).then(ch => {
+                }).then(async (ch) => {
                   f_applychannel = ch.id
-                  apply_for_here.set(ch.guild.id, ch.id, pre+".f_channel_id")
+                  await apply_for_here.set(ch.guild.id+`.${pre}`+".f_channel_id", ch.id)
                 })
                 ch.guild.channels.create("✅|apply-here", {
                   type: "GUILD_TEXT",
@@ -477,7 +417,7 @@ module.exports = {
                       allow: ["VIEW_CHANNEL", "SEND_MESSAGES"],
                     }
                   ]
-                }).then(ch => {
+                }).then(async (ch) => {
                   var embed = new Discord.MessageEmbed().setFooter(client.getFooter(es))
                     .setColor(es.color)
                     .setFooter(client.getFooter(es))
@@ -486,13 +426,13 @@ module.exports = {
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable9"]))
                       .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable9_1"]))
                     ]
-                  }).then(msg => {
+                  }).then(async (msg) => {
                     msg.channel.awaitMessages({
                         filter: m => m.author.id === userid,
                         max: 1,
                         time: 180000,
                         errors: ["TIME"]
-                      }).then(collected => {
+                      }).then(async collected => {
                         var content = collected.first().content;
                         if (!content.startsWith("#") && content.length !== 7) {
                           message.reply({
@@ -529,13 +469,13 @@ module.exports = {
                             .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable13"]))
                             .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable13_1"]))
                           ]
-                        }).then(msg => {
+                        }).then(async (msg) => {
                           msg.channel.awaitMessages({
                             filter: m => m.author.id === userid,
                             max: 1,
                             time: 180000,
                             errors: ["TIME"]
-                          }).then(collected => {
+                          }).then(async collected => {
                             desc = collected.first().content;
                             var setupembed = new Discord.MessageEmbed().setFooter(client.getFooter(es))
                               .setColor(color)
@@ -545,15 +485,15 @@ module.exports = {
                             ch.send({
                               embeds: [setupembed],
                               components: allbuttons
-                            }).then(msg => {
-                              apply_for_here.set(msg.guild.id, msg.id, pre+".message_id")
-                              apply_for_here.set(msg.guild.id, msg.channel.id, pre+".channel_id")
+                            }).then(async (msg) => {
+                              await apply_for_here.set(msg.guild.id+`.${pre}`+".message_id", msg.id)
+                              await apply_for_here.set(msg.guild.id+`.${pre}`+".channel_id", msg.channel.id)
                               applychannel = msg.channel.id;
                             });
                             var counter = 0;
-                            apply_for_here.set(msg.guild.id, [{
-                              "1": "DEFAULT"
-                            }], pre+".QUESTIONS")
+                            await apply_for_here.set(msg.guild.id+`.${pre}`+".QUESTIONS", [
+                              //{ "1": "DEFAULT" }
+                          ])
                             ask_which_qu();
 
                             function ask_which_qu() {
@@ -568,143 +508,23 @@ module.exports = {
                               }
                               message.reply({
                                 embeds: [embed.setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable16"])).setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable17"]))]
-                              }).then(msg => {
+                              }).then(async (msg) => {
                                 msg.channel.awaitMessages({
                                   filter: m => m.author.id === userid,
                                   max: 1,
                                   time: 180000,
                                   errors: ["TIME"]
-                                }).then(collected => {
+                                }).then(async collected => {
                                   if (collected.first().content.toLowerCase() === "finish") {
                                     return ask_addrole();
                                   }
-                                  switch (counter) {
-                                    case 1: {
-                                      apply_for_here.set(msg.guild.id, [], pre+".QUESTIONS");
-                                      apply_for_here.push(msg.guild.id, {
-                                        "1": collected.first().content
-                                      }, pre+".QUESTIONS");
-                                    }
-                                    break;
-                                  case 2:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "2": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 3:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "3": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 4:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "4": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 5:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "5": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 6:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "6": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 7:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "7": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 8:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "8": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 9:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "9": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 10:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "10": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 11:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "11": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 12:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "12": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 13:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "13": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 14:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "14": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 15:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "15": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 16:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "16": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 17:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "17": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 18:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "18": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 19:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "19": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 20:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "20": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 21:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "21": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 22:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "22": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 23:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "23": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
-                                  case 24:
-                                    apply_for_here.push(msg.guild.id, {
-                                      "24": collected.first().content
-                                    }, pre+".QUESTIONS");
-                                    break;
+                                  if(counter >= 1 && counter <= 24) {
+                                    let obj = {}
+                                    obj[String(counter)] = collected.first().content;
+                                    await apply_for_here.push(msg.guild.id+`.${pre}`+".QUESTIONS", obj)
                                   }
                                   ask_which_qu();
                                 }).catch(error => {
-
                                   return message.reply({
                                     embeds: [new Discord.MessageEmbed()
                                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable18"]))
@@ -720,7 +540,7 @@ module.exports = {
                             function ask_addrole() {
                               message.reply({
                                 embeds: [embed.setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable19"])).setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable20"]))]
-                              }).then(msg => {
+                              }).then(async (msg) => {
                                 msg.channel.awaitMessages({
                                   filter: m => m.author.id === userid,
                                   max: 1,
@@ -768,7 +588,7 @@ module.exports = {
                                         ]
                                       });
                                     }
-                                    apply_for_here.set(message.guild.id, role.id, pre+".TEMP_ROLE")
+                                    await apply_for_here.set(message.guild.id+`.${pre}`+".TEMP_ROLE", role.id)
                                     return message.reply({
                                       embeds: [new Discord.MessageEmbed()
                                         .setFooter(client.getFooter(es))
@@ -829,7 +649,7 @@ module.exports = {
                   max: 1,
                   time: 180000,
                   erros: ["time"]
-                }).then(collected => {
+                }).then(async collected => {
                   var channel = collected.first().mentions.channels.filter(ch => ch.guild.id == message.guild.id).first();
                   if (channel) {
                     applychannel = channel.id;
@@ -875,7 +695,7 @@ module.exports = {
                   max: 1,
                   time: 180000,
                   erros: ["time"]
-                }).then(collected => {
+                }).then(async collected => {
                   var channel = collected.first().mentions.channels.filter(ch => ch.guild.id == message.guild.id).first();
                   if (channel) {
                     f_applychannel = channel.id;
@@ -936,7 +756,7 @@ module.exports = {
                 max: 1,
                 time: 180000,
                 errors: ["TIME"]
-              }).then(collected => {
+              }).then(async collected => {
                 var content = collected.first().content;
                 if (!content.startsWith("#") && content.length !== 7) {
                   message.reply({
@@ -974,13 +794,13 @@ module.exports = {
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable46"]))
                   .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable46_1"]))
                 ]
-              }).then(msg => {
+              }).then(async (msg) => {
                 msg.channel.awaitMessages({
                   filter: m => m.author.id === userid,
                   max: 1,
                   time: 180000,
                   errors: ["TIME"]
-                }).then(collected => {
+                }).then(async collected => {
                   desc = collected.first().content;
                   var setupembed = new Discord.MessageEmbed().setFooter(client.getFooter(es))
                     .setColor(color)
@@ -990,15 +810,15 @@ module.exports = {
                   message.guild.channels.cache.get(applychannel).send({
                     embeds: [setupembed],
                     components: allbuttons
-                  }).then(msg => {
-                    apply_for_here.set(msg.guild.id, msg.id, pre+".message_id")
-                    apply_for_here.set(message.guild.id, f_applychannel, pre+".f_channel_id")
-                    apply_for_here.set(msg.guild.id, applychannel, pre+".channel_id")
+                  }).then(async (msg) => {
+                    await apply_for_here.set(msg.guild.id+`.${pre}`+".message_id", msg.id)
+                    await apply_for_here.set(message.guild.id+`.${pre}`+".f_channel_id", f_applychannel)
+                    await apply_for_here.set(msg.guild.id+`.${pre}`+".channel_id", applychannel)
                   });
                   var counter = 0;
-                  apply_for_here.set(msg.guild.id, [{
-                    "1": "DEFAULT"
-                  }], pre+".QUESTIONS")
+                  await apply_for_here.set(msg.guild.id+`.${pre}`+".QUESTIONS", [
+                    //{ "1": "DEFAULT" }
+                ])
                   ask_which_qu();
 
                   function ask_which_qu() {
@@ -1006,7 +826,7 @@ module.exports = {
                     if (counter === 25) {
                       message.reply({
                         embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("RED")
-                          .setAuthor('You reached the maximum amount of Questions!', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/facebook/65/cross-mark_274c.png')
+                          .setAuthor(client.getAuthor('You reached the maximum amount of Questions!', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/facebook/65/cross-mark_274c.png'))
                         ]
                       })
 
@@ -1014,140 +834,27 @@ module.exports = {
                     }
                     message.reply({
                       embeds: [embed.setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable49"])).setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable50"]))]
-                    }).then(msg => {
+                    }).then(async (msg) => {
                       msg.channel.awaitMessages({
                         filter: m => m.author.id === userid,
                         max: 1,
                         time: 180000,
                         errors: ["TIME"]
-                      }).then(collected => {
+                      }).then(async collected => {
                         if (collected.first().content.toLowerCase() === "finish") {
                           return ask_addrole();
                         }
-                        switch (counter) {
-                          case 1: {
-                            apply_for_here.set(msg.guild.id, [], pre+".QUESTIONS");
-                            apply_for_here.push(msg.guild.id, {
-                              "1": collected.first().content
-                            }, pre+".QUESTIONS");
-                          }
-                          break;
-                        case 2:
-                          apply_for_here.push(msg.guild.id, {
-                            "2": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 3:
-                          apply_for_here.push(msg.guild.id, {
-                            "3": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 4:
-                          apply_for_here.push(msg.guild.id, {
-                            "4": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 5:
-                          apply_for_here.push(msg.guild.id, {
-                            "5": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 6:
-                          apply_for_here.push(msg.guild.id, {
-                            "6": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 7:
-                          apply_for_here.push(msg.guild.id, {
-                            "7": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 8:
-                          apply_for_here.push(msg.guild.id, {
-                            "8": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 9:
-                          apply_for_here.push(msg.guild.id, {
-                            "9": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 10:
-                          apply_for_here.push(msg.guild.id, {
-                            "10": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 11:
-                          apply_for_here.push(msg.guild.id, {
-                            "11": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 12:
-                          apply_for_here.push(msg.guild.id, {
-                            "12": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 13:
-                          apply_for_here.push(msg.guild.id, {
-                            "13": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 14:
-                          apply_for_here.push(msg.guild.id, {
-                            "14": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 15:
-                          apply_for_here.push(msg.guild.id, {
-                            "15": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 16:
-                          apply_for_here.push(msg.guild.id, {
-                            "16": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 17:
-                          apply_for_here.push(msg.guild.id, {
-                            "17": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 18:
-                          apply_for_here.push(msg.guild.id, {
-                            "18": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 19:
-                          apply_for_here.push(msg.guild.id, {
-                            "19": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 20:
-                          apply_for_here.push(msg.guild.id, {
-                            "20": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 21:
-                          apply_for_here.push(msg.guild.id, {
-                            "21": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 22:
-                          apply_for_here.push(msg.guild.id, {
-                            "22": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 23:
-                          apply_for_here.push(msg.guild.id, {
-                            "23": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
-                        case 24:
-                          apply_for_here.push(msg.guild.id, {
-                            "24": collected.first().content
-                          }, pre+".QUESTIONS");
-                          break;
+                        // Reset 
+                        if(counter == 1) {
+                          await apply_for_here.set(msg.guild.id+`.${pre}`+".QUESTIONS", []);
                         }
+                        // push the new ones
+                        if(counter >= 1 && counter <= 24) {
+                          let obj = {}
+                          obj[String(counter)] = collected.first().content;
+                          await apply_for_here.push(msg.guild.id+`.${pre}`+".QUESTIONS", obj)
+                        }
+                        
                         ask_which_qu();
                       }).catch(e => {
                         errored = e
@@ -1169,7 +876,7 @@ module.exports = {
                   function ask_addrole() {
                     message.reply({
                       embeds: [embed.setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable52"])).setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable53"]))]
-                    }).then(msg => {
+                    }).then(async (msg) => {
                       msg.channel.awaitMessages({
                         filter: m => m.author.id === userid,
                         max: 1,
@@ -1219,7 +926,7 @@ module.exports = {
                               ]
                             });
                           }
-                          apply_for_here.set(message.guild.id, role.id, pre+".TEMP_ROLE")
+                          await apply_for_here.set(message.guild.id+`.${pre}`+".TEMP_ROLE", role.id)
                           return message.reply({
                             embeds: [new Discord.MessageEmbed()
                               .setFooter(client.getFooter(es))
@@ -1270,14 +977,14 @@ module.exports = {
             embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new accept message?", message.author.displayAvatarURL({
               dynamic: true
             }))]
-          }).then(msg => {
+          }).then(async (msg) => {
             msg.channel.awaitMessages({
               filter: m => m.author.id === cmduser.id,
               max: 1,
               time: 180000,
               errors: ["TIME"]
-            }).then(collected => {
-              apply_for_here.set(message.guild.id, collected.first().content, pre+".accept")
+            }).then(async collected => {
+              await apply_for_here.set(message.guild.id+`.${pre}`+".accept", collected.first().content)
               return message.reply({
                 embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT MESSAGE!", message.author.displayAvatarURL({
                   dynamic: true
@@ -1302,13 +1009,13 @@ module.exports = {
             embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new accept Role, which will be granted when the User got accepted?", message.author.displayAvatarURL({
               dynamic: true
             }))]
-          }).then(msg => {
+          }).then(async (msg) => {
             msg.channel.awaitMessages({
               filter: m => m.author.id === cmduser.id,
               max: 1,
               time: 180000,
               errors: ["TIME"]
-            }).then(collected => {
+            }).then(async collected => {
               var role = collected.first().mentions.roles.first();
               if (!role) return message.reply({
                 content: eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable69"])
@@ -1324,7 +1031,7 @@ module.exports = {
               var botrole = message.guild.me.roles.highest
 
               if (guildrole.rawPosition <= botrole.rawPosition) {
-                apply_for_here.set(message.guild.id, role.id, pre+".accept_role")
+                await apply_for_here.set(message.guild.id+`.${pre}`+".accept_role", role.id)
                 return message.reply({
                   embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT ROLE!", message.author.displayAvatarURL({
                     dynamic: true
@@ -1356,14 +1063,14 @@ module.exports = {
             embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new deny message?", message.author.displayAvatarURL({
               dynamic: true
             }))]
-          }).then(msg => {
+          }).then(async (msg) => {
             msg.channel.awaitMessages({
               filter: m => m.author.id === cmduser.id,
               max: 1,
               time: 180000,
               errors: ["TIME"]
-            }).then(collected => {
-              apply_for_here.set(message.guild.id, collected.first().content, pre+".deny")
+            }).then(async collected => {
+              await apply_for_here.set(message.guild.id+`.${pre}`+".deny", collected.first().content)
               return message.reply({
                 embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the DENY MESSAGE!", message.author.displayAvatarURL({
                   dynamic: true
@@ -1388,14 +1095,14 @@ module.exports = {
             embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new Ticket message? | {user} pings the User", message.author.displayAvatarURL({
               dynamic: true
             }))]
-          }).then(msg => {
+          }).then(async (msg) => {
             msg.channel.awaitMessages({
               filter: m => m.author.id === cmduser.id,
               max: 1,
               time: 180000,
               errors: ["TIME"]
-            }).then(collected => {
-              apply_for_here.set(message.guild.id, collected.first().content, pre+".ticket")
+            }).then(async collected => {
+              await apply_for_here.set(message.guild.id+`.${pre}`+".ticket", collected.first().content)
               return message.reply({
                 embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the TICKET MESSAGE!", message.author.displayAvatarURL({
                   dynamic: true
@@ -1447,7 +1154,7 @@ module.exports = {
               time: 180000,
               errors: ["time"]
             })
-            .then(collected => {
+            .then(async collected => {
               var reaction = collected.first()
               reaction.users.remove(cmduser.id)
               if (reaction.emoji?.name === "1️⃣") type = "message";
@@ -1477,14 +1184,14 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new accept message for emoji one?", message.author.displayAvatarURL({
                   dynamic: true
                 }))]
-              }).then(msg => {
+              }).then(async (msg) => {
                 msg.channel.awaitMessages({
                   filter: m => m.author.id === cmduser.id,
                   max: 1,
                   time: 180000,
                   errors: ["TIME"]
-                }).then(collected => {
-                  apply_for_here.set(message.guild.id, collected.first().content, pre+".one.message")
+                }).then(async collected => {
+                  await apply_for_here.set(message.guild.id+`.${pre}`+".one.message", collected.first().content)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT MESSAGE for emoji one!", message.author.displayAvatarURL({
                       dynamic: true
@@ -1509,13 +1216,13 @@ module.exports = {
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new accept Role, which will be granted when the User got accepted for emoji one?", message.author.displayAvatarURL({
                 dynamic: true
               }))]
-            }).then(msg => {
+            }).then(async (msg) => {
               msg.channel.awaitMessages({
                 filter: m => m.author.id === cmduser.id,
                 max: 1,
                 time: 180000,
                 errors: ["TIME"]
-              }).then(collected => {
+              }).then(async collected => {
                 var role = collected.first().mentions.roles.first();
                 if (!role) return message.reply({
                   content: eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable80"])
@@ -1531,7 +1238,7 @@ module.exports = {
                 var botrole = message.guild.me.roles.highest
 
                 if (guildrole.rawPosition <= botrole.rawPosition) {
-                  apply_for_here.set(message.guild.id, role.id, pre+".one.role")
+                  await apply_for_here.set(message.guild.id+`.${pre}`+".one.role", role.id)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT ROLE for emoji one!", message.author.displayAvatarURL({
                       dynamic: true
@@ -1559,7 +1266,7 @@ module.exports = {
           }
           break;
           case "delrole": {
-            apply_for_here.set(message.guild.id, "", pre+".one.role")
+            await apply_for_here.set(message.guild.id+`.${pre}`+".one.role", "")
             return message.reply({
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully deleted the ACCEPT ROLE for emoji one!", message.author.displayAvatarURL({
                 dynamic: true
@@ -1568,8 +1275,8 @@ module.exports = {
           }
           break;
           case "delimage": {
-            apply_for_here.set(message.guild.id, false, pre+".one.image.enabled")
-            apply_for_here.set(message.guild.id, "", pre+".one.image.url")
+            await apply_for_here.set(message.guild.id+`.${pre}`+".one.image.enabled", false)
+            await apply_for_here.set(message.guild.id+`.${pre}`+".one.image.url", "")
             return message.reply({
               embeds: [new Discord.MessageEmbed()
                 .setFooter(client.getFooter(es))
@@ -1589,17 +1296,17 @@ module.exports = {
                   .setFooter("Pick the INDEX NUMBER / send the IMAGE URl", client.user.displayAvatarURL())
                   .setThumbnail(client.user.displayAvatarURL())
                 ]
-              }).then(msg => {
+              }).then(async (msg) => {
                 msg.channel.awaitMessages({
                   filter: m => m.author.id === cmduser.id,
                   max: 1,
                   time: 180000,
                   errors: ['time']
-                }).then(collected => {
+                }).then(async collected => {
                   if (collected.first().attachments.size > 0) {
                     if (collected.first().attachments.every(attachIsImage)) {
-                      apply_for_here.set(message.guild.id, true, pre+".one.image.enabled")
-                      apply_for_here.set(message.guild.id, url, pre+".one.image.url")
+                      await apply_for_here.set(message.guild.id+`.${pre}`+".one.image.enabled", true)
+                      await apply_for_here.set(message.guild.id+`.${pre}`+".one.image.url", url)
                       return message.reply({
                         embeds: [new Discord.MessageEmbed()
                           .setFooter(client.getFooter(es))
@@ -1617,8 +1324,8 @@ module.exports = {
                       });
                     }
                   } else if (collected.first().content.includes("https") || collected.first().content.includes("http")) {
-                    apply_for_here.set(message.guild.id, true, pre+".one.image.enabled")
-                    apply_for_here.set(message.guild.id, collected.first().content, pre+".one.image.url")
+                    await apply_for_here.set(message.guild.id+`.${pre}`+".one.image.enabled", true)
+                    await apply_for_here.set(message.guild.id+`.${pre}`+".one.image.url", collected.first().content)
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setFooter(client.getFooter(es))
@@ -1697,7 +1404,7 @@ module.exports = {
               time: 180000,
               errors: ["time"]
             })
-            .then(collected => {
+            .then(async collected => {
               var reaction = collected.first()
               reaction.users.remove(cmduser.id)
               if (reaction.emoji?.name === "1️⃣") type = "message";
@@ -1727,14 +1434,14 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new accept message for emoji two?", message.author.displayAvatarURL({
                   dynamic: true
                 }))]
-              }).then(msg => {
+              }).then(async (msg) => {
                 msg.channel.awaitMessages({
                   filter: m => m.author.id === cmduser.id,
                   max: 1,
                   time: 180000,
                   errors: ["TIME"]
-                }).then(collected => {
-                  apply_for_here.set(message.guild.id, collected.first().content, pre+".two.message")
+                }).then(async collected => {
+                  await apply_for_here.set(message.guild.id+`.${pre}`+".two.message", collected.first().content)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT MESSAGE for emoji two!", message.author.displayAvatarURL({
                       dynamic: true
@@ -1759,13 +1466,13 @@ module.exports = {
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new accept Role, which will be granted when the User got accepted for emoji two?", message.author.displayAvatarURL({
                 dynamic: true
               }))]
-            }).then(msg => {
+            }).then(async (msg) => {
               msg.channel.awaitMessages({
                 filter: m => m.author.id === cmduser.id,
                 max: 1,
                 time: 180000,
                 errors: ["TIME"]
-              }).then(collected => {
+              }).then(async collected => {
                 var role = collected.first().mentions.roles.first();
                 if (!role) return message.reply({
                   embeds: [new Discord.MessageEmbed()
@@ -1786,7 +1493,7 @@ module.exports = {
                 var botrole = message.guild.me.roles.highest
 
                 if (guildrole.rawPosition <= botrole.rawPosition) {
-                  apply_for_here.set(message.guild.id, role.id, pre+".two.role")
+                  await apply_for_here.set(message.guild.id+`.${pre}`+".two.role", role.id)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT ROLE for emoji two!", message.author.displayAvatarURL({
                       dynamic: true
@@ -1814,7 +1521,7 @@ module.exports = {
           }
           break;
           case "delrole": {
-            apply_for_here.set(message.guild.id, "", pre+".two.role")
+            await apply_for_here.set(message.guild.id+`.${pre}`+".two.role", "", )
             return message.reply({
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully deleted the ACCEPT ROLE for emoji two!", message.author.displayAvatarURL({
                 dynamic: true
@@ -1823,8 +1530,8 @@ module.exports = {
           }
           break;
           case "delimage": {
-            apply_for_here.set(message.guild.id, false, pre+".two.image.enabled")
-            apply_for_here.set(message.guild.id, "", pre+".two.image.url")
+            await apply_for_here.set(message.guild.id+`.${pre}`+".two.image.enabled", false, )
+            await apply_for_here.set(message.guild.id+`.${pre}`+".two.image.url", "", )
             return message.reply({
               embeds: [new Discord.MessageEmbed()
                 .setFooter(client.getFooter(es))
@@ -1846,17 +1553,17 @@ module.exports = {
                   .setFooter("Pick the INDEX NUMBER / send the IMAGE URl", client.user.displayAvatarURL())
                   .setThumbnail(client.user.displayAvatarURL())
                 ]
-              }).then(msg => {
+              }).then(async (msg) => {
                 msg.channel.awaitMessages({
                   filter: m => m.author.id === cmduser.id,
                   max: 1,
                   time: 180000,
                   errors: ['time']
-                }).then(collected => {
+                }).then(async collected => {
                   if (collected.first().attachments.size > 0) {
                     if (collected.first().attachments.every(attachIsImage)) {
-                      apply_for_here.set(message.guild.id, true, pre+".two.image.enabled")
-                      apply_for_here.set(message.guild.id, url, pre+".two.image.url")
+                      await apply_for_here.set(message.guild.id+`.${pre}`+".two.image.enabled", true, )
+                      await apply_for_here.set(message.guild.id+`.${pre}`+".two.image.url", url, )
                       return message.reply({
                         embeds: [new Discord.MessageEmbed()
                           .setFooter(client.getFooter(es))
@@ -1874,8 +1581,8 @@ module.exports = {
                       });
                     }
                   } else if (collected.first().content.includes("https") || collected.first().content.includes("http")) {
-                    apply_for_here.set(message.guild.id, true, pre+".two.image.enabled")
-                    apply_for_here.set(message.guild.id, collected.first().content, pre+".two.image.url")
+                    await apply_for_here.set(message.guild.id+`.${pre}`+".two.image.enabled", true)
+                    await apply_for_here.set(message.guild.id+`.${pre}`+".two.image.url", collected.first().content)
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setFooter(client.getFooter(es))
@@ -1953,7 +1660,7 @@ module.exports = {
               time: 180000,
               errors: ["time"]
             })
-            .then(collected => {
+            .then(async collected => {
               var reaction = collected.first()
               reaction.users.remove(cmduser.id)
               if (reaction.emoji?.name === "1️⃣") type = "message";
@@ -1983,14 +1690,14 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new accept message for emoji three?", message.author.displayAvatarURL({
                   dynamic: true
                 }))]
-              }).then(msg => {
+              }).then(async (msg) => {
                 msg.channel.awaitMessages({
                   filter: m => m.author.id === cmduser.id,
                   max: 1,
                   time: 180000,
                   errors: ["TIME"]
-                }).then(collected => {
-                  apply_for_here.set(message.guild.id, collected.first().content, pre+".three.message")
+                }).then(async collected => {
+                  await apply_for_here.set(message.guild.id+`.${pre}`+".three.message", collected.first().content)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT MESSAGE for emoji three!", message.author.displayAvatarURL({
                       dynamic: true
@@ -2015,13 +1722,13 @@ module.exports = {
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new accept Role, which will be granted when the User got accepted for emoji three?", message.author.displayAvatarURL({
                 dynamic: true
               }))]
-            }).then(msg => {
+            }).then(async (msg) => {
               msg.channel.awaitMessages({
                 filter: m => m.author.id === cmduser.id,
                 max: 1,
                 time: 180000,
                 errors: ["TIME"]
-              }).then(collected => {
+              }).then(async collected => {
                 var role = collected.first().mentions.roles.first();
                 if (!role) return message.reply({
                   embeds: [new Discord.MessageEmbed()
@@ -2043,7 +1750,7 @@ module.exports = {
                 var botrole = message.guild.me.roles.highest
 
                 if (guildrole.rawPosition <= botrole.rawPosition) {
-                  apply_for_here.set(message.guild.id, role.id, pre+".three.role")
+                  await apply_for_here.set(message.guild.id+`.${pre}`+".three.role", role.id)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT ROLE for emoji three!", message.author.displayAvatarURL({
                       dynamic: true
@@ -2071,7 +1778,7 @@ module.exports = {
           }
           break;
           case "delrole": {
-            apply_for_here.set(message.guild.id, "", pre+".three.role")
+            await apply_for_here.set(message.guild.id+`.${pre}`+".three.role", "")
             return message.reply({
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully deleted the ACCEPT ROLE for emoji three!", message.author.displayAvatarURL({
                 dynamic: true
@@ -2080,8 +1787,8 @@ module.exports = {
           }
           break;
           case "delimage": {
-            apply_for_here.set(message.guild.id, false, pre+".three.image.enabled")
-            apply_for_here.set(message.guild.id, "", pre+".three.image.url")
+            await apply_for_here.set(message.guild.id+`.${pre}`+".three.image.enabled", false)
+            await apply_for_here.set(message.guild.id+`.${pre}`+".three.image.url", "")
             return message.reply({
               embeds: [new Discord.MessageEmbed()
                 .setFooter(client.getFooter(es))
@@ -2101,17 +1808,17 @@ module.exports = {
                   .setFooter("Pick the INDEX NUMBER / send the IMAGE URl", client.user.displayAvatarURL())
                   .setThumbnail(client.user.displayAvatarURL())
                 ]
-              }).then(msg => {
+              }).then(async (msg) => {
                 msg.channel.awaitMessages({
                   filter: m => m.author.id === cmduser.id,
                   max: 1,
                   time: 180000,
                   errors: ['time']
-                }).then(collected => {
+                }).then(async collected => {
                   if (collected.first().attachments.size > 0) {
                     if (collected.first().attachments.every(attachIsImage)) {
-                      apply_for_here.set(message.guild.id, true, pre+".three.image.enabled")
-                      apply_for_here.set(message.guild.id, url, pre+".three.image.url")
+                      await apply_for_here.set(message.guild.id+`.${pre}`+".three.image.enabled", true)
+                      await apply_for_here.set(message.guild.id+`.${pre}`+".three.image.url", url)
                       return message.reply({
                         embeds: [new Discord.MessageEmbed()
                           .setFooter(client.getFooter(es))
@@ -2129,8 +1836,8 @@ module.exports = {
                       });
                     }
                   } else if (collected.first().content.includes("https") || collected.first().content.includes("http")) {
-                    apply_for_here.set(message.guild.id, true, pre+".three.image.enabled")
-                    apply_for_here.set(message.guild.id, collected.first().content, pre+".three.image.url")
+                    await apply_for_here.set(message.guild.id+`.${pre}`+".three.image.enabled", true, )
+                    await apply_for_here.set(message.guild.id+`.${pre}`+".three.image.url", collected.first().content)
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setFooter(client.getFooter(es))
@@ -2213,7 +1920,7 @@ module.exports = {
               time: 180000,
               errors: ["time"]
             })
-            .then(collected => {
+            .then(async collected => {
               var reaction = collected.first()
               reaction.users.remove(cmduser.id)
               if (reaction.emoji?.name === "1️⃣") type = "message";
@@ -2243,14 +1950,14 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new accept message for emoji four?", message.author.displayAvatarURL({
                   dynamic: true
                 }))]
-              }).then(msg => {
+              }).then(async (msg) => {
                 msg.channel.awaitMessages({
                   filter: m => m.author.id === cmduser.id,
                   max: 1,
                   time: 180000,
                   errors: ["TIME"]
-                }).then(collected => {
-                  apply_for_here.set(message.guild.id, collected.first().content, pre+".four.message")
+                }).then(async collected => {
+                  await apply_for_here.set(message.guild.id+`.${pre}`+".four.message", collected.first().content)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT MESSAGE for emoji four!", message.author.displayAvatarURL({
                       dynamic: true
@@ -2275,13 +1982,13 @@ module.exports = {
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new accept Role, which will be granted when the User got accepted for emoji four?", message.author.displayAvatarURL({
                 dynamic: true
               }))]
-            }).then(msg => {
+            }).then(async (msg) => {
               msg.channel.awaitMessages({
                 filter: m => m.author.id === cmduser.id,
                 max: 1,
                 time: 180000,
                 errors: ["TIME"]
-              }).then(collected => {
+              }).then(async collected => {
                 var role = collected.first().mentions.roles.first();
                 if (!role) return message.reply({
                   embeds: [new Discord.MessageEmbed()
@@ -2302,7 +2009,7 @@ module.exports = {
                 var botrole = message.guild.me.roles.highest
 
                 if (guildrole.rawPosition <= botrole.rawPosition) {
-                  apply_for_here.set(message.guild.id, role.id, pre+".four.role")
+                  await apply_for_here.set(message.guild.id+`.${pre}`+".four.role", role.id)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT ROLE for emoji four!", message.author.displayAvatarURL({
                       dynamic: true
@@ -2330,7 +2037,7 @@ module.exports = {
           }
           break;
           case "delrole": {
-            apply_for_here.set(message.guild.id, "", pre+".four.role")
+            await apply_for_here.set(message.guild.id+`.${pre}`+".four.role", "")
             return message.reply({
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully deleted the ACCEPT ROLE for emoji four!", message.author.displayAvatarURL({
                 dynamic: true
@@ -2339,8 +2046,8 @@ module.exports = {
           }
           break;
           case "delimage": {
-            apply_for_here.set(message.guild.id, false, pre+".four.image.enabled")
-            apply_for_here.set(message.guild.id, "", pre+".four.image.url")
+            await apply_for_here.set(message.guild.id+`.${pre}`+".four.image.enabled", false)
+            await apply_for_here.set(message.guild.id+`.${pre}`+".four.image.url", "")
             return message.reply({
               embeds: [new Discord.MessageEmbed()
                 .setFooter(client.getFooter(es))
@@ -2360,17 +2067,17 @@ module.exports = {
                   .setFooter("Pick the INDEX NUMBER / send the IMAGE URl", client.user.displayAvatarURL())
                   .setThumbnail(client.user.displayAvatarURL())
                 ]
-              }).then(msg => {
+              }).then(async (msg) => {
                 msg.channel.awaitMessages({
                   filter: m => m.author.id === cmduser.id,
                   max: 1,
                   time: 180000,
                   errors: ['time']
-                }).then(collected => {
+                }).then(async collected => {
                   if (collected.first().attachments.size > 0) {
                     if (collected.first().attachments.every(attachIsImage)) {
-                      apply_for_here.set(message.guild.id, true, pre+".four.image.enabled")
-                      apply_for_here.set(message.guild.id, url, pre+".four.image.url")
+                      await apply_for_here.set(message.guild.id+`.${pre}`+".four.image.enabled", true)
+                      await apply_for_here.set(message.guild.id+`.${pre}`+".four.image.url", url)
                       return message.reply({
                         embeds: [new Discord.MessageEmbed()
                           .setFooter(client.getFooter(es))
@@ -2388,8 +2095,8 @@ module.exports = {
                       });
                     }
                   } else if (collected.first().content.includes("https") || collected.first().content.includes("http")) {
-                    apply_for_here.set(message.guild.id, true, pre+".four.image.enabled")
-                    apply_for_here.set(message.guild.id, collected.first().content, pre+".four.image.url")
+                    await apply_for_here.set(message.guild.id+`.${pre}`+".four.image.enabled", true)
+                    await apply_for_here.set(message.guild.id+`.${pre}`+".four.image.url", collected.first().content)
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setFooter(client.getFooter(es))
@@ -2472,7 +2179,7 @@ module.exports = {
               time: 180000,
               errors: ["time"]
             })
-            .then(collected => {
+            .then(async collected => {
               var reaction = collected.first()
               reaction.users.remove(cmduser.id)
               if (reaction.emoji?.name === "1️⃣") type = "message";
@@ -2502,14 +2209,14 @@ module.exports = {
                 embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new accept message for emoji five?", message.author.displayAvatarURL({
                   dynamic: true
                 }))]
-              }).then(msg => {
+              }).then(async (msg) => {
                 msg.channel.awaitMessages({
                   filter: m => m.author.id === cmduser.id,
                   max: 1,
                   time: 180000,
                   errors: ["TIME"]
-                }).then(collected => {
-                  apply_for_here.set(message.guild.id, collected.first().content, pre+".five.message")
+                }).then(async collected => {
+                  await apply_for_here.set(message.guild.id+`.${pre}`+".five.message", collected.first().content)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT MESSAGE for emoji five!", message.author.displayAvatarURL({
                       dynamic: true
@@ -2534,13 +2241,13 @@ module.exports = {
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new accept Role, which will be granted when the User got accepted for emoji five?", message.author.displayAvatarURL({
                 dynamic: true
               }))]
-            }).then(msg => {
+            }).then(async (msg) => {
               msg.channel.awaitMessages({
                 filter: m => m.author.id === cmduser.id,
                 max: 1,
                 time: 180000,
                 errors: ["TIME"]
-              }).then(collected => {
+              }).then(async collected => {
                 var role = collected.first().mentions.roles.first();
                 if (!role) return message.reply({
                   embeds: [new Discord.MessageEmbed()
@@ -2562,7 +2269,7 @@ module.exports = {
                 var botrole = message.guild.me.roles.highest
 
                 if (guildrole.rawPosition <= botrole.rawPosition) {
-                  apply_for_here.set(message.guild.id, role.id, pre+".five.role")
+                  await apply_for_here.set(message.guild.id+`.${pre}`+".five.role", role.id)
                   return message.reply({
                     embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the ACCEPT ROLE for emoji five!", message.author.displayAvatarURL({
                       dynamic: true
@@ -2590,7 +2297,7 @@ module.exports = {
           }
           break;
           case "delrole": {
-            apply_for_here.set(message.guild.id, "", pre+".five.role")
+            await apply_for_here.set(message.guild.id+`.${pre}`+".five.role", "")
             return message.reply({
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully deleted the ACCEPT ROLE for emoji five!", message.author.displayAvatarURL({
                 dynamic: true
@@ -2599,8 +2306,8 @@ module.exports = {
           }
           break;
           case "delimage": {
-            apply_for_here.set(message.guild.id, false, pre+".five.image.enabled")
-            apply_for_here.set(message.guild.id, "", pre+".five.image.url")
+            await apply_for_here.set(message.guild.id+`.${pre}`+".five.image.enabled", false)
+            await apply_for_here.set(message.guild.id+`.${pre}`+".five.image.url", "")
             return message.reply({
               embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully deleted the ACCEPT IMAGE for emoji five!", message.author.displayAvatarURL({
                 dynamic: true
@@ -2618,17 +2325,17 @@ module.exports = {
                   .setFooter("Pick the INDEX NUMBER / send the IMAGE URl", client.user.displayAvatarURL())
                   .setThumbnail(client.user.displayAvatarURL())
                 ]
-              }).then(msg => {
+              }).then(async (msg) => {
                 msg.channel.awaitMessages({
                   filter: m => m.author.id === cmduser.id,
                   max: 1,
                   time: 180000,
                   errors: ['time']
-                }).then(collected => {
+                }).then(async collected => {
                   if (collected.first().attachments.size > 0) {
                     if (collected.first().attachments.every(attachIsImage)) {
-                      apply_for_here.set(message.guild.id, true, pre+".five.image.enabled")
-                      apply_for_here.set(message.guild.id, url, pre+".five.image.url")
+                      await apply_for_here.set(message.guild.id+`.${pre}`+".five.image.enabled", true)
+                      await apply_for_here.set(message.guild.id+`.${pre}`+".five.image.url", url)
                       return message.reply({
                         embeds: [new Discord.MessageEmbed()
                           .setFooter(client.getFooter(es))
@@ -2647,8 +2354,8 @@ module.exports = {
                       });
                     }
                   } else if (collected.first().content.includes("https") || collected.first().content.includes("http")) {
-                    apply_for_here.set(message.guild.id, true, pre+".five.image.enabled")
-                    apply_for_here.set(message.guild.id, collected.first().content, pre+".five.image.url")
+                    await apply_for_here.set(message.guild.id+`.${pre}`+".five.image.enabled", true)
+                    await apply_for_here.set(message.guild.id+`.${pre}`+".five.image.url", collected.first().content)
                     return message.reply({
                       embeds: [new Discord.MessageEmbed()
                         .setFooter(client.getFooter(es))
@@ -2701,7 +2408,7 @@ module.exports = {
         }
         break;
         case "editquestion": {
-          var Questions = apply_for_here.get(message.guild.id, pre+".QUESTIONS");
+          var Questions = await apply_for_here.get(message.guild.id+ `.${pre}`+".QUESTIONS");
           var embed = new Discord.MessageEmbed()
             .setFooter(client.getFooter(es))
 
@@ -2727,27 +2434,27 @@ module.exports = {
               .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable175"]))
               .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable176"]))
             ]
-          }).then(msg => {
+          }).then(async (msg) => {
             msg.channel.awaitMessages({
               filter: m => m.author.id === cmduser.id,
               max: 1,
               time: 180000,
               errors: ["TIME"]
-            }).then(collected => {
-              var arr = apply_for_here.get(message.guild.id, pre+".QUESTIONS");
+            }).then(async collected => {
+              var arr = await apply_for_here.get(message.guild.id+`.${pre}`+".QUESTIONS");
               var quindex = collected.first().content
               if (arr.length >= Number(quindex)) {
                 message.reply({
                   embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor(es.color).setAuthor("What should be the new Question?", message.author.displayAvatarURL({
                     dynamic: true
                   }))]
-                }).then(msg => {
+                }).then(async (msg) => {
                   msg.channel.awaitMessages({
                     filter: m => m.author.id === cmduser.id,
                     max: 1,
                     time: 180000,
                     errors: ["TIME"]
-                  }).then(collected => {
+                  }).then(async collected => {
                     var index = Number(quindex);
                     var obj;
                     switch (Number(index)) {
@@ -2873,8 +2580,8 @@ module.exports = {
                         break;
                     }
                     arr[index] = obj;
-                    apply_for_here.set(message.guild.id, arr, pre+".QUESTIONS")
-                    Questions = apply_for_here.get(message.guild.id, pre+".QUESTIONS");
+                    await apply_for_here.set(message.guild.id+ `.${pre}`+".QUESTIONS", arr)
+                    Questions = await apply_for_here.get(message.guild.id+`.${pre}`+".QUESTIONS");
                     var new_embed = new Discord.MessageEmbed().setFooter(client.getFooter(es))
                       .setColor(es.color)
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable177"])) //Tomato#6966
@@ -2937,13 +2644,13 @@ module.exports = {
               .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable180"]))
               .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable181"]))
             ]
-          }).then(msg => {
+          }).then(async (msg) => {
             msg.channel.awaitMessages({
               filter: m => m.author.id === cmduser.id,
               max: 1,
               time: 180000,
               errors: ["TIME"]
-            }).then(collected => {
+            }).then(async collected => {
               var role = collected.first().mentions.roles.first();
               if (!role) return message.reply({
                 content: eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable182"])
@@ -2959,7 +2666,7 @@ module.exports = {
               var botrole = message.guild.me.roles.highest
 
               if (guildrole.rawPosition <= botrole.rawPosition) {
-                apply_for_here.set(message.guild.id, role.id, pre+".TEMP_ROLE")
+                await apply_for_here.set(message.guild.id+`.${pre}`+".TEMP_ROLE", role.id)
                 return message.reply({
                   embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully changed the TEMP ROLE!", message.author.displayAvatarURL({
                     dynamic: true
@@ -2993,14 +2700,14 @@ module.exports = {
               .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable186"]))
               .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable187"]))
             ]
-          }).then(msg => {
+          }).then(async (msg) => {
             msg.channel.awaitMessages({
               filter: m => m.author.id === cmduser.id,
               max: 1,
               time: 180000,
               errors: ["TIME"]
-            }).then(collected => {
-              var Questions = apply_for_here.get(message.guild.id, pre+".QUESTIONS")
+            }).then(async collected => {
+              var Questions = await apply_for_here.get(message.guild.id+`.${pre}`+".QUESTIONS")
               var obj;
               switch (Questions.length + 1) {
                 case 1:
@@ -3124,13 +2831,13 @@ module.exports = {
                   };
                   break;
               }
-              apply_for_here.push(message.guild.id, obj, pre+".QUESTIONS")
+              await apply_for_here.push(message.guild.id`.${pre}`+".QUESTIONS"+`.${pre}`+".QUESTIONS", obj)
               message.reply({
                 embeds: [new Discord.MessageEmbed().setFooter(client.getFooter(es)).setColor("GREEN").setAuthor("Successfully added your Question!", message.author.displayAvatarURL({
                   dynamic: true
                 }))]
               })
-              Questions = apply_for_here.get(message.guild.id, pre+".QUESTIONS");
+              Questions = await apply_for_here.get(message.guild.id+`.${pre}`+".QUESTIONS");
               var embed = new Discord.MessageEmbed().setFooter(client.getFooter(es))
                 .setColor(es.color)
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable188"])) //Tomato#6966
@@ -3164,7 +2871,7 @@ module.exports = {
         }
         break;
         case "removequestion": {
-          var Questions = apply_for_here.get(message.guild.id, pre+".QUESTIONS");
+          var Questions = await apply_for_here.get(message.guild.id+`.${pre}`+".QUESTIONS");
           var embed = new Discord.MessageEmbed()
             .setFooter(client.getFooter(es))
 
@@ -3191,14 +2898,14 @@ module.exports = {
               .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable191"]))
               .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable192"]))
             ]
-          }).then(msg => {
+          }).then(async (msg) => {
             msg.channel.awaitMessages({
               filter: m => m.author.id === cmduser.id,
               max: 1,
               time: 180000,
               errors: ["TIME"]
-            }).then(collected => {
-              var arr = apply_for_here.get(message.guild.id, pre+".QUESTIONS");
+            }).then(async collected => {
+              var arr = await apply_for_here.get(message.guild.id+`.${pre}`+".QUESTIONS");
               var quindex = collected.first().content
               if (arr.length >= Number(quindex)) {
 
@@ -3221,8 +2928,8 @@ module.exports = {
                   }
                   counter++;
                 }
-                apply_for_here.set(message.guild.id, arr, pre+".QUESTIONS")
-                Questions = apply_for_here.get(message.guild.id, pre+".QUESTIONS");
+                await apply_for_here.set(message.guild.id+`.${pre}`+".QUESTIONS", arr)
+                Questions = await apply_for_here.get(message.guild.id+`.${pre}`+".QUESTIONS");
                 var new_embed = new Discord.MessageEmbed().setFooter(client.getFooter(es))
                   .setColor(es.color)
                   .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable193"])) //Tomato#6966
@@ -3285,7 +2992,7 @@ module.exports = {
                 max: 1,
                 time: 180000,
                 erros: ["time"]
-              }).then(collected => {
+              }).then(async collected => {
                 var channel = collected.first().mentions.channels.filter(ch => ch.guild.id == message.guild.id).first();
                 if (channel) {
                   applychannel = channel.id;
@@ -3337,7 +3044,7 @@ module.exports = {
               max: 1,
               time: 180000,
               errors: ["TIME"]
-            }).then(collected => {
+            }).then(async collected => {
               var content = collected.first().content;
               if (!content.startsWith("#") && content.length !== 7) {
                 message.reply({
@@ -3384,7 +3091,7 @@ module.exports = {
               max: 1,
               time: 180000,
               errors: ["TIME"]
-            }).then(collected => {
+            }).then(async collected => {
               desc = collected.first().content;
               var setupembed = new Discord.MessageEmbed().setFooter(client.getFooter(es))
                 .setColor(color)
@@ -3395,9 +3102,9 @@ module.exports = {
               message.guild.channels.cache.get(applychannel).send({
                 embeds: [setupembed],
                 components: allbuttons
-              }).then(msg => {
-                apply_for_here.set(msg.guild.id, msg.id, pre+".message_id")
-                apply_for_here.set(msg.guild.id, msg.channel.id, pre+".channel_id")
+              }).then(async (msg) => {
+                await apply_for_here.set(msg.guild.id+`.${pre}`+".message_id", msg.id)
+                await apply_for_here.set(msg.guild.id+`.${pre}`+".channel_id", msg.channel.id)
               }).catch(e => console.log(e.stack ? String(e.stack).grey : String(e).grey))
 
               return message.reply({
@@ -3455,7 +3162,7 @@ module.exports = {
                 max: 1,
                 time: 180000,
                 erros: ["time"]
-              }).then(collected => {
+              }).then(async collected => {
                 var channel = collected.first().mentions.channels.filter(ch => ch.guild.id == message.guild.id).first();
                 if (channel) {
                   f_applychannel = channel.id;
@@ -3487,7 +3194,7 @@ module.exports = {
               }).then(msg => msg.delete({
                 timeout: 7500
               }))
-            apply_for_here.set(message.guild.id, f_applychannel, pre+".f_channel_id")
+            await apply_for_here.set(message.guild.id+ `.${pre}`+".f_channel_id", f_applychannel)
             return message.reply({
               content: eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable216"])
             });
@@ -3507,12 +3214,12 @@ module.exports = {
           }
           break;
         case `${pre}.last_verify`: {
-          apply_for_here.set(message.guild.id, !apply_for_here.get(message.guild.id, `${pre}.last_verify`), `${pre}.last_verify`)
+          await apply_for_here.set(message.guild.id+`.${pre}.last_verify`, !await apply_for_here.get(message.guild.id+ `.${pre}.last_verify`))
           var embed = new Discord.MessageEmbed()
             .setFooter(client.getFooter(es))
             .setColor(es.color)
-            .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable219"])) //Tomato#6966
-            .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-apply"]["variable220"])) //Tomato#6966
+            .setTitle(`${await apply_for_here.get(message.guild.id+`.${pre}.last_verify`) ? "Enabled Last Verification": "Disabled Last Verification"}`) //Tomato#6966
+            .setDescription(`${await apply_for_here.get(message.guild.id+`.${pre}.last_verify`) ? "I will now ask the User a last Time if he really wanna apply for the Server": "I will not ask the User"}`) //Tomato#6966
             .setTimestamp()
           message.reply({
             embeds: [embed]
@@ -3572,4 +3279,70 @@ function getNumberEmojis() {
     "<:Number_24:893173642744201226>",
     "<:Number_25:893173642727424020>"
   ]
+}
+
+
+function getApplyEnsureData(){
+  const obj = {
+    "channel_id": "",
+    "message_id": "",
+    "f_channel_id": "", //changequestions --> which one (lists everyone with index) --> 4. --> Question
+    "QUESTIONS": [
+      /*
+      {
+        "1": "DEFAULT"
+      }
+      */
+    ],
+    "TEMP_ROLE": "0",
+    "accept": "You've got accepted!",
+    "accept_role": "0",
+    "deny": "You've got denied!",
+    "ticket": "Hey {user}! We have some Questions!",
+    "one": {
+      "role": "0",
+      "message": "Hey you've got accepted for Team 1",
+      "image": {
+        "enabled": false,
+        "url": ""
+      }
+    },
+    "two": {
+      "role": "0",
+      "message": "Hey you've got accepted for Team 2",
+      "image": {
+        "enabled": false,
+        "url": ""
+      }
+    },
+    "three": {
+      "role": "0",
+      "message": "Hey you've got accepted for Team 3",
+      "image": {
+        "enabled": false,
+        "url": ""
+      }
+    },
+    "four": {
+      "role": "0",
+      "message": "Hey you've got accepted for Team 4",
+      "image": {
+        "enabled": false,
+        "url": ""
+      }
+    },
+    "five": {
+      "role": "0",
+      "message": "Hey you've got accepted for Team 5",
+      "image": {
+        "enabled": false,
+        "url": ""
+      }
+    }
+  };
+  const totalObj = {}
+  for(let i = 1; i<=100; i++) {
+    totalObj[`apply${i}`] = obj;
+  }
+  return totalObj;
 }

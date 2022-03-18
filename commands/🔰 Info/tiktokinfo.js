@@ -2,12 +2,12 @@ const Discord = require("discord.js");
 const {
   MessageEmbed
 } = require("discord.js");
-const config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-const emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+const config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+const emoji = require(`../../botconfig/emojis.json`);
 const moment = require('moment');
 const TikTokScraper = require('tiktok-scraper');
-const { handlemsg } = require(`${process.cwd()}/handlers/functions`) 
+const { handlemsg } = require(`../../handlers/functions`) 
 module.exports = {
   name: "tiktokinfo",
   aliases: ["tiktokinfo", "tiktokuserinfo", "ttuserinfo", "ttuser", "tiktokuser"],
@@ -15,9 +15,9 @@ module.exports = {
   description: "Get information about a Twitter User",
   usage: "tiktokinfo <TWITTERUSER>",
   type: "util",
-  run: async (client, message, args, cmduser, text, prefix) => {
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
+    
     try {
       (async () => {
         try {
@@ -75,7 +75,7 @@ module.exports = {
 }
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

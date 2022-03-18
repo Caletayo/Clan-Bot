@@ -6,7 +6,7 @@ var config = require(`${process.cwd()}/botconfig/config.json`);
 var ee = require(`${process.cwd()}/botconfig/embed.json`);
 var emoji = require(`${process.cwd()}/botconfig/emojis.json`);
 var {
-  databasing
+  dbEnsure
 } = require(`${process.cwd()}/handlers/functions`);
 const { MessageButton, MessageActionRow, MessageSelectMenu } = require('discord.js')
 module.exports = {
@@ -18,11 +18,10 @@ module.exports = {
   description: "Enable/Disable the Logger / Audit log System",
   memberpermissions: ["ADMINISTRATOR"],
   type: "security",
-  run: async (client, message, args, cmduser, text, prefix) => {
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
     try {
-      var adminroles = client.settings.get(message.guild.id, "adminroles")
+      var adminroles = GuildSettings.adminroles ? GuildSettings.adminroles : []
 
       first_layer()
       async function first_layer(){
@@ -68,17 +67,17 @@ module.exports = {
         //define the embed
         let MenuEmbed = new MessageEmbed()
           .setColor(es.color)
-          .setAuthor('Audit Logger Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/apple/285/bookmark_1f516.png', 'https://discord.gg/milrato')
+          .setAuthor('Audit Logger Setup', 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/apple/285/bookmark_1f516.png', 'https://discord.gg/dcdev')
           .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
         //send the menu msg
         let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({ 
-          filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+          filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
           time: 90000
         })
         //Menu Collections
-        collector.on('collect', menu => {
+        collector.on('collect', async menu => {
           if (menu?.user.id === cmduser.id) {
             collector.stop();
             let menuoptiondata = menuoptions.find(v=>v.value == menu?.values[0])
@@ -105,17 +104,17 @@ module.exports = {
                 .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-logger"]["variable6"]))
                 .setFooter(client.getFooter(es))]
               })
-              await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+              await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
                   max: 1,
                   time: 90000,
                   errors: ["time"]
                 })
-                .then(collected => {
+                .then(async collected => {
                   var message = collected.first();
                   var channel = message.mentions.channels.filter(ch=>ch.guild.id==message.guild.id).first() || message.guild.channels.cache.get(message.content.trim().split(" ")[0]);
                   if (channel) {
                     try {
-                      client.settings.set(message.guild.id, channel.id, "logger.channel");
+                      await client.settings.set(message.guild.id+".logger.channel", channel.id);
                       return message.reply({embeds: [new Discord.MessageEmbed()
                         .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-logger"]["variable7"]))
                         .setColor(es.color)
@@ -146,7 +145,7 @@ module.exports = {
           break;
           case "Disable Audit-Log":
             {
-              client.settings.set(message.guild.id, "no", "logger.channel");
+              await client.settings.set(message.guild.id+".logger.channel", "no");
               return message.reply({embeds: [new Discord.MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-logger"]["variable11"]))
                 .setColor(es.color)
@@ -156,7 +155,7 @@ module.exports = {
           break;
           case "Show Settings":
             {
-              let thesettings = client.settings.get(message.guild.id, `logger`)
+              let thesettings = await client.settings.get(message.guild.id+`.logger`)
               return message.reply({embeds: [new Discord.MessageEmbed()
                 .setTitle("Settings of the AUDIT-LOG")
                 .setColor(es.color)
@@ -181,7 +180,7 @@ module.exports = {
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

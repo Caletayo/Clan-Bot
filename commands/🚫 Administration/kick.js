@@ -2,12 +2,12 @@ const {
   MessageEmbed,
   Permissions
 } = require(`discord.js`);
-const config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-const emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+const config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+const emoji = require(`../../botconfig/emojis.json`);
 const {
   databasing
-} = require(`${process.cwd()}/handlers/functions`);
+} = require(`../../handlers/functions`);
 module.exports = {
   name: `kick`,
   category: `🚫 Administration`,
@@ -15,17 +15,17 @@ module.exports = {
   description: `Kicks a Member from a Guild`,
   usage: `kick @User [Reason]`,
   type: "member",
-  run: async (client, message, args, cmduser, text, prefix) => {
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
+    
     try {
       if(!message.guild.me.permissions.has([Permissions.FLAGS.KICK_MEMBERS]))      
       return message.reply({embeds : [new MessageEmbed()
         .setColor(es.wrongcolor).setFooter(client.getFooter(es))
         .setTitle(eval(client.la[ls]["cmds"]["administration"]["kick"]["variable1"]))
       ]})
-      let adminroles = client.settings.get(message.guild.id, "adminroles")
-      let cmdroles = client.settings.get(message.guild.id, "cmdadminroles.kick")
+      let adminroles = GuildSettings?.adminroles || [];
+      let cmdroles = GuildSettings?.cmdadminroles?.kick || [];
       var cmdrole = []
         if(cmdroles.length > 0){
           for(const r of cmdroles){
@@ -36,13 +36,16 @@ module.exports = {
               cmdrole.push(` | <@${r}>`)
             }
             else {
-              
-              //console.log(r)
-              client.settings.remove(message.guild.id, r, `cmdadminroles.kick`)
+              const File = `kick`;
+              let index = GuildSettings && GuildSettings.cmdadminroles && typeof GuildSettings.cmdadminroles == "object" ? GuildSettings.cmdadminroles[File]?.indexOf(r) || -1 : -1;
+              if(index > -1) {
+                GuildSettings.cmdadminroles[File].splice(index, 1);
+                client.settings.set(`${message.guild.id}.cmdadminroles`, GuildSettings.cmdadminroles)
+              }
             }
           }
         }
-      if (([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => cmdroles.includes(r.id))) && !cmdroles.includes(message.author.id) && ([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => adminroles.includes(r ? r.id : r))) && !Array(message.guild.ownerId, config.ownerid).includes(message.author.id) && !message.member.permissions.has([Permissions.FLAGS.ADMINISTRATOR]))
+      if (([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => cmdroles.includes(r.id))) && !cmdroles.includes(message.author?.id) && ([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => adminroles.includes(r ? r.id : r))) && !Array(message.guild.ownerId, config.ownerid).includes(message.author?.id) && !message.member?.permissions?.has([Permissions.FLAGS.ADMINISTRATOR]))
         return message.reply({embeds :[new MessageEmbed()
           .setColor(es.wrongcolor)
           .setFooter(client.getFooter(es))
@@ -100,25 +103,25 @@ module.exports = {
       try {
         kickmember.kick({
           reason: reason
-        }).then(() => {
-          client.stats.push(message.guild.id+message.author.id, new Date().getTime(), "kick"); 
+        }).then(async () => {
+          await client.stats.push(message.guild.id+message.author?.id+".kick", new Date().getTime()); 
           message.reply({embeds :[new MessageEmbed()
             .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null)
             .setFooter(client.getFooter(es))
             .setTitle(eval(client.la[ls]["cmds"]["administration"]["kick"]["variable12"]))
             .setDescription(eval(client.la[ls]["cmds"]["administration"]["kick"]["variable13"]))
           ]});
-          if(client.settings.get(message.guild.id, `adminlog`) != "no"){
+          if(GuildSettings && GuildSettings.adminlog && GuildSettings.adminlog != "no"){
             try{
-              var channel = message.guild.channels.cache.get(client.settings.get(message.guild.id, `adminlog`))
-              if(!channel) return client.settings.set(message.guild.id, "no", `adminlog`);
+              var channel = message.guild.channels.cache.get(GuildSettings.adminlog)
+              if(!channel) return client.settings.set(`${message.guild.id}.adminlog`, "no");
               channel.send({embeds :[new MessageEmbed()
                 .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null).setFooter(client.getFooter(es))
-                .setAuthor(`${require("path").parse(__filename).name} | ${message.author.tag}`, message.author.displayAvatarURL({dynamic: true}))
+                .setAuthor(client.getAuthor(`${require("path").parse(__filename).name} | ${message.author.tag}`, message.author.displayAvatarURL({dynamic: true})))
                 .setDescription(eval(client.la[ls]["cmds"]["administration"]["kick"]["variable14"]))
                 .addField(eval(client.la[ls]["cmds"]["administration"]["ban"]["variablex_15"]), eval(client.la[ls]["cmds"]["administration"]["ban"]["variable15"]))
                .addField(eval(client.la[ls]["cmds"]["administration"]["ban"]["variablex_16"]), eval(client.la[ls]["cmds"]["administration"]["ban"]["variable16"]))
-                .setTimestamp().setFooter(client.getFooter("ID: " + message.author.id, message.author.displayAvatarURL({dynamic: true})))
+                .setTimestamp().setFooter(client.getFooter("ID: " + message.author?.id, message.author.displayAvatarURL({dynamic: true})))
               ]})
             }catch (e){
               console.log(e.stack ? String(e.stack).grey : String(e).grey)

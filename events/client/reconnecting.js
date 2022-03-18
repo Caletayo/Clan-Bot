@@ -1,10 +1,10 @@
 //here the event starts
-module.exports = client => {
+module.exports = async (client) => {
     console.log(`Reconnceting at ${new Date()}.`.bgYellow.black)
 }
 /**
   * @INFO
-  * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+  * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
   * @INFO
   * Work for Milrato Development | https://milrato.eu
   * @INFO

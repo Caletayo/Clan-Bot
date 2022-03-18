@@ -1,13 +1,12 @@
 const twitconfig = require("./twitter.json")
 const Twit = require('twit')
-const { databasing, delay } = require(`${process.cwd()}/handlers/functions`)
+const { dbEnsure, delay } = require(`${process.cwd()}/handlers/functions`)
 var CronJob = require('cron').CronJob;
-require('dotenv').config();
-module.exports = client => {
+module.exports = async (client) => {
   //create the job with a "7" Minute delay!
-  client.Jobtwitterfeed  = new CronJob('0 */7 * * * *', async function() {
-    await delay(3 * 60 * 1000)
+  client.Jobtwitterfeed  = new CronJob('0 0,8,16,22,28,34,40,46,52,58 * * * *', async function() {
     create_twit(client);
+    return true;
   }, null, true, 'Europe/Berlin');
 
   client.on('ready', () => {
@@ -18,7 +17,9 @@ async function create_twit(client){
       console.log(" [TWITER] :: Checking Accounts".cyan)
       //ensure the db for each guild
       //get all userids from the db
-      var userids = client.social_log.filterArray(value => value?.twitter?.TWITTER_USER_NAME_ONLY_THOSE?.length > 2).map(value => `${value.twitter.TWITTER_USER_NAME_ONLY_THOSE}`)
+      var userids = await client.social_log.all().then(d => {
+        return d.filter(d => d?.data?.twitter?.TWITTER_USER_NAME_ONLY_THOSE?.length > 2).map(value => `${value.data?.twitter?.TWITTER_USER_NAME_ONLY_THOSE}`)
+      })
       //if no userids return
       if(!userids || userids.length == 0) return console.log(` [TWITER] :: NO USERIDS: ${userids}`.cyan)
       //create a new TWIT
@@ -40,7 +41,7 @@ async function create_twit(client){
 
       async function gettwit(user){
         try{
-          await T.get('search/tweets', { q: `from:${user}`, count: 10 }, function(err, data, response) {
+          await T.get('search/tweets', { q: `from:${user}`, count: 10 }, async function(err, data, response) {
             try{
               console.log(" [TWITER] :: DATA RECEIVED".cyan)
               if(err) return console.log(String(" [TWITER] :: "+err).grey)
@@ -50,11 +51,13 @@ async function create_twit(client){
               var TwitterName = tweet.user.screen_name;
               var url = "https://twitter.com/" + TwitterName + "/status/" + tweet.id_str;
               //get the guildid for the twitter account
-              var guildid = client.social_log.findKey("twitter.TWITTER_USER_ID", tweet.user.id_str)
+              var guildid = await client.social_log.all().then(d => {
+                return d.find(d => d?.data?.twitter?.TWITTER_USER_ID == tweet.user.id_str)?.ID
+              })
               //get the settings from the guildid
               if(!guildid || guildid == null || guildid == undefined || guildid.length != 18) return console.log(" [TWITER] :: NO VALID GUILD ".cyan)
               try{
-                client.social_log.ensure(guildid, {
+                await dbEnsure(client.social_log, guildid, {
                 twitter: {
                   TWITTER_USER_ID: "",
                   TWITTER_USER_NAME_ONLY_THOSE: "",
@@ -65,7 +68,7 @@ async function create_twit(client){
                 }
               })}catch(e){ }
               //
-              var twitsettings = client.social_log.get(guildid, "twitter")
+              var twitsettings = await client.social_log.get(guildid+ ".twitter")
               //if the tweet was the latest tweet stop!
               if(twitsettings.latesttweet === tweet.id_str) return console.log(" [TWITER] :: LATEST TWEET".cyan)
               //if its not from the right user, ... cancel
@@ -84,7 +87,7 @@ async function create_twit(client){
                   channel.send(twitsettings.infomsg.replace("{Twittername}", TwitterName).replace("{url}", url)).then(msg=>{
                     console.log(` [TWITER] :: NOTIFICATION SENT IN ${channel.name} for ${TwitterName} with ${url}`.green)
                     //set the new latest tweet
-                    client.social_log.set(guildid, tweet.id_str, "twitter.latesttweet")
+                    client.social_log.set(guildid+".twitter.latesttweet", tweet.id_str)
                   }).catch(e=>{
                     console.log(String(" [TWITER] :: "+e).grey.grey)
                   })
@@ -97,7 +100,7 @@ async function create_twit(client){
                   channel.send(twitsettings.infomsg.replace("{Twittername}", TwitterName).replace("{url}", url)).then(msg=>{
                     console.log(` [TWITER] :: NOTIFICATION SENT IN ${channel.name} for ${TwitterName} with ${url}`.green)
                     //set the new latest tweet
-                    client.social_log.set(guildid, tweet.id_str, "twitter.latesttweet")
+                    client.social_log.set(guildid+".twitter.latesttweet", tweet.id_str)
                   }).catch(e=>{
                     console.log(String(" [TWITER] :: "+e).grey.grey)
                   })

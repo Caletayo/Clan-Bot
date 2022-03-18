@@ -11,7 +11,7 @@ var {
 
 module.exports = playtop;
 async function playtop(client, message, args, type, slashCommand) {
-  let ls = client.settings.get(message.guild.id, "language")
+  let ls = await client.settings.get(message.guild.id+".language")
   const search = args.join(" ");
   var player = client.manager.players.get(message.guild.id);
   //if no node, connect it 
@@ -31,7 +31,7 @@ async function playtop(client, message, args, type, slashCommand) {
   if (state !== "CONNECTED") {
     //set the variables
     player.set("message", message);
-    player.set("playerauthor", message.author.id);
+    player.set("playerauthor", message.author?.id);
     player.connect();
     try{message.react("863876115584385074").catch(() => {});}catch(e){console.log(String(e).grey)}
     player.stop();
@@ -55,12 +55,12 @@ async function playtop(client, message, args, type, slashCommand) {
       if(slashCommand)
       return slashCommand.reply({ephemeral: true, embeds: [new MessageEmbed()
         .setColor(ee.wrongcolor)
-        .setTitle(String("❌ Error | Found nothing for: **`" + search).substr(0, 256 - 3) + "`**")
+        .setTitle(String("❌ Error | Found nothing for: **`" + search).substring(0, 256 - 3) + "`**")
         .setDescription(eval(client.la[ls]["handlers"]["playermanagers"]["playtop"]["variable1"]))
       ]}).catch(() => {})
       return message.reply({embeds: [new MessageEmbed()
         .setColor(ee.wrongcolor)
-        .setTitle(String("❌ Error | Found nothing for: **`" + search).substr(0, 256 - 3) + "`**")
+        .setTitle(String("❌ Error | Found nothing for: **`" + search).substring(0, 256 - 3) + "`**")
         .setDescription(eval(client.la[ls]["handlers"]["playermanagers"]["playtop"]["variable1"]))
       ]}).catch(() => {}).then(msg => {
         setTimeout(()=>{
@@ -73,7 +73,7 @@ async function playtop(client, message, args, type, slashCommand) {
       //set the variables
       player.set("message", message);
       player.set("messageid", message.id);
-      player.set("playerauthor", message.author.id);
+      player.set("playerauthor", message.author?.id);
       //connect
       player.connect();
       try{message.react("863876115584385074").catch(() => {});}catch(e){console.log(String(e).grey)}
@@ -113,11 +113,12 @@ async function playtop(client, message, args, type, slashCommand) {
       .addField("🔂 Queue length: ", `\`${player.queue.length} Songs\``, true)
     if(slashCommand) slashCommand.reply({ephemeral: true, embeds: [playembed]}).catch(() => {});
     else message.reply({embeds: [playembed]}).catch(() => {});
-    if(client.musicsettings.get(player.guild, "channel") && client.musicsettings.get(player.guild, "channel").length > 5){
-      let messageId = client.musicsettings.get(player.guild, "message");
+    var musicsettings = await client.musicsettings.get(player.guild+".channel")
+    if(musicsettings && musicsettings.length > 5){
+      let messageId = musicsettings.message;
       let guild = client.guilds.cache.get(player.guild);
       if(!guild) return 
-      let channel = guild.channels.cache.get(client.musicsettings.get(player.guild, "channel"));
+      let channel = guild.channels.cache.get(musicsettings);
       if(!channel) return 
       let message = channel.messages.cache.get(messageId);
       if(!message) message = await channel.messages.fetch(messageId).catch(()=>{});
@@ -125,7 +126,7 @@ async function playtop(client, message, args, type, slashCommand) {
       //edit the message so that it's right!
       var data = require("../erela_events/musicsystem").generateQueueEmbed(client, player.guild)
       message.edit(data).catch(() => {})
-      if(client.musicsettings.get(player.guild, "channel") == player.textChannel){
+      if(musicsettings == player.textChannel){
         return;
       }
     }
@@ -137,12 +138,12 @@ async function playtop(client, message, args, type, slashCommand) {
       if(slashCommand)
         return slashCommand.reply({ephemeral: true, embeds: [new MessageEmbed()
           .setColor(ee.wrongcolor)
-          .setTitle(String("❌ Error | Found nothing for: **`" + search).substr(0, 256 - 3) + "`**")
+          .setTitle(String("❌ Error | Found nothing for: **`" + search).substring(0, 256 - 3) + "`**")
           .setDescription(eval(client.la[ls]["handlers"]["playermanagers"]["playtop"]["variable3"]))
         ]}).catch(() => {})
       return message.reply({embeds: [new MessageEmbed()
         .setColor(ee.wrongcolor)
-        .setTitle(String("❌ Error | Found nothing for: **`" + search).substr(0, 256 - 3) + "`**")
+        .setTitle(String("❌ Error | Found nothing for: **`" + search).substring(0, 256 - 3) + "`**")
         .setDescription(eval(client.la[ls]["handlers"]["playermanagers"]["playtop"]["variable3"]))
       ]}).catch(() => {}).then(msg => {
         setTimeout(()=>{
@@ -154,7 +155,7 @@ async function playtop(client, message, args, type, slashCommand) {
     if (state !== "CONNECTED") {
 
       player.set("message", message);
-      player.set("playerauthor", message.author.id);
+      player.set("playerauthor", message.author?.id);
       //add track
       player.queue.add(res.tracks);
       //play track

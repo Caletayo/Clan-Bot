@@ -2,12 +2,12 @@ var {
   MessageEmbed
 } = require(`discord.js`);
 var Discord = require(`discord.js`);
-var config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-var emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+var config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+var emoji = require(`../../botconfig/emojis.json`);
 var {
-  databasing
-} = require(`${process.cwd()}/handlers/functions`);
+  dbEnsure, dbEnsure
+} = require(`../../handlers/functions`);
 const { MessageButton, MessageActionRow, MessageSelectMenu } = require('discord.js')
 module.exports = {
   name: "setup-admin",
@@ -18,10 +18,7 @@ module.exports = {
   description: "Allow specific Roles/Users to execute specific Commands / all Commands!",
   memberpermissions: ["ADMINISTRATOR"],
   type: "info",
-  run: async (client, message, args, cmduser, text, prefix) => {
-    
-    let es = client.settings.get(message.guild.id, "embed");
-    let ls = client.settings.get(message.guild.id, "language")
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     let timeouterror;
     try {
       first_layer()
@@ -74,17 +71,17 @@ module.exports = {
         //define the embed
         let MenuEmbed = new MessageEmbed()
         .setColor(es.color)
-        .setAuthor('Admin Setup', 'https://cdn.discordapp.com/emojis/892521772002447400.png?size=96', 'https://discord.gg/milrato')
+        .setAuthor(client.getAuthor('Admin Setup', 'https://cdn.discordapp.com/emojis/892521772002447400.png?size=96', 'https://discord.gg/dcdev'))
         .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
         //send the menu msg
         let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
         //Create the collector
         const collector = menumsg.createMessageComponentCollector({ 
-          filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+          filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
           time: 90000
         })
         //Menu Collections
-        collector.on('collect', menu => {
+        collector.on('collect', async menu => {
           if (menu?.user.id === cmduser.id) {
             collector.stop();
             let menuoptiondata = menuoptions.find(v=>v.value == menu?.values[0])
@@ -111,27 +108,28 @@ module.exports = {
               .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-admin"]["variable36"]))
               .setFooter(client.getFooter(es))]
             })
-            await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+            await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
                 max: 1,
                 time: 90000,
                 errors: ["time"]
               })
-              .then(collected => {
+              .then(async collected => {
                 var message = collected.first();
                 var role = message.mentions.roles.filter(role=>role.guild.id==message.guild.id).first();
                 if (role) {
-                  var adminroles = client.settings.get(message.guild.id, "adminroles")
+                  var adminroles = await client.settings.get(message.guild.id + ".adminroles")
                   if (adminroles.includes(role.id)) return message.reply({embeds: [new MessageEmbed()
                     .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-admin"]["variable37"]))
                     .setColor(es.wrongcolor)
                     .setFooter(client.getFooter(es))]
                   });
                   try {
-                    client.settings.push(message.guild.id, role.id, "adminroles");
+                    await client.settings.push(message.guild.id+".adminroles", role.id);
+                    const newAdminRoles = await client.settings.get(message.guild.id+".adminroles");
                     return message.reply({embeds: [new MessageEmbed()
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-admin"]["variable38"]))
                       .setColor(es.color)
-                      .setDescription(`Everyone with one of those Roles:\n<@&${client.settings.get(message.guild.id, "adminroles").join(">\n<@&")}>\nis now able to use the Admin Commands`.substring(0, 2048))
+                      .setDescription(`Everyone with one of those Roles:\n<@&${newAdminRoles.join(">\n<@&")}>\nis now able to use the Admin Commands`.substring(0, 2048))
                       .setFooter(client.getFooter(es))]
                     });
                   } catch (e) {
@@ -167,27 +165,32 @@ module.exports = {
               .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-admin"]["variable43"]))
               .setFooter(client.getFooter(es))]
             })
-            await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+            await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
                 max: 1,
                 time: 90000,
                 errors: ["time"]
               })
-              .then(collected => {
+              .then(async collected => {
                 var message = collected.first();
                 var role = message.mentions.roles.filter(role=>role.guild.id==message.guild.id).first();
                 if (role) {
-                  var adminroles = client.settings.get(message.guild.id, "adminroles")
+                  var adminroles = await client.settings.get(message.guild.id + ".adminroles")
                   if (!adminroles.includes(role.id)) return message.reply({embeds: [new MessageEmbed()
                     .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-admin"]["variable44"]))
                     .setColor(es.wrongcolor)
                     .setFooter(client.getFooter(es))]
                   });
                   try {
-                    client.settings.remove(message.guild.id, role.id, "adminroles");
+                    let index = adminroles.indexOf(role.id);
+                    if(index > -1) {
+                      adminroles.splice(index, 1);
+                      client.settings.set(message.guild.id+".adminroles", adminroles);
+                    }
+                    const newAdminRoles = await client.settings.get(message.guild.id+".adminroles");
                     return message.reply({embeds: [new MessageEmbed()
                       .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-admin"]["variable45"]))
                       .setColor(es.color)
-                      .setDescription(`Everyone with one of those Roles:\n<@&${client.settings.get(message.guild.id, "adminroles").join(">\n<@&")}>\nis now able to use the Admin Commands`.substring(0, 2048))
+                      .setDescription(`Everyone with one of those Roles:\n<@&${newAdminRoles.join(">\n<@&")}>\nis now able to use the Admin Commands`.substring(0, 2048))
                       .setFooter(client.getFooter(es))]
                     });
                   } catch (e) {
@@ -216,7 +219,7 @@ module.exports = {
           break;
           case "Show Settings": 
           {
-            let db = client.settings.get(message.guild.id, "cmdadminroles")
+            let db = await client.settings.get(message.guild.id+ ".cmdadminroles")
             var cmdrole = []
             for(const [cmd, values] of Object.entries(db)){
               var percmd = [];
@@ -229,17 +232,23 @@ module.exports = {
                     percmd.push(`<@${r}>`)
                   }
                   else {
-                    client.settings.remove(message.guild.id, r, `cmdadminroles.${cmd}`)
+                    const File = cmd;
+                    let index = values.indexOf(r)
+                    if(index > -1) {
+                      values.splice(index, 1);
+                      await client.settings.set(`${message.guild.id}.cmdadminroles`, values)
+                    }
                   }
                 }
                 var key = `For the \`${cmd}\` Command`
                 cmdrole.push({ "info" : percmd, "name": key })
               }
             }
+            const newAdminRoles = await client.settings.get(message.guild.id+".adminroles");
             var embed = new MessageEmbed()
               .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-admin"]["variable50"]))
               .setColor(es.color)
-              .setDescription(`**General Admin Roles:**\n${client.settings.get(message.guild.id, "adminroles").length > 0 ? `<@&${client.settings.get(message.guild.id, "adminroles").join(">, <@&")}>`: "No General Admin Roles Setup yet"}`.substring(0, 2048))
+              .setDescription(`**General Admin Roles:**\n${newAdminRoles.length > 0 ? `<@&${newAdminRoles.join(">, <@&")}>`: "No General Admin Roles Setup yet"}`.substring(0, 2048))
               .setFooter(client.getFooter(es))
             for(const cmd of cmdrole){
               embed.addField(cmd.name, cmd.info.join(", "))
@@ -259,7 +268,7 @@ module.exports = {
               *Enter one of those Commands!*`).setFooter(client.getFooter(es))
             ]})
             var thecmd;
-            await tempmsg.channel.awaitMessages({filter: m => m.author.id == message.author.id, 
+            await tempmsg.channel.awaitMessages({filter: m => m.author.id == message.author?.id, 
                 max: 1,
                 time: 90000,
                 errors: ["time"]
@@ -284,7 +293,7 @@ module.exports = {
                   message: "YOU CANNOT USE THAT COMMAND, CAUSE IT DOES NOT NEED PERMISSIONS"
                 }
 
-                client.settings.ensure(message.guild.id, [], `cmdadminroles.${thecmd}`)
+                await dbEnsure(client.settings, `${message.guild.id}.cmdadminroles.${thecmd}`, [])
 
                 if(["dm"].includes(thecmd.toLowerCase())) return timeouterror = {
                   message: "YOU CANNOT USE THAT COMMAND, CAUSE IT IS ADMINISTRATOR ONLY"
@@ -334,17 +343,17 @@ module.exports = {
                   //define the embed
                   let MenuEmbed = new MessageEmbed()
                   .setColor(es.color)
-                  .setAuthor('Admin Setup', 'https://cdn.discordapp.com/emojis/892521772002447400.png?size=96', 'https://discord.gg/milrato')
+                  .setAuthor(client.getAuthor('Admin Setup', 'https://cdn.discordapp.com/emojis/892521772002447400.png?size=96', 'https://discord.gg/dcdev'))
                   .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-ticket"]["variable2"]))
                   //send the menu msg
                   let menumsg = await message.reply({embeds: [MenuEmbed], components: [new MessageActionRow().addComponents(Selection)]})
                   //Create the collector
                   const collector = menumsg.createMessageComponentCollector({ 
-                    filter: i => i?.isSelectMenu() && i?.message.author.id == client.user.id && i?.user,
+                    filter: i => i?.isSelectMenu() && i?.message.author?.id == client.user.id && i?.user,
                     time: 90000
                   })
                   //Menu Collections
-                  collector.on('collect', menu => {
+                  collector.on('collect', async menu => {
                     if (menu?.user.id === cmduser.id) {
                       collector.stop();
                       let menuoptiondata = menuoptions.find(v=>v.value == menu?.values[0])
@@ -370,25 +379,25 @@ module.exports = {
                         .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-admin"]["variable11"]))
                         .setFooter(client.getFooter(es))]
                       })
-                      await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+                      await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
                           max: 1,
                           time: 90000,
                           errors: ["time"]
                         })
-                        .then(collected => {
+                        .then(async collected => {
                           var message = collected.first();
                           var role = message.mentions.roles.filter(role=>role.guild.id==message.guild.id).first();
                           var user = message.mentions.users.first();
                           if (role) {
-                            var adminroles = client.settings.get(message.guild.id, `cmdadminroles.${thecmd}`)
+                            var adminroles = await client.settings.get(message.guild.id + `.cmdadminroles.${thecmd}`)
                             if (adminroles.includes(role.id)) return message.reply({embeds: [new MessageEmbed()
                               .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-admin"]["variable12"]))
                               .setColor(es.wrongcolor)
                               .setFooter(client.getFooter(es))]
                             });
                             try {
-                              client.settings.push(message.guild.id, role.id, `cmdadminroles.${thecmd}`)
-                              let cmd = client.settings.get(message.guild.id, `cmdadminroles.${thecmd}`)
+                              await client.settings.push(`${message.guild.id}.cmdadminroles.${thecmd}`, role.id)
+                              let cmd = await client.settings.get(message.guild.id + `.cmdadminroles.${thecmd}`)
                               var cmdrole = []
                                 if(cmd.length > 0){
                                   for(const r of cmd){
@@ -399,9 +408,11 @@ module.exports = {
                                       cmdrole.push(`<@${r}>`)
                                     }
                                     else {
-                                      
-                                      //console.log(r)
-                                      client.settings.remove(message.guild.id, r, `cmdadminroles.${cmd}`)
+                                      let index = cmd.indexOf(r)
+                                      if(index > -1) {
+                                        cmd.splice(index, 1);
+                                        client.settings.set(`${message.guild.id}.cmdadminroles.${thecmd}`, cmd)
+                                      }
                                     }
                                   }
                                 }
@@ -420,15 +431,15 @@ module.exports = {
                               });
                             }
                           } else if (user) {
-                            var adminroles = client.settings.get(message.guild.id, `cmdadminroles.${thecmd}`)
+                            var adminroles = await client.settings.get(message.guild.id + `.cmdadminroles.${thecmd}`)
                             if (adminroles.includes(user.id)) return message.reply({embeds: [new MessageEmbed()
                               .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-admin"]["variable16"]))
                               .setColor(es.wrongcolor)
                               .setFooter(client.getFooter(es))]
                             });
                             try {
-                              client.settings.push(message.guild.id, user.id, `cmdadminroles.${thecmd}`)
-                              let cmd = client.settings.get(message.guild.id, `cmdadminroles.${thecmd}`)
+                              await client.settings.push(message.guild.id+`.cmdadminroles.${thecmd}`, user.id)
+                              let cmd = await client.settings.get(message.guild.id+ `.cmdadminroles.${thecmd}`)
                               var cmdrole = []
                                 if(cmd.length > 0){
                                   for(const r of cmd){
@@ -439,9 +450,11 @@ module.exports = {
                                       cmdrole.push(`<@${r}>`)
                                     }
                                     else {
-                                      
-                                      //console.log(r)
-                                      client.settings.remove(message.guild.id, r, `cmdadminroles.${cmd}`)
+                                      let index = cmd.indexOf(r)
+                                      if(index > -1) {
+                                        cmd.splice(index, 1);
+                                        client.settings.set(`${message.guild.id}.cmdadminroles.${thecmd}`, cmd)
+                                      }
                                     }
                                   }
                                 }
@@ -483,25 +496,29 @@ module.exports = {
                         .setDescription(eval(client.la[ls]["cmds"]["setup"]["setup-admin"]["variable21"]))
                         .setFooter(client.getFooter(es))]
                       })
-                      await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author.id,
+                      await tempmsg.channel.awaitMessages({filter: m => m.author.id === message.author?.id,
                           max: 1,
                           time: 90000,
                           errors: ["time"]
                         })
-                        .then(collected => {
+                        .then(async collected => {
                           var message = collected.first();
                           var role = message.mentions.roles.filter(role=>role.guild.id==message.guild.id).first();
                           var user = message.mentions.users.first();
                           if (role) {
-                            var adminroles = client.settings.get(message.guild.id, `cmdadminroles.${thecmd}`)
-                            if (!adminroles.includes(role.id)) return message.reply({embeds: [new MessageEmbed()
+                            var adminroles = await client.settings.get(message.guild.id+ `.cmdadminroles.${thecmd}`)
+                            if (!adminroles || !adminroles.includes(role.id)) return message.reply({embeds: [new MessageEmbed()
                               .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-admin"]["variable22"]))
                               .setColor(es.wrongcolor)
                               .setFooter(client.getFooter(es))]
                             });
                             try {
-                              client.settings.remove(message.guild.id, role.id, `cmdadminroles.${thecmd}`)
-                              let cmd = client.settings.get(message.guild.id, `cmdadminroles.${thecmd}`)
+                              let index = adminroles.indexOf(role.id)
+                              if(index > -1) {
+                                adminroles.splice(index, 1);
+                                await client.settings.set(`${message.guild.id}.cmdadminroles.${thecmd}`, adminroles)
+                              }
+                              let cmd = await client.settings.get(message.guild.id, `cmdadminroles.${thecmd}`)
                               var cmdrole = []
                                 if(cmd.length > 0){
                                   for(const r of cmd){
@@ -512,9 +529,11 @@ module.exports = {
                                       cmdrole.push(`<@${r}>`)
                                     }
                                     else {
-                                      
-                                      //console.log(r)
-                                      client.settings.remove(message.guild.id, r, `cmdadminroles.${cmd}`)
+                                      let index = cmd.indexOf(r)
+                                      if(index > -1) {
+                                        cmd.splice(index, 1);
+                                        client.settings.set(`${message.guild.id}.cmdadminroles.${thecmd}`, cmd)
+                                      }
                                     }
                                   }
                                 }
@@ -533,14 +552,18 @@ module.exports = {
                               });
                             }
                           } else if (user) {
-                            var adminroles = client.settings.get(message.guild.id, `cmdadminroles.${thecmd}`)
+                            var adminroles = await client.settings.get(message.guild.id+ `.cmdadminroles.${thecmd}`)
                             if (!adminroles.includes(user.id)) return message.reply({embeds: [new MessageEmbed()
                               .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-admin"]["variable26"]))
                               .setColor(es.wrongcolor)
                               .setFooter(client.getFooter(es))]
                             });
                             try {
-                              client.settings.remove(message.guild.id, user.id, `cmdadminroles.${thecmd}`)
+                              let index = adminroles.indexOf(user.id)
+                              if(index > -1) {
+                                adminroles.splice(index, 1);
+                                await client.settings.set(`${message.guild.id}.cmdadminroles.${thecmd}`, adminroles)
+                              }
                               let cmd = client.settings.get(message.guild.id, `cmdadminroles.${thecmd}`)
                               var cmdrole = []
                                 if(cmd.length > 0){
@@ -552,9 +575,11 @@ module.exports = {
                                       cmdrole.push(`<@${r}>`)
                                     }
                                     else {
-                                      
-                                      //console.log(r)
-                                      client.settings.remove(message.guild.id, r, `cmdadminroles.${cmd}`)
+                                      let index = cmd.indexOf(r)
+                                      if(index > -1) {
+                                        cmd.splice(index, 1);
+                                        client.settings.set(`${message.guild.id}.cmdadminroles.${thecmd}`, cmd)
+                                      }
                                     }
                                   }
                                 }
@@ -590,25 +615,29 @@ module.exports = {
                     break;
                     case "Show Settings":
                     {
-                      let db = client.settings.get(message.guild.id, "cmdadminroles")
-                var cmdrole = []
-                for(const [cmd, values] of Object.entries(db)){
-                  var percmd = [];
-                  if(values.length > 0){
-                    for(const r of values){
-                      if(message.guild.roles.cache.get(r)){
-                        percmd.push(`<@&${r}>`)
+                      let db = await client.settings.get(message.guild.id+ ".cmdadminroles")
+                      var cmdrole = []
+                      for(const [cmd, values] of Object.entries(db)){
+                        var percmd = [];
+                        if(values.length > 0){
+                          for(const r of values){
+                            if(message.guild.roles.cache.get(r)){
+                              percmd.push(`<@&${r}>`)
+                            }
+                            else if(message.guild.members.cache.get(r)){
+                              percmd.push(`<@${r}>`)
+                            }
+                            else {
+                              let index = values.indexOf(r)
+                              if(index > -1) {
+                                values.splice(index, 1);
+                                client.settings.set(`${message.guild.id}.cmdadminroles.${cmd}`, values)
+                              }
+                            }
+                          }
+                        var key = `For the \`${cmd}\` Command`
+                        cmdrole.push({ "info" : percmd, "name": key })
                       }
-                      else if(message.guild.members.cache.get(r)){
-                        percmd.push(`<@${r}>`)
-                      }
-                      else {
-                        client.settings.remove(message.guild.id, r, `cmdadminroles.${cmd}`)
-                      }
-                    }
-                    var key = `For the \`${cmd}\` Command`
-                    cmdrole.push({ "info" : percmd, "name": key })
-                  }
                 }
                 var embed = new MessageEmbed()
                 .setTitle(eval(client.la[ls]["cmds"]["setup"]["setup-admin"]["variable33"]))
@@ -651,7 +680,7 @@ module.exports = {
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

@@ -8,20 +8,21 @@ const {
   format,
   delay,
   arrayMove
-} = require(`${process.cwd()}/handlers/functions`)
+} = require(`./functions`)
 module.exports = async (client, message, args, type, slashCommand = false, extras = false) => {
   let method = type.includes(":") ? type.split(":") : Array(type)
   if (!message.guild) return;
   
   //just visual for the console
   
-  ee = client.settings.get(message.guild.id, "embed")
-  if(!client.settings.has(message.guild.id, "language")) client.settings.ensure(message.guild.id, { language: "en" });
-  let ls = client.settings.get(message.guild.id, "language");
+  var es = await client.settings.get(message.guild.id+".embed") || ee
+  let ls = await client.settings.get(message.guild.id+".language") || "en";
+  ee = es
 
   let {
     channel
   } = message.member.voice;
+  if(!channel) return
   let botchannel = message.guild.me.voice.channel;
   const permissions = channel.permissionsFor(client.user);
 
@@ -29,12 +30,12 @@ module.exports = async (client, message, args, type, slashCommand = false, extra
     if(slashCommand) 
       return slashCommand.reply({ephemeral: true, embeds: [new MessageEmbed()
         .setColor(ee.wrongcolor)
-        .setFooter({text: `${ee.footertext}`, iconURL: `${ee.footericon}`})
+        .setFooter(client.getFooter(ee))
         .setTitle(eval(client.la[ls]["handlers"]["playermanagerjs"]["playermanager"]["variable1"]))
       ]}).catch((e)=>console.log(String(e).grey));
     return message.reply({embeds: [new MessageEmbed()
       .setColor(ee.wrongcolor)
-      .setFooter({text: `${ee.footertext}`, iconURL: `${ee.footericon}`})
+      .setFooter(client.getFooter(ee))
       .setTitle(eval(client.la[ls]["handlers"]["playermanagerjs"]["playermanager"]["variable1"]))
     ]}).catch((e)=>console.log(String(e).grey));
   }
@@ -42,12 +43,12 @@ module.exports = async (client, message, args, type, slashCommand = false, extra
     if(slashCommand) 
       return slashCommand.reply({ephemeral: true, embeds: [new MessageEmbed()
         .setColor(ee.wrongcolor)
-        .setFooter({text: `${ee.footertext}`, iconURL: `${ee.footericon}`})
+        .setFooter(client.getFooter(ee))
         .setTitle(eval(client.la[ls]["handlers"]["playermanagerjs"]["playermanager"]["variable2"]))
       ]}).catch((e)=>console.log(String(e).grey));
     return message.reply({embeds: [new MessageEmbed()
       .setColor(ee.wrongcolor)
-      .setFooter({text: `${ee.footertext}`, iconURL: `${ee.footericon}`})
+      .setFooter(client.getFooter(ee))
       .setTitle(eval(client.la[ls]["handlers"]["playermanagerjs"]["playermanager"]["variable2"]))
     ]}).catch((e)=>console.log(String(e).grey));
   }
@@ -73,19 +74,19 @@ module.exports = async (client, message, args, type, slashCommand = false, extra
     if(slashCommand) 
       return slashCommand.reply({ephemeral: true, embeds: [new MessageEmbed()
         .setColor(ee.wrongcolor)
-        .setFooter({text: `${ee.footertext}`, iconURL: `${ee.footericon}`})
+        .setFooter(client.getFooter(ee))
         .setTitle(eval(client.la[ls]["handlers"]["playermanagerjs"]["playermanager"]["variable3"]))
       ]}).catch((e)=>console.log(String(e).grey));
     return message.reply({embeds: [new MessageEmbed()
       .setColor(ee.wrongcolor)
-      .setFooter({text: `${ee.footertext}`, iconURL: `${ee.footericon}`})
+      .setFooter(client.getFooter(ee))
       .setTitle(eval(client.la[ls]["handlers"]["playermanagerjs"]["playermanager"]["variable3"]))
     ]}).catch((e)=>console.log(String(e).grey));
   }
 }
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

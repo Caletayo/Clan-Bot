@@ -12,7 +12,7 @@ var {
 
 //function for playling song
 async function song(client, message, args, type, slashCommand, extras) {
-  let ls = client.settings.get(message.guild.id, "language")
+  let ls = await client.settings.get(message.guild.id+".language")
   var search = args.join(" ");
   var res;
   var player = client.manager.players.get(message.guild.id);
@@ -34,7 +34,7 @@ async function song(client, message, args, type, slashCommand, extras) {
   if (state !== "CONNECTED") {
     //set the variables
     player.set("message", message);
-    player.set("playerauthor", message.author.id);
+    player.set("playerauthor", message.author?.id);
     player.connect();
     try{message.react("863876115584385074").catch(() => {});}catch(e){console.log(String(e).grey)}
     player.stop();
@@ -88,12 +88,12 @@ async function song(client, message, args, type, slashCommand, extras) {
       if(slashCommand) 
       return slashCommand.reply({ephemeral: true, embeds: [new MessageEmbed()
         .setColor(ee.wrongcolor)
-        .setTitle(String("❌ Error | Found nothing for: **`" + search).substr(0, 256 - 3) + "`**")
+        .setTitle(String("❌ Error | Found nothing for: **`" + search).substring(0, 256 - 3) + "`**")
         .setDescription(eval(client.la[ls]["handlers"]["playermanagers"]["song"]["variable3"]))
       ]})
       return message.reply({embeds: [new MessageEmbed()
         .setColor(ee.wrongcolor)
-        .setTitle(String("❌ Error | Found nothing for: **`" + search).substr(0, 256 - 3) + "`**")
+        .setTitle(String("❌ Error | Found nothing for: **`" + search).substring(0, 256 - 3) + "`**")
         .setDescription(eval(client.la[ls]["handlers"]["playermanagers"]["song"]["variable3"]))
       ]}).then(msg => {
         setTimeout(()=>{
@@ -105,7 +105,7 @@ async function song(client, message, args, type, slashCommand, extras) {
     if (player.state !== "CONNECTED") {
       //set the variables
       player.set("message", message);
-      player.set("playerauthor", message.author.id);
+      player.set("playerauthor", message.author?.id);
       //connect
       player.connect();
       try{message.react("863876115584385074").catch(() => {});}catch(e){console.log(String(e).grey)}
@@ -134,11 +134,12 @@ async function song(client, message, args, type, slashCommand, extras) {
       if(slashCommand) slashCommand.reply({ephemeral: true, embeds: [playembed]})
       else message.reply({embeds: [playembed]})
     }
-    if(client.musicsettings.get(player.guild, "channel") && client.musicsettings.get(player.guild, "channel").length > 5){
-      let messageId = client.musicsettings.get(player.guild, "message");
+    var musicsettings = await client.musicsettings.get(player.guild+".channel")
+    if(musicsettings && musicsettings.length > 5){
+      let messageId = musicsettings.message;
       let guild = client.guilds.cache.get(player.guild);
       if(!guild) return 
-      let channel = guild.channels.cache.get(client.musicsettings.get(player.guild, "channel"));
+      let channel = guild.channels.cache.get(musicsettings);
       if(!channel) return 
       let message = channel.messages.cache.get(messageId);
       if(!message) message = await channel.messages.fetch(messageId).catch(()=>{});
@@ -146,7 +147,7 @@ async function song(client, message, args, type, slashCommand, extras) {
       //edit the message so that it's right!
       var data = require("../erela_events/musicsystem").generateQueueEmbed(client, player.guild)
       message.edit(data).catch(() => {})
-      if(client.musicsettings.get(player.guild, "channel") == player.textChannel){
+      if(musicsettings == player.textChannel){
         return;
       }
     }
@@ -157,12 +158,12 @@ async function song(client, message, args, type, slashCommand, extras) {
       if(slashCommand) 
       return slashCommand.reply({ephemeral: true, embeds: [new MessageEmbed()
         .setColor(ee.wrongcolor)
-        .setTitle(String("❌ Error | Found nothing for: **`" + search).substr(0, 256 - 3) + "`**")
+        .setTitle(String("❌ Error | Found nothing for: **`" + search).substring(0, 256 - 3) + "`**")
         .setDescription(eval(client.la[ls]["handlers"]["playermanagers"]["song"]["variable5"]))
       ]})
       return message.reply({embeds: [new MessageEmbed()
         .setColor(ee.wrongcolor)
-        .setTitle(String("❌ Error | Found nothing for: **`" + search).substr(0, 256 - 3) + "`**")
+        .setTitle(String("❌ Error | Found nothing for: **`" + search).substring(0, 256 - 3) + "`**")
         .setDescription(eval(client.la[ls]["handlers"]["playermanagers"]["song"]["variable5"]))
       ]}).then(msg => {
         setTimeout(()=>{
@@ -174,7 +175,7 @@ async function song(client, message, args, type, slashCommand, extras) {
     if (player.state !== "CONNECTED") {
       //set the variables
       player.set("message", message);
-      player.set("playerauthor", message.author.id);
+      player.set("playerauthor", message.author?.id);
       player.connect();
       try{message.react("863876115584385074").catch(() => {});}catch(e){console.log(String(e).grey)}
       var firsttrack = res.tracks[0]
@@ -203,7 +204,7 @@ async function song(client, message, args, type, slashCommand, extras) {
     }
     //send information
     var playlistembed = new MessageEmbed()
-      .setTitle(`Added Playlist 🩸 **\`${res.playlist.name}`.substr(0, 256 - 3) + "`**")
+      .setTitle(`Added Playlist 🩸 **\`${res.playlist.name}`.substring(0, 256 - 3) + "`**")
       .setURL(res.playlist.uri).setColor(ee.color)
       .setThumbnail(`https://img.youtube.com/vi/${res.tracks[0].identifier}/mqdefault.jpg`)
       .addField("⌛ Duration: ", `\`${format(res.playlist.duration)}\``, true)
@@ -211,13 +212,15 @@ async function song(client, message, args, type, slashCommand, extras) {
       .setFooter(client.getFooter(`Requested by: ${message.author.tag}`, message.author.displayAvatarURL({
         dynamic: true
       })))
+      console.log(slashCommand)
       if(slashCommand) slashCommand.reply({ephemeral: true, embeds: [playlistembed]})
       else message.reply({embeds: [playlistembed]})
-    if(client.musicsettings.get(player.guild, "channel") && client.musicsettings.get(player.guild, "channel").length > 5){
-      let messageId = client.musicsettings.get(player.guild, "message");
+      var musicsettings = await client.musicsettings.get(player.guild+".channel")
+    if(musicsettings && musicsettings.length > 5){
+      let messageId = musicsettings.message;
       let guild = client.guilds.cache.get(player.guild);
       if(!guild) return 
-      let channel = guild.channels.cache.get(client.musicsettings.get(player.guild, "channel"));
+      let channel = guild.channels.cache.get(musicsettings);
       if(!channel) return 
       let message = channel.messages.cache.get(messageId);
       if(!message) message = await channel.messages.fetch(messageId).catch(()=>{});
@@ -225,7 +228,7 @@ async function song(client, message, args, type, slashCommand, extras) {
       //edit the message so that it's right!
       var data = require("../erela_events/musicsystem").generateQueueEmbed(client, player.guild)
       message.edit(data).catch(() => {})
-      if(client.musicsettings.get(player.guild, "channel") == player.textChannel){
+      if(musicsettings == player.textChannel){
         return;
       }
     }

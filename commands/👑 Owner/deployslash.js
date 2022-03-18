@@ -3,14 +3,14 @@ const {
   splitMessage
 } = require(`discord.js`);
 var Discord = require(`discord.js`);
-var config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-var emoji = require(`${process.cwd()}/botconfig/emojis.json`);
+var config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+var emoji = require(`../../botconfig/emojis.json`);
 const fs = require('fs');
 var {
-  databasing,
+  dbEnsure,
   isValidURL
-} = require(`${process.cwd()}/handlers/functions`);
+} = require(`../../handlers/functions`);
 const {
   inspect
 } = require(`util`);
@@ -22,15 +22,14 @@ module.exports = {
   description: `Deploy and Enable the Slash Commands of this Bot! Either GLOBALLY or for ONE GUILD ONLY`,
   usage: `deployslash [GUILDID]`,
   cooldown: 360,
-  run: async (client, message, args, cmduser, text, prefix) => {
-    let es = client.settings.get(message.guild.id, "embed"); let ls = client.settings.get(message.guild.id, "language")
-    if (message.author.id != "442355791412854784")
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
+    if (message.author?.id != "442355791412854784")
       return message.channel.send({
         embeds: [new MessageEmbed()
           .setColor(es.wrongcolor)
-          .setFooter(client.user.username, es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL())
+          .setFooter(client.getFooter(es))
           .setTitle("Only Tomato is allowed to deploy the SLASH-COMMANDS")
-          .setDescription(`Go to the [Discord-Server](https://discord.gg/milrato), open a Ticket and ask for it!`)
+          .setDescription(`Go to the [Discord-Server](https://discord.gg/dcdev), open a Ticket and ask for it!`)
         ]
       });
     try {
@@ -72,7 +71,7 @@ module.exports = {
 };
 /**
  * @INFO
- * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+ * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
  * @INFO
  * Work for Milrato Development | https://milrato.eu
  * @INFO

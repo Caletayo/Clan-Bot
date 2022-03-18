@@ -2,11 +2,11 @@ const {
   MessageEmbed,
   Permissions
 } = require("discord.js");
-const config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
+const config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
 const {
   databasing
-} = require(`${process.cwd()}/handlers/functions`);
+} = require(`../../handlers/functions`);
 module.exports = {
   name: "channellock",
   category: "🚫 Administration",
@@ -15,12 +15,12 @@ module.exports = {
   usage: "channellock",
   description: "Locks a Text Channel instantly",
   type: "channel",
-  run: async (client, message, args, cmduser, text, prefix) => {
+  run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
     
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
+    
     try {
-      let adminroles = client.settings.get(message.guild.id, "adminroles")
-      let cmdroles = client.settings.get(message.guild.id, "cmdadminroles.channellock")
+      let adminroles = GuildSettings?.adminroles || [];
+      let cmdroles = GuildSettings?.cmdadminroles?.channellock || [];
       var cmdrole = []
         if(cmdroles.length > 0){
           for(const r of cmdroles){
@@ -31,13 +31,16 @@ module.exports = {
               cmdrole.push(` | <@${r}>`)
             }
             else {
-              
-              //console.log(r)
-              client.settings.remove(message.guild.id, r, `cmdadminroles.channellock`)
+              const File = `channellock`;
+              let index = GuildSettings && GuildSettings.cmdadminroles && typeof GuildSettings.cmdadminroles == "object" ? GuildSettings.cmdadminroles[File]?.indexOf(r) || -1 : -1;
+              if(index > -1) {
+                GuildSettings.cmdadminroles[File].splice(index, 1);
+                client.settings.set(`${message.guild.id}.cmdadminroles`, GuildSettings.cmdadminroles)
+              }
             }
           }
         }
-      if (([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => cmdroles.includes(r.id))) && !cmdroles.includes(message.author.id) && ([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => adminroles.includes(r ? r.id : r))) && !Array(message.guild.ownerId, config.ownerid).includes(message.author.id) && !message.member.permissions.has([Permissions.FLAGS_ADMINISTRATOR]))
+      if (([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => cmdroles.includes(r.id))) && !cmdroles.includes(message.author?.id) && ([...message.member.roles.cache.values()] && !message.member.roles.cache.some(r => adminroles.includes(r ? r.id : r))) && !Array(message.guild.ownerId, config.ownerid).includes(message.author?.id) && !message.member?.permissions?.has([Permissions.FLAGS_ADMINISTRATOR]))
         return message.reply({embeds : [new MessageEmbed()
           .setColor(es.wrongcolor)
           .setFooter(client.getFooter(es))
@@ -96,17 +99,17 @@ module.exports = {
         .setFooter(client.getFooter(es))
         .setTitle(`<a:yes:833101995723194437> **Successfully locked \`${channel.name}\`**`)
       ]});
-      if(client.settings.get(message.guild.id, `adminlog`) != "no"){
+      if(GuildSettings && GuildSettings.adminlog && GuildSettings.adminlog != "no"){
         try{
-          var ch = message.guild.channels.cache.get(client.settings.get(message.guild.id, `adminlog`))
-          if(!ch) return client.settings.set(message.guild.id, "no", `adminlog`);
+          var ch = message.guild.channels.cache.get(GuildSettings.adminlog)
+          if(!ch) return client.settings.set(`${message.guild.id}.adminlog`, "no");
           ch.send({embeds :[new MessageEmbed()
             .setColor(es.color).setThumbnail(es.thumb ? es.footericon && (es.footericon.includes("http://") || es.footericon.includes("https://")) ? es.footericon : client.user.displayAvatarURL() : null).setFooter(client.getFooter(es))
-            .setAuthor(`${require("path").parse(__filename).name} | ${message.author.tag}`, message.author.displayAvatarURL({dynamic: true}))
+            .setAuthor(client.getAuthor(`${require("path").parse(__filename).name} | ${message.author.tag}`, message.author.displayAvatarURL({dynamic: true})))
             .setDescription(eval(client.la[ls]["cmds"]["administration"]["say"]["variable5"]))
             .addField(eval(client.la[ls]["cmds"]["administration"]["ban"]["variablex_15"]), eval(client.la[ls]["cmds"]["administration"]["ban"]["variable15"]))
            .addField(eval(client.la[ls]["cmds"]["administration"]["ban"]["variablex_16"]), eval(client.la[ls]["cmds"]["administration"]["ban"]["variable16"]))
-            .setTimestamp().setFooter(client.getFooter("ID: " + message.author.id, message.author.displayAvatarURL({dynamic: true})))
+            .setTimestamp().setFooter(client.getFooter("ID: " + message.author?.id, message.author.displayAvatarURL({dynamic: true})))
           ]})
         }catch (e){
           console.log(e.stack ? String(e.stack).grey : String(e).grey)

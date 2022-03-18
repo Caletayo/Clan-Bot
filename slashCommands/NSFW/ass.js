@@ -20,7 +20,7 @@ module.exports = {
       ],
       run: async (client, interaction, cmduser, es, ls, prefix, player, message) => {
 
-    if (!client.settings.get(message.guild.id, "NSFW")) {
+    if(GuildSettings.NSFW === false) {
       const x = new MessageEmbed()
         .setColor(es.wrongcolor)
         .setFooter(client.getFooter(es))

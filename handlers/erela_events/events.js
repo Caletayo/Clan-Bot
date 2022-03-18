@@ -13,7 +13,7 @@ ee = require(`${process.cwd()}/botconfig/embed.json`),
   check_if_dj,
   databasing,
   autoplay
-} = require(`${process.cwd()}/handlers/functions`),
+} = require(`../functions`),
 playermanager = require("../../handlers/playermanager"),
 
 playercreated = new Map(),
@@ -39,7 +39,8 @@ module.exports = (client) => {
     .on("playerDestroy", async (player) => {
       
       if(player.textChannel && player.guild){
-        let Queuechannel = client.channels.cache.get(player.textChannel);
+        let Queuechannel = await client.getChannel(player.textChannel).catch(() => {})
+
         if(Queuechannel && Queuechannel.permissionsFor(Queuechannel.guild.me).has(Permissions.FLAGS.SEND_MESSAGES)){
           Queuechannel.messages.fetch(player.get("currentmsg")).then(currentSongPlayMsg => {
             if(currentSongPlayMsg && currentSongPlayMsg.embeds && currentSongPlayMsg.embeds[0]){
@@ -50,11 +51,12 @@ module.exports = (client) => {
             }
           }).catch(() => {})
         }
-        if(client.musicsettings.get(player.guild, "channel") && client.musicsettings.get(player.guild, "channel").length > 5){
-          let messageId = client.musicsettings.get(player.guild, "message");
-          let guild = client.guilds.cache.get(player.guild);
+        const musicsettings = await client.musicsettings.get(player.guild)
+        if(musicsettings.channel && musicsettings.channel.length > 5){
+          let messageId = musicsettings.message;
+          let guild = await client.guilds.cache.get(player.guild)
           if(!guild) return 
-          let channel = guild.channels.cache.get(client.musicsettings.get(player.guild, "channel"));
+          let channel = guild.channels.cache.get(musicsettings.channel);
           if(!channel) return 
           let message = channel.messages.cache.get(messageId);
           if(!message) message = await channel.messages.fetch(messageId).catch(()=>{});
@@ -62,7 +64,7 @@ module.exports = (client) => {
           //edit the message so that it's right!
           var data = require("./musicsystem").generateQueueEmbed(client, player.guild, true)
           message.edit(data).catch(() => {})
-          if(client.musicsettings.get(player.guild, "channel") == player.textChannel){
+          if(musicsettings.channel == player.textChannel){
             return;
           }
         }
@@ -72,49 +74,44 @@ module.exports = (client) => {
     .on("trackStart", async (player, track) => {
       try {
         let edited = false;
+        const Settings = await client.settings.get(player.guild)
         if(playercreated.has(player.guild)){
           player.set("eq", "💣 None");
           player.set("filter", "🧨 None");
-          client.settings.ensure(player.guild, {
-            defaultvolume: 10,
-            defaulteq: false,
-            defaultap: true,
-            playmsg: true,
-          });
-          await player.setVolume(client.settings.get(player.guild, "defaultvolume"))
-          await player.set("autoplay", client.settings.get(player.guild, "defaultap"));
+          await player.setVolume(Settings.defaultvolume)
+          await player.set("autoplay", Settings.defaultap);
           await player.set(`afk`, false)
-          if(client.settings.get(player.guild, "defaulteq")){
+          if(Settings.defaulteq){
             await player.setEQ(client.eqs.music);
           }
           databasing(client, player.guild, player.get("playerauthor"));
           playercreated.delete(player.guild); // delete the playercreated state from the thing
         }
-        if(client.musicsettings.get(player.guild, "channel") && client.musicsettings.get(player.guild, "channel").length > 5){
-          let messageId = client.musicsettings.get(player.guild, "message");
-          let guild = client.guilds.cache.get(player.guild);
+        const musicsettings = await client.musicsettings.get(player.guild)
+        if(musicsettings.channel && musicsettings.channel.length > 5){
+          let messageId = musicsettings.message;
+          let guild = await client.guilds.cache.get(player.guild)
           if(!guild) return 
-          let channel = guild.channels.cache.get(client.musicsettings.get(player.guild, "channel"));
+          let channel = guild.channels.cache.get(musicsettings.channel);
           if(!channel) return 
           let message = channel.messages.cache.get(messageId);
           if(!message) message = await channel.messages.fetch(messageId).catch(()=>{});
           if(!message) return
           //edit the message so that it's right!
-          var data = require("./musicsystem").generateQueueEmbed(client, player.guild)
+          var data = require("./musicsystem").generateQueueEmbed(client, player.guild, true)
           message.edit(data).catch(() => {})
-          if(client.musicsettings.get(player.guild, "channel") == player.textChannel){
+          if(musicsettings.channel == player.textChannel){
             return;
           }
         }
         if(player.textChannel && player.get("previoustrack")){
           if(!collector.ended){
             try{
-              collector.stop()
+              collector?.stop()
             } catch (e) {
-              console.log(e.stack ? String(e.stack).grey : String(e).grey)
             }
           }
-          let channel = client.channels.cache.get(player.textChannel);
+          let channel = await client.getChannel(player.textChannel).catch(() => {})
           if(channel && channel.permissionsFor(channel.guild.me).has(Permissions.FLAGS.SEND_MESSAGES)){
             channel.messages.fetch(player.get("currentmsg")).then(currentSongPlayMsg => {
               if(currentSongPlayMsg && currentSongPlayMsg.embeds && currentSongPlayMsg.embeds[0]){
@@ -129,25 +126,26 @@ module.exports = (client) => {
         //votes for skip --> 0
         player.set("votes", "0");
         //set the vote of every user to FALSE so if they voteskip it will vote skip and not remove voteskip if they have voted before bruh
-        for (var userid of client.guilds.cache.get(player.guild).members.cache.map(member => member.user.id))
+        const guild = client.guilds.cache.get(player.guild)
+        for (var userid of guild.members.cache.map(member => member.user.id))
           player.set(`vote-${userid}`, false);
         //set the previous track just have it is used for the autoplay function!
         player.set("previoustrack", track);
         //if that's disabled return
-        if(!client.settings.get(player.guild, "playmsg")){
+        if(!Settings.playmsg){
           return;
         }
         // playANewTrack(client,player,track);
         let playdata = generateQueueEmbed(client, player, track)
         //Send message with buttons
-        let channel = client.channels.cache.get(player.textChannel);
+        let channel = await client.getChannel(player.textChannel).catch(() => {})
         if(channel && channel.permissionsFor(channel.guild.me).has(Permissions.FLAGS.SEND_MESSAGES)){
           let swapmsg = await channel.send(playdata).then(msg => {
             player.set("currentmsg", msg.id);
             return msg;
           })
           //create a collector for the thinggy
-          collector = swapmsg.createMessageComponentCollector({filter: (i) => i?.isButton() && i?.user && i?.message.author.id == client.user.id, time: track.duration > 0 ? track.duration : 600000 }); //collector for 5 seconds
+          collector = swapmsg.createMessageComponentCollector({filter: (i) => i?.isButton() && i?.user && i?.message.author?.id == client.user.id, time: track.duration > 0 ? track.duration : 600000 }); //collector for 5 seconds
           //array of all embeds, here simplified just 10 embeds with numbers 0 - 9
           collector.on('collect', async i => {
               let { member } = i;
@@ -382,7 +380,7 @@ module.exports = (client) => {
     .on("trackStuck", async (player, track, payload) => {
       await player.stop();
       if(player.textChannel){
-        let channel = client.channels.cache.get(player.textChannel);
+        let channel = await client.getChannel(player.textChannel).catch(() => {})
         if(channel && channel.permissionsFor(channel.guild.me).has(Permissions.FLAGS.SEND_MESSAGES)){
           channel.messages.fetch(player.get("currentmsg")).then(currentSongPlayMsg => {
             if(currentSongPlayMsg && currentSongPlayMsg.embeds && currentSongPlayMsg.embeds[0]){
@@ -393,19 +391,20 @@ module.exports = (client) => {
             }
           }).catch(() => {})
         }
-        if(client.musicsettings.get(player.guild, "channel") && client.musicsettings.get(player.guild, "channel").length > 5){
-          let messageId = client.musicsettings.get(player.guild, "message");
-          let guild = client.guilds.cache.get(player.guild);
+        const musicsettings = await client.musicsettings.get(player.guild)
+        if(musicsettings.channel && musicsettings.channel.length > 5){
+          let messageId = musicsettings.message;
+          let guild = client.guilds.cache.get(player.guild)
           if(!guild) return 
-          let channel = guild.channels.cache.get(client.musicsettings.get(player.guild, "channel"));
+          let channel = guild.channels.cache.get(musicsettings.channel);
           if(!channel) return 
           let message = channel.messages.cache.get(messageId);
           if(!message) message = await channel.messages.fetch(messageId).catch(()=>{});
           if(!message) return
           //edit the message so that it's right!
-          var data = require("./musicsystem").generateQueueEmbed(client, player.guild)
+          var data = require("./musicsystem").generateQueueEmbed(client, player.guild, true)
           message.edit(data).catch(() => {})
-          if(client.musicsettings.get(player.guild, "channel") == player.textChannel){
+          if(musicsettings.channel == player.textChannel){
             return;
           }
         }
@@ -414,7 +413,7 @@ module.exports = (client) => {
     .on("trackError", async (player, track, payload) => {
       await player.stop();
       if(player.textChannel){
-        let channel = client.channels.cache.get(player.textChannel);
+        let channel = await client.getChannel(player.textChannel).catch(() => {})
         if(channel && channel.permissionsFor(channel.guild.me).has(Permissions.FLAGS.SEND_MESSAGES)){
           channel.messages.fetch(player.get("currentmsg")).then(currentSongPlayMsg => {
             if(currentSongPlayMsg && currentSongPlayMsg.embeds && currentSongPlayMsg.embeds[0]){
@@ -425,19 +424,20 @@ module.exports = (client) => {
             }
           }).catch(() => {})
         }
-        if(client.musicsettings.get(player.guild, "channel") && client.musicsettings.get(player.guild, "channel").length > 5){
-          let messageId = client.musicsettings.get(player.guild, "message");
-          let guild = client.guilds.cache.get(player.guild);
+        const musicsettings = await client.musicsettings.get(player.guild)
+        if(musicsettings.channel && musicsettings.channel.length > 5){
+          let messageId = musicsettings.message;
+          let guild = await client.guilds.cache.get(player.guild)
           if(!guild) return 
-          let channel = guild.channels.cache.get(client.musicsettings.get(player.guild, "channel"));
+          let channel = guild.channels.cache.get(musicsettings.channel);
           if(!channel) return 
           let message = channel.messages.cache.get(messageId);
           if(!message) message = await channel.messages.fetch(messageId).catch(()=>{});
           if(!message) return
           //edit the message so that it's right!
-          var data = require("./musicsystem").generateQueueEmbed(client, player.guild)
+          var data = require("./musicsystem").generateQueueEmbed(client, player.guild, true)
           message.edit(data).catch(() => {})
-          if(client.musicsettings.get(player.guild, "channel") == player.textChannel){
+          if(musicsettings.channel == player.textChannel){
             return;
           }
         }
@@ -450,11 +450,13 @@ module.exports = (client) => {
       try {
         player = client.manager.players.get(player.guild);
         if (!player.queue || !player.queue.current) {
-          if(client.musicsettings.get(player.guild, "channel") && client.musicsettings.get(player.guild, "channel").length > 5){
-            let messageId = client.musicsettings.get(player.guild, "message");
-            let guild = client.guilds.cache.get(player.guild);
+          
+          const musicsettings = await client.musicsettings.get(player.guild)
+          if(musicsettings.channel && musicsettings.channel.length > 5){
+            let messageId = musicsettings.message;
+            let guild = await client.guilds.cache.get(player.guild)
             if(!guild) return 
-            let channel = guild.channels.cache.get(client.musicsettings.get(player.guild, "channel"));
+            let channel = guild.channels.cache.get(musicsettings.channel);
             if(!channel) return 
             let message = channel.messages.cache.get(messageId);
             if(!message) message = await channel.messages.fetch(messageId).catch(()=>{});

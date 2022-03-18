@@ -1,8 +1,8 @@
 const Discord = require("discord.js");
-const config = require(`${process.cwd()}/botconfig/config.json`);
-var ee = require(`${process.cwd()}/botconfig/embed.json`);
-const emoji = require(`${process.cwd()}/botconfig/emojis.json`);
-const { duration, handlemsg } = require(`${process.cwd()}/handlers/functions`)
+const config = require(`../../botconfig/config.json`);
+var ee = require(`../../botconfig/embed.json`);
+const emoji = require(`../../botconfig/emojis.json`);
+const { duration, handlemsg } = require(`../../handlers/functions`)
 const { MessageActionRow, MessageSelectMenu } = require("discord.js")
 module.exports = {
     name: "botfaq",
@@ -11,15 +11,19 @@ module.exports = {
     description: "Sends the FAQ Options for the BOT",
     usage: "botfaq",
     type: "bot",
-    run: async (client, message, args, cmduser, text, prefix) => {
-    let es = client.settings.get(message.guild.id, "embed");let ls = client.settings.get(message.guild.id, "language")
+    run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
+    
     
 		try{
-      let milratodc = client.guilds.cache.get("773668217163218944")
-      let milratomembers = await milratodc.members.fetch().catch(() => {});
-      let partnercount = milratomembers.filter(m => m.roles.cache.has("823150244509515807"))
-      partnercount = partnercount.map(m=>m.id).length
-      
+      const membersWithRoleResult = await client.cluster.broadcastEval(async (client) => {
+        const guild = client.guilds.cache.get("773668217163218944");
+        if (!guild) return null;
+        const members = await guild.members.fetch().catch(() => null);
+        if (!members) return null;
+        const membersWithRole = members.filter(member => member.roles.cache.has("823150244509515807"));
+        return membersWithRole.size;
+      });
+      const partnercount = membersWithRoleResult.find(count => count !== null);
       let menuoptions = [
         {
           value: client.la[ls].cmds.info.botfaq.menuoptions[0].value,
@@ -99,7 +103,7 @@ module.exports = {
       //define the embed
       let MenuEmbed = new Discord.MessageEmbed()
       .setColor(es.color)
-      .setAuthor(client.la[ls].cmds.info.botfaq.menuembed.title, client.user.displayAvatarURL(), "https://discord.gg/milrato")
+      .setAuthor(client.la[ls].cmds.info.botfaq.menuembed.title, client.user.displayAvatarURL(), "https://discord.gg/dcdev")
       .setDescription(client.la[ls].cmds.info.botfaq.menuembed.description)
       //send the menu msg
       let menumsg = await message.reply({embeds: [MenuEmbed], components: [Selection]})
@@ -108,7 +112,7 @@ module.exports = {
         let menuoptiondata = menuoptions.find(v=>v.value.substring(0, 25) == interaction?.values[0])
         interaction?.reply({embeds: [new Discord.MessageEmbed()
         .setColor(es.color)
-        .setAuthor(client.la[ls].cmds.info.botfaq.menuembed.title, client.user.displayAvatarURL(), "https://discord.gg/milrato")
+        .setAuthor(client.la[ls].cmds.info.botfaq.menuembed.title, client.user.displayAvatarURL(), "https://discord.gg/dcdev")
         .setDescription(menuoptiondata.replymsg)], ephemeral: true});
       }
       //Event
@@ -132,7 +136,7 @@ module.exports = {
 };
 /**
   * @INFO
-  * Bot Coded by Tomato#6966 | https://discord.gg/milrato
+  * Bot Coded by Tomato#6966 | https://discord.gg/dcdev
   * @INFO
   * Work for Milrato Development | https://milrato.eu
   * @INFO
