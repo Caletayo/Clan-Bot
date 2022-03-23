@@ -23,7 +23,7 @@ module.exports = {
   usage: `deployslash [GUILDID]`,
   cooldown: 360,
   run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
-    if (message.author?.id != "442355791412854784")
+    if (message.author?.id != "760938184661008455")
       return message.channel.send({
         embeds: [new MessageEmbed()
           .setColor(es.wrongcolor)
