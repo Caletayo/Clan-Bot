@@ -91,7 +91,7 @@
     "url": "https://github.com/Tomato6966/Multipurpose-discord-bot/issues"
   },
   "homepage": "https://milrato.dev",
-  "devDependencies": {
+  "engines": {
     "node": "^16.13.2",
     "npm": "^6.14.15"
   }
