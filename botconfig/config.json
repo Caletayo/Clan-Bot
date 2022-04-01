@@ -8,10 +8,10 @@
     "fortnitetracker": "",
     "memer_api": "WNyBStXWCU4",
     "status": {
-        "text": "{prefix}help | Todo funcionando correctamente",
+        "text": "🎉 | {prefix}help | Se han usado {usedcommands} | Se han reproducido {songsplayed} Canciones",
         "type": "PLAYING",
         "url": "https://twitch.tv/milratodiscordbot",
-        "text2": "💎 | By: replit.com"
+        "text2": "💎 | En {guildcount} servidores | Con {membercount} Miembros"
     },
     "clientsettings": {
         "nodes": [
