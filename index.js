@@ -2,7 +2,7 @@ const { Manager } = require("discord-hybrid-sharding");
 const config = require("./botconfig/config.json");
 const colors = require("colors");
 
-const totalShards = 30; // suggested is to make it that 600-900 Servers are per shard, if u want to stay save, make it that it"s 400 servers / shard, and once it reached the ~1k mark, change the amount and restart
+const totalShards = 50; // suggested is to make it that 600-900 Servers are per shard, if u want to stay save, make it that it"s 400 servers / shard, and once it reached the ~1k mark, change the amount and restart
 const shardsPerCluster = 5; // suggested is: 2-8
 
 const manager = new Manager("./bot.js", { 
@@ -13,11 +13,11 @@ const manager = new Manager("./bot.js", {
     mode: "process", // "process" or: "worker"
     respawn: true, 
     usev13: true,
-    /*keepAlive: {
+    keepAlive: {
        interval: 2000,
        maxMissedHeartbeats: 5,
        maxClusterRestarts: 3,
-    }*/
+    }
 });
 manager.on("clusterCreate", cluster => {
     console.log(`[SHARDING-MANAGER]: `.magenta + `Launched Cluster #${cluster.id} | ${cluster.id+1}/${cluster.manager.totalClusters} [${cluster.manager.shardsPerClusters}/${cluster.manager.totalShards} Shards]`.green)
