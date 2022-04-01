@@ -8,7 +8,7 @@
     "fortnitetracker": "",
     "memer_api": "WNyBStXWCU4",
     "status": {
-        "text": "🎉 | {prefix}help | Se han usado {usedcommands} | Se han reproducido {songsplayed} Canciones",
+        "text": "🎉 | {prefix}help | Se han usado {usedcommands} comandos | Se han reproducido {songsplayed} Canciones",
         "type": "PLAYING",
         "url": "https://twitch.tv/milratodiscordbot",
         "text2": "💎 | En {guildcount} servidores | Con {membercount} Miembros"
