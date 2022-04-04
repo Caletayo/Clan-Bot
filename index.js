@@ -9,7 +9,7 @@ const manager = new Manager("./bot.js", {
     token: process.env.token || config.token,    
     // shardList: [ 0, 1, 2, 3, 4, 5 ], // if only those shards on that host etc.
     totalShards: totalShards, // amount or: "auto"
-    totalClusters: 4,
+    totalClusters: 2,
     mode: "process", // "process" or: "worker"
     respawn: true, 
     usev13: true,
