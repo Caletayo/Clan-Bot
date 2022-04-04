@@ -48,7 +48,7 @@ async function change_status(client){
   config = require(`${process.cwd()}/botconfig/config.json`)
   if(!state){
     for(id of client.cluster.ids.map(s => s.id)){
-      client.user.setActivity(`${config.status.text} 🍡 | En el shard: ${id}`)
+      client.user.setActivity(`${config.status.text} | on Cluster: ${client.cluster.id} | on Shard: ${id}`
         .replace("{prefix}", config.prefix)
         .replace("{guildcount}", nFormatter(client.guilds.cache.size, 2))
         .replace("{membercount}", nFormatter(client.guilds.cache.reduce((a, b) => a + b?.memberCount, 0), 2))
@@ -62,7 +62,7 @@ async function change_status(client){
     }
   } else {
     for(id of client.cluster.ids.map(s => s.id)){
-      client.user.setActivity(`${config.status.text2} 🍡 | En el Shard: ${id}`)
+      client.user.setActivity(`${config.status.text2} | on Cluster: ${client.cluster.id} | on Shard: ${id}`
         .replace("{prefix}", config.prefix)
         .replace("{guildcount}", nFormatter(client.guilds.cache.size, 2))
         .replace("{membercount}", nFormatter(client.guilds.cache.reduce((a, b) => a + b?.memberCount, 0), 2))
