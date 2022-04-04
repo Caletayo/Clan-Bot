@@ -23,8 +23,6 @@ module.exports = {
   memberpermissions: ["ADMINISTRATOR"],
   type: "system",
   run: async (client, message, args, cmduser, text, prefix, player, es, ls, GuildSettings) => {
-    return message.reply(`<a:Milrato_Animated:900394164829708388> **Since the last update, this got not fixxed yet, will be fixxed as soon as possible** :cry:!
-> Join https://discord.gg/dcdev for updates!`);
     try {
       let theDB = client.autosupport;
       let pre;
