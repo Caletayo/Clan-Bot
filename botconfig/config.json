@@ -1,22 +1,23 @@
 {
-   "token": "OTM0NjI0ODI4NDQxMzc4ODM3.YeyzMw.ulBRUDYJF_6oZZAdlvD7KnCPsLk",
-   "prefix": ",",
+   "token": "OTYwNzA0MjkwMjc0NTYyMTUw.YkuTlw.mkljw7qNMEKNpYu8AKAF-ZFBh0o",
+   "prefix": "P!",
    "ownerIDS": [
       "760938184661008455"
    ],
    "memer_api": "WNyBStXWCU4",
    "status": {
-      "text": "🎈 | Todo funcionando correctamente | ,help",
-      "text2": "😂 | Si tienes dudas pregúntale a Google XD",
+      "text": "😎 | P!help | En {guildcount} Servidores | Con {membercount} Miembros",
+      "text2": "🤫 | Se han usado {usedcommands} comandos | Se han reproducido {playedsongs} canciones",
       "type": "WATCHING",
       "url": "https://twitch.tv/milratoDiscordBot"
    },
    "clientsettings": {
       "nodes": [
          {
-            "host": "lava.link",
-            "port": 80,
-            "password": "youshallnotpass"
+            "host": "lavalink.oops.wtf",
+            "port": 443,
+            "secure": true,
+            "password": "www.freelavalink.ga"
          }
       ]
    },
